@@ -1,0 +1,659 @@
+*, ::before, ::after {
+    --tw-border-spacing-x: 0;
+    --tw-border-spacing-y: 0;
+    --tw-translate-x: 0;
+    --tw-translate-y: 0;
+    --tw-rotate: 0;
+    --tw-skew-x: 0;
+    --tw-skew-y: 0;
+    --tw-scale-x: 1;
+    --tw-scale-y: 1;
+    --tw-pan-x:  ;
+    --tw-pan-y:  ;
+    --tw-pinch-zoom:  ;
+    --tw-scroll-snap-strictness: proximity;
+    --tw-gradient-from-position:  ;
+    --tw-gradient-via-position:  ;
+    --tw-gradient-to-position:  ;
+    --tw-ordinal:  ;
+    --tw-slashed-zero:  ;
+    --tw-numeric-figure:  ;
+    --tw-numeric-spacing:  ;
+    --tw-numeric-fraction:  ;
+    --tw-ring-inset:  ;
+    --tw-ring-offset-width: 0px;
+    --tw-ring-offset-color: #fff;
+    --tw-ring-color: rgb(59 130 246 / 0.5);
+    --tw-ring-offset-shadow: 0 0 #0000;
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-shadow: 0 0 #0000;
+    --tw-shadow-colored: 0 0 #0000;
+    --tw-blur:  ;
+    --tw-brightness:  ;
+    --tw-contrast:  ;
+    --tw-grayscale:  ;
+    --tw-hue-rotate:  ;
+    --tw-invert:  ;
+    --tw-saturate:  ;
+    --tw-sepia:  ;
+    --tw-drop-shadow:  ;
+    --tw-backdrop-blur:  ;
+    --tw-backdrop-brightness:  ;
+    --tw-backdrop-contrast:  ;
+    --tw-backdrop-grayscale:  ;
+    --tw-backdrop-hue-rotate:  ;
+    --tw-backdrop-invert:  ;
+    --tw-backdrop-opacity:  ;
+    --tw-backdrop-saturate:  ;
+    --tw-backdrop-sepia:  ;
+    --tw-contain-size:  ;
+    --tw-contain-layout:  ;
+    --tw-contain-paint:  ;
+    --tw-contain-style:  
+}
+::backdrop {
+    --tw-border-spacing-x: 0;
+    --tw-border-spacing-y: 0;
+    --tw-translate-x: 0;
+    --tw-translate-y: 0;
+    --tw-rotate: 0;
+    --tw-skew-x: 0;
+    --tw-skew-y: 0;
+    --tw-scale-x: 1;
+    --tw-scale-y: 1;
+    --tw-pan-x:  ;
+    --tw-pan-y:  ;
+    --tw-pinch-zoom:  ;
+    --tw-scroll-snap-strictness: proximity;
+    --tw-gradient-from-position:  ;
+    --tw-gradient-via-position:  ;
+    --tw-gradient-to-position:  ;
+    --tw-ordinal:  ;
+    --tw-slashed-zero:  ;
+    --tw-numeric-figure:  ;
+    --tw-numeric-spacing:  ;
+    --tw-numeric-fraction:  ;
+    --tw-ring-inset:  ;
+    --tw-ring-offset-width: 0px;
+    --tw-ring-offset-color: #fff;
+    --tw-ring-color: rgb(59 130 246 / 0.5);
+    --tw-ring-offset-shadow: 0 0 #0000;
+    --tw-ring-shadow: 0 0 #0000;
+    --tw-shadow: 0 0 #0000;
+    --tw-shadow-colored: 0 0 #0000;
+    --tw-blur:  ;
+    --tw-brightness:  ;
+    --tw-contrast:  ;
+    --tw-grayscale:  ;
+    --tw-hue-rotate:  ;
+    --tw-invert:  ;
+    --tw-saturate:  ;
+    --tw-sepia:  ;
+    --tw-drop-shadow:  ;
+    --tw-backdrop-blur:  ;
+    --tw-backdrop-brightness:  ;
+    --tw-backdrop-contrast:  ;
+    --tw-backdrop-grayscale:  ;
+    --tw-backdrop-hue-rotate:  ;
+    --tw-backdrop-invert:  ;
+    --tw-backdrop-opacity:  ;
+    --tw-backdrop-saturate:  ;
+    --tw-backdrop-sepia:  ;
+    --tw-contain-size:  ;
+    --tw-contain-layout:  ;
+    --tw-contain-paint:  ;
+    --tw-contain-style:  
+}
+#sales-dashboard .fixed {
+    position: fixed
+}
+#sales-dashboard .absolute {
+    position: absolute
+}
+#sales-dashboard .relative {
+    position: relative
+}
+#sales-dashboard .inset-0 {
+    inset: 0px
+}
+#sales-dashboard .z-50 {
+    z-index: 50
+}
+#sales-dashboard .mb-1\.5 {
+    margin-bottom: 0.375rem
+}
+#sales-dashboard .ml-auto {
+    margin-left: auto
+}
+#sales-dashboard .mr-1 {
+    margin-right: 0.25rem
+}
+#sales-dashboard .mt-0\.5 {
+    margin-top: 0.125rem
+}
+#sales-dashboard .block {
+    display: block
+}
+#sales-dashboard .flex {
+    display: flex
+}
+#sales-dashboard .inline-flex {
+    display: inline-flex
+}
+#sales-dashboard .table {
+    display: table
+}
+#sales-dashboard .grid {
+    display: grid
+}
+#sales-dashboard .h-2 {
+    height: 0.5rem
+}
+#sales-dashboard .h-3 {
+    height: 0.75rem
+}
+#sales-dashboard .h-4 {
+    height: 1rem
+}
+#sales-dashboard .h-5 {
+    height: 1.25rem
+}
+#sales-dashboard .h-72 {
+    height: 18rem
+}
+#sales-dashboard .h-full {
+    height: 100%
+}
+#sales-dashboard .max-h-80 {
+    max-height: 20rem
+}
+#sales-dashboard .min-h-screen {
+    min-height: 100vh
+}
+#sales-dashboard .w-2 {
+    width: 0.5rem
+}
+#sales-dashboard .w-3 {
+    width: 0.75rem
+}
+#sales-dashboard .w-4 {
+    width: 1rem
+}
+#sales-dashboard .w-5 {
+    width: 1.25rem
+}
+#sales-dashboard .w-full {
+    width: 100%
+}
+#sales-dashboard .max-w-\[140px\] {
+    max-width: 140px
+}
+#sales-dashboard .max-w-lg {
+    max-width: 32rem
+}
+#sales-dashboard .shrink-0 {
+    flex-shrink: 0
+}
+@keyframes ping {
+    75%, 100% {
+        transform: scale(2);
+        opacity: 0
+    }
+}
+#sales-dashboard .animate-ping {
+    animation: ping 1s cubic-bezier(0, 0, 0.2, 1) infinite
+}
+#sales-dashboard .grid-cols-1 {
+    grid-template-columns: repeat(1, minmax(0, 1fr))
+}
+#sales-dashboard .grid-cols-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr))
+}
+#sales-dashboard .grid-cols-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr))
+}
+#sales-dashboard .flex-col {
+    flex-direction: column
+}
+#sales-dashboard .flex-wrap {
+    flex-wrap: wrap
+}
+#sales-dashboard .items-start {
+    align-items: flex-start
+}
+#sales-dashboard .items-center {
+    align-items: center
+}
+#sales-dashboard .justify-end {
+    justify-content: flex-end
+}
+#sales-dashboard .justify-center {
+    justify-content: center
+}
+#sales-dashboard .justify-between {
+    justify-content: space-between
+}
+#sales-dashboard .gap-1 {
+    gap: 0.25rem
+}
+#sales-dashboard .gap-1\.5 {
+    gap: 0.375rem
+}
+#sales-dashboard .gap-2 {
+    gap: 0.5rem
+}
+#sales-dashboard .gap-3 {
+    gap: 0.75rem
+}
+#sales-dashboard .gap-4 {
+    gap: 1rem
+}
+#sales-dashboard .gap-6 {
+    gap: 1.5rem
+}
+#sales-dashboard :is(.space-x-1\.5 > :not([hidden]) ~ :not([hidden])) {
+    --tw-space-x-reverse: 0;
+    margin-right: calc(0.375rem * var(--tw-space-x-reverse));
+    margin-left: calc(0.375rem * calc(1 - var(--tw-space-x-reverse)))
+}
+#sales-dashboard :is(.space-x-2 > :not([hidden]) ~ :not([hidden])) {
+    --tw-space-x-reverse: 0;
+    margin-right: calc(0.5rem * var(--tw-space-x-reverse));
+    margin-left: calc(0.5rem * calc(1 - var(--tw-space-x-reverse)))
+}
+#sales-dashboard :is(.space-x-3 > :not([hidden]) ~ :not([hidden])) {
+    --tw-space-x-reverse: 0;
+    margin-right: calc(0.75rem * var(--tw-space-x-reverse));
+    margin-left: calc(0.75rem * calc(1 - var(--tw-space-x-reverse)))
+}
+#sales-dashboard :is(.space-y-1\.5 > :not([hidden]) ~ :not([hidden])) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0.375rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0.375rem * var(--tw-space-y-reverse))
+}
+#sales-dashboard :is(.space-y-2 > :not([hidden]) ~ :not([hidden])) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0.5rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0.5rem * var(--tw-space-y-reverse))
+}
+#sales-dashboard :is(.space-y-2\.5 > :not([hidden]) ~ :not([hidden])) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0.625rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0.625rem * var(--tw-space-y-reverse))
+}
+#sales-dashboard :is(.space-y-3 > :not([hidden]) ~ :not([hidden])) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(0.75rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(0.75rem * var(--tw-space-y-reverse))
+}
+#sales-dashboard :is(.space-y-4 > :not([hidden]) ~ :not([hidden])) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(1rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(1rem * var(--tw-space-y-reverse))
+}
+#sales-dashboard :is(.space-y-5 > :not([hidden]) ~ :not([hidden])) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(1.25rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(1.25rem * var(--tw-space-y-reverse))
+}
+#sales-dashboard :is(.space-y-6 > :not([hidden]) ~ :not([hidden])) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(1.5rem * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(1.5rem * var(--tw-space-y-reverse))
+}
+#sales-dashboard .overflow-y-auto {
+    overflow-y: auto
+}
+#sales-dashboard .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap
+}
+#sales-dashboard .rounded {
+    border-radius: 0.25rem
+}
+#sales-dashboard .rounded-2xl {
+    border-radius: 1rem
+}
+#sales-dashboard .rounded-full {
+    border-radius: 9999px
+}
+#sales-dashboard .rounded-lg {
+    border-radius: 0.5rem
+}
+#sales-dashboard .rounded-xl {
+    border-radius: 0.75rem
+}
+#sales-dashboard .border {
+    border-width: 1px
+}
+#sales-dashboard .border-b {
+    border-bottom-width: 1px
+}
+#sales-dashboard .border-t {
+    border-top-width: 1px
+}
+#sales-dashboard .border-amber-500\/30 {
+    border-color: rgb(245 158 11 / 0.3)
+}
+#sales-dashboard .border-emerald-500\/20 {
+    border-color: rgb(16 185 129 / 0.2)
+}
+#sales-dashboard .border-emerald-500\/30 {
+    border-color: rgb(16 185 129 / 0.3)
+}
+#sales-dashboard .border-slate-200 {
+    --tw-border-opacity: 1;
+    border-color: rgb(226 232 240 / var(--tw-border-opacity, 1))
+}
+#sales-dashboard .bg-emerald-400 {
+    --tw-bg-opacity: 1;
+    background-color: rgb(52 211 153 / var(--tw-bg-opacity, 1))
+}
+#sales-dashboard .bg-emerald-500\/10 {
+    background-color: rgb(16 185 129 / 0.1)
+}
+#sales-dashboard .bg-emerald-600 {
+    --tw-bg-opacity: 1;
+    background-color: rgb(5 150 105 / var(--tw-bg-opacity, 1))
+}
+#sales-dashboard .bg-slate-100 {
+    --tw-bg-opacity: 1;
+    background-color: rgb(241 245 249 / var(--tw-bg-opacity, 1))
+}
+#sales-dashboard .bg-slate-50 {
+    --tw-bg-opacity: 1;
+    background-color: rgb(248 250 252 / var(--tw-bg-opacity, 1))
+}
+#sales-dashboard .bg-slate-500 {
+    --tw-bg-opacity: 1;
+    background-color: rgb(100 116 139 / var(--tw-bg-opacity, 1))
+}
+#sales-dashboard .bg-white {
+    --tw-bg-opacity: 1;
+    background-color: rgb(255 255 255 / var(--tw-bg-opacity, 1))
+}
+#sales-dashboard .bg-gradient-to-r {
+    background-image: linear-gradient(to right, var(--tw-gradient-stops))
+}
+#sales-dashboard .from-white {
+    --tw-gradient-from: #fff var(--tw-gradient-from-position);
+    --tw-gradient-to: rgb(255 255 255 / 0) var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to)
+}
+#sales-dashboard .via-emerald-50 {
+    --tw-gradient-to: rgb(236 253 245 / 0)  var(--tw-gradient-to-position);
+    --tw-gradient-stops: var(--tw-gradient-from), #ecfdf5 var(--tw-gradient-via-position), var(--tw-gradient-to)
+}
+#sales-dashboard .to-white {
+    --tw-gradient-to: #fff var(--tw-gradient-to-position)
+}
+#sales-dashboard .p-1 {
+    padding: 0.25rem
+}
+#sales-dashboard .p-2 {
+    padding: 0.5rem
+}
+#sales-dashboard .p-2\.5 {
+    padding: 0.625rem
+}
+#sales-dashboard .p-3 {
+    padding: 0.75rem
+}
+#sales-dashboard .p-4 {
+    padding: 1rem
+}
+#sales-dashboard .p-5 {
+    padding: 1.25rem
+}
+#sales-dashboard .p-6 {
+    padding: 1.5rem
+}
+#sales-dashboard .px-1\.5 {
+    padding-left: 0.375rem;
+    padding-right: 0.375rem
+}
+#sales-dashboard .px-2\.5 {
+    padding-left: 0.625rem;
+    padding-right: 0.625rem
+}
+#sales-dashboard .px-3 {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem
+}
+#sales-dashboard .px-4 {
+    padding-left: 1rem;
+    padding-right: 1rem
+}
+#sales-dashboard .py-1 {
+    padding-top: 0.25rem;
+    padding-bottom: 0.25rem
+}
+#sales-dashboard .py-2 {
+    padding-top: 0.5rem;
+    padding-bottom: 0.5rem
+}
+#sales-dashboard .pb-12 {
+    padding-bottom: 3rem
+}
+#sales-dashboard .pb-3 {
+    padding-bottom: 0.75rem
+}
+#sales-dashboard .pb-4 {
+    padding-bottom: 1rem
+}
+#sales-dashboard .pr-1 {
+    padding-right: 0.25rem
+}
+#sales-dashboard .pt-1 {
+    padding-top: 0.25rem
+}
+#sales-dashboard .pt-2 {
+    padding-top: 0.5rem
+}
+#sales-dashboard .pt-3 {
+    padding-top: 0.75rem
+}
+#sales-dashboard .text-left {
+    text-align: left
+}
+#sales-dashboard .text-center {
+    text-align: center
+}
+#sales-dashboard .text-right {
+    text-align: right
+}
+#sales-dashboard .font-mono {
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace
+}
+#sales-dashboard .font-sans {
+    font-family: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji"
+}
+#sales-dashboard .text-\[10px\] {
+    font-size: 10px
+}
+#sales-dashboard .text-\[11px\] {
+    font-size: 11px
+}
+#sales-dashboard .text-base {
+    font-size: 1rem;
+    line-height: 1.5rem
+}
+#sales-dashboard .text-sm {
+    font-size: 0.875rem;
+    line-height: 1.25rem
+}
+#sales-dashboard .text-xs {
+    font-size: 0.75rem;
+    line-height: 1rem
+}
+#sales-dashboard .font-bold {
+    font-weight: 700
+}
+#sales-dashboard .font-medium {
+    font-weight: 500
+}
+#sales-dashboard .font-normal {
+    font-weight: 400
+}
+#sales-dashboard .font-semibold {
+    font-weight: 600
+}
+#sales-dashboard .uppercase {
+    text-transform: uppercase
+}
+#sales-dashboard .italic {
+    font-style: italic
+}
+#sales-dashboard .leading-tight {
+    line-height: 1.25
+}
+#sales-dashboard .tracking-wider {
+    letter-spacing: 0.05em
+}
+#sales-dashboard .text-amber-700 {
+    --tw-text-opacity: 1;
+    color: rgb(180 83 9 / var(--tw-text-opacity, 1))
+}
+#sales-dashboard .text-amber-700\/90 {
+    color: rgb(180 83 9 / 0.9)
+}
+#sales-dashboard .text-emerald-700 {
+    --tw-text-opacity: 1;
+    color: rgb(4 120 87 / var(--tw-text-opacity, 1))
+}
+#sales-dashboard .text-emerald-700\/90 {
+    color: rgb(4 120 87 / 0.9)
+}
+#sales-dashboard .text-rose-700 {
+    --tw-text-opacity: 1;
+    color: rgb(190 18 60 / var(--tw-text-opacity, 1))
+}
+#sales-dashboard .text-slate-500 {
+    --tw-text-opacity: 1;
+    color: rgb(100 116 139 / var(--tw-text-opacity, 1))
+}
+#sales-dashboard .text-slate-700 {
+    --tw-text-opacity: 1;
+    color: rgb(51 65 85 / var(--tw-text-opacity, 1))
+}
+#sales-dashboard .text-slate-800 {
+    --tw-text-opacity: 1;
+    color: rgb(30 41 59 / var(--tw-text-opacity, 1))
+}
+#sales-dashboard .text-slate-900 {
+    --tw-text-opacity: 1;
+    color: rgb(15 23 42 / var(--tw-text-opacity, 1))
+}
+#sales-dashboard .text-white {
+    --tw-text-opacity: 1;
+    color: rgb(255 255 255 / var(--tw-text-opacity, 1))
+}
+#sales-dashboard .underline {
+    text-decoration-line: underline
+}
+#sales-dashboard .antialiased {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale
+}
+#sales-dashboard .opacity-60 {
+    opacity: 0.6
+}
+#sales-dashboard .opacity-75 {
+    opacity: 0.75
+}
+#sales-dashboard .shadow-2xl {
+    --tw-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+    --tw-shadow-colored: 0 25px 50px -12px var(--tw-shadow-color);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+}
+#sales-dashboard .shadow-md {
+    --tw-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+    --tw-shadow-colored: 0 4px 6px -1px var(--tw-shadow-color), 0 2px 4px -2px var(--tw-shadow-color);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+}
+#sales-dashboard .shadow-sm {
+    --tw-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --tw-shadow-colored: 0 1px 2px 0 var(--tw-shadow-color);
+    box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)
+}
+#sales-dashboard .filter {
+    filter: var(--tw-blur) var(--tw-brightness) var(--tw-contrast) var(--tw-grayscale) var(--tw-hue-rotate) var(--tw-invert) var(--tw-saturate) var(--tw-sepia) var(--tw-drop-shadow)
+}
+#sales-dashboard .backdrop-blur-sm {
+    --tw-backdrop-blur: blur(4px);
+    backdrop-filter: var(--tw-backdrop-blur) var(--tw-backdrop-brightness) var(--tw-backdrop-contrast) var(--tw-backdrop-grayscale) var(--tw-backdrop-hue-rotate) var(--tw-backdrop-invert) var(--tw-backdrop-opacity) var(--tw-backdrop-saturate) var(--tw-backdrop-sepia)
+}
+#sales-dashboard .transition-all {
+    transition-property: all;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms
+}
+#sales-dashboard .transition-colors {
+    transition-property: color, background-color, border-color, text-decoration-color, fill, stroke;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+    transition-duration: 150ms
+}
+#sales-dashboard .hover\:border-slate-200:hover {
+    --tw-border-opacity: 1;
+    border-color: rgb(226 232 240 / var(--tw-border-opacity, 1))
+}
+#sales-dashboard .hover\:bg-emerald-700:hover {
+    --tw-bg-opacity: 1;
+    background-color: rgb(4 120 87 / var(--tw-bg-opacity, 1))
+}
+#sales-dashboard .hover\:bg-slate-100:hover {
+    --tw-bg-opacity: 1;
+    background-color: rgb(241 245 249 / var(--tw-bg-opacity, 1))
+}
+#sales-dashboard .hover\:text-slate-900:hover {
+    --tw-text-opacity: 1;
+    color: rgb(15 23 42 / var(--tw-text-opacity, 1))
+}
+#sales-dashboard .focus\:border-emerald-500:focus {
+    --tw-border-opacity: 1;
+    border-color: rgb(16 185 129 / var(--tw-border-opacity, 1))
+}
+#sales-dashboard .focus\:outline-none:focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px
+}
+#sales-dashboard :is(.group:hover .group-hover\:bg-emerald-500\/20) {
+    background-color: rgb(16 185 129 / 0.2)
+}
+@media (min-width: 640px) {
+    #sales-dashboard .sm\:h-80 {
+        height: 20rem
+    }
+    #sales-dashboard .sm\:p-4 {
+        padding: 1rem
+    }
+    #sales-dashboard .sm\:p-5 {
+        padding: 1.25rem
+    }
+    #sales-dashboard .sm\:text-base {
+        font-size: 1rem;
+        line-height: 1.5rem
+    }
+}
+@media (min-width: 768px) {
+    #sales-dashboard .md\:flex-row {
+        flex-direction: row
+    }
+    #sales-dashboard .md\:items-center {
+        align-items: center
+    }
+}
+@media (min-width: 1024px) {
+    #sales-dashboard .lg\:grid-cols-2 {
+        grid-template-columns: repeat(2, minmax(0, 1fr))
+    }
+}
+@media (min-width: 1280px) {
+    #sales-dashboard .xl\:flex-row {
+        flex-direction: row
+    }
+    #sales-dashboard .xl\:items-center {
+        align-items: center
+    }
+}

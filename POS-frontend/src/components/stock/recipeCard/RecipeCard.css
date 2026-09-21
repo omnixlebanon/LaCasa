@@ -1,0 +1,73 @@
+.recipe-card {
+    background-color: white;
+    width: 45%;
+    min-width: 0;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow .2s ease, border-color .2s ease;
+}
+
+.recipe-card:hover { box-shadow: var(--shadow-md); border-color: var(--main-border); }
+.recipe-head { display: flex; justify-content: space-between; padding: 1.25rem 1.25rem 0; gap: .75rem; }
+.recipe-head-left { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
+.recipe-head-left h4 { color: var(--text-color); font-size: 1rem; font-weight: 600; overflow-wrap: anywhere; }
+.recipe-head-left p { font-size: .75rem; color: var(--font-color); background: var(--sec-bg); border: 1px solid var(--border-color); border-radius: 999px; width: fit-content; padding: .25rem .625rem; }
+.linked-ingredients { padding: 1.25rem; }
+.linked-ingredients h4 { padding-bottom: .75rem; color: var(--font-color); font-size: .8125rem; font-weight: 500; }
+.ingredients { display: flex; flex-direction: column; gap: .625rem; }
+.ingredient { display: flex; align-items: center; justify-content: space-between; gap: .75rem; font-size: .875rem; }
+.ingredient-name { min-width: 0; width: 50%; max-width: 50%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ingredient-qty { color: var(--font-color); font-variant-numeric: tabular-nums; }
+.ingredient input { min-width: 0; min-height: 38px; padding: .5rem .625rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); max-width: 25%; background: white; }
+.recipe-actions { margin-top: auto; padding: .75rem 1.25rem; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end; background: var(--default-bg); }
+.add-stock-btn:hover svg { color: var(--main-color); background-color: var(--main-soft); }
+.recipePopup {
+    display: flex;
+    position: fixed;
+    inset: 0;
+    padding: 1.25rem;
+    background-color: rgba(20, 42, 30, .38);
+    backdrop-filter: blur(4px);
+    justify-content: center;
+    align-items: center;
+    z-index: 1200;
+}
+
+.recipePopup-container {
+    display: flex;
+    flex-direction: column;
+    width: min(100%, 520px);
+    max-height: calc(100dvh - 2.5rem);
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 24px 64px rgba(20, 42, 30, .18);
+    overflow-y: auto;
+}
+
+.recipePopup-head { display: flex; justify-content: space-between; align-items: center; gap: 1rem; padding: 1.125rem 1.5rem; border-bottom: 1px solid var(--border-color); background: var(--sec-bg); }
+.recipePopup-head p { color: var(--text-color); font-weight: 600; }
+.recipePopup-head button { background: transparent; border: none; }
+.recipePopup-head .close-btn { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; flex-shrink: 0; border-radius: var(--radius-sm); color: var(--font-color); }
+.recipePopup-head .close-btn svg { width: 20px; height: 20px; }
+.recipePopup-head .close-btn:hover { background: var(--hover-bg); color: var(--text-color); }
+.recipePopup-linked-ingredients-area { padding: 1.5rem; }
+.recipePopup-linked-ingredients { display: flex; flex-direction: column; gap: .75rem; }
+.recipePopup-actions { display: flex; justify-content: flex-end; margin-top: 1.25rem; gap: .75rem; }
+.recipePopup-actions button { min-height: 40px; padding: .625rem 1rem; border: 1px solid var(--main-color); border-radius: var(--radius-sm); background: var(--main-color); color: white; font-weight: 500; }
+.recipePopup-actions button:hover { background: var(--main-color-hover); border-color: var(--main-color-hover); }
+.recipePopup-add { background-color: var(--main-color); color: white; }
+.recipe-card .no-data, .recipePopup .no-data { color: var(--font-color); font-size: .875rem; line-height: 1.6; }
+@media (max-width: 768px) {
+    .recipe-card { width: 100%; }
+}
+@media (max-width: 600px) {
+    .recipePopup { padding: 1rem; }
+    .recipePopup-container { max-height: calc(100dvh - 2rem); }
+    .recipePopup-head, .recipePopup-linked-ingredients-area { padding: 1rem; }
+}
+

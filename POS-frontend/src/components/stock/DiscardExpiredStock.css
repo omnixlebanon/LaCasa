@@ -1,0 +1,21 @@
+.discard-expired-button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; align-self: flex-start; margin-top: 6px; padding: 8px 12px; border: 1px solid var(--danger-border); border-radius: var(--radius-sm); background: var(--danger-soft); color: var(--danger-color); font-size: 13px; cursor: pointer; }
+.discard-expired-button svg { width: 16px; height: 16px; }
+.discard-expired-success { color: var(--main-color); font-size: 13px; }
+.discard-expired-dialog { width: min(600px, calc(100vw - 32px)); max-height: 90dvh; margin: auto; padding: 0; border: 1px solid var(--border-color); border-radius: var(--radius-lg); background: white; color: var(--text-color); box-shadow: var(--shadow-md); overflow-y: auto; }
+.discard-expired-dialog::backdrop { background: rgba(20, 40, 30, .5); }
+.discard-expired-dialog header, .discard-expired-dialog footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 20px; }
+.discard-expired-dialog header { border-bottom: 1px solid var(--border-color); }
+.discard-expired-dialog h3 { font-size: 17px; }
+.discard-expired-dialog header button { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: var(--radius-sm); }
+.discard-expired-body { padding: 20px; }
+.discard-expired-body > p { font-size: 14px; line-height: 1.6; margin-bottom: 12px; }
+.discard-expired-body ul { list-style: none; display: grid; gap: 10px; padding: 0; }
+.discard-expired-body li { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 12px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: var(--default-bg); font-size: 14px; }
+.discard-expired-body li div { display: grid; gap: 4px; }
+.discard-expired-body li span { font-size: 12px; color: var(--font-color); }
+.discard-expired-error { color: var(--danger-color); }
+.discard-expired-dialog footer { justify-content: flex-end; border-top: 1px solid var(--border-color); }
+.discard-expired-dialog footer button { padding: 10px 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); }
+.discard-expired-dialog footer .discard-expired-confirm { color: white; background: var(--danger-color); border-color: var(--danger-color); }
+.discard-expired-dialog button { cursor: pointer; }
+.discard-expired-dialog button:disabled, .discard-expired-button:disabled { opacity: .6; cursor: default; }

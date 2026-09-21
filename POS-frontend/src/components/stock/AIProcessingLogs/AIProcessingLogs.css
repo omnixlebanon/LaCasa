@@ -1,0 +1,27 @@
+.ai-logs-area { padding: 1.25rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: white; box-shadow: var(--shadow-sm); }
+.stock-workflows { display: grid; gap: 1rem; min-width: 0; }
+.ai-logs-area > p { color: var(--font-color); font-size: .875rem; line-height: 1.6; }
+.ai-logs-head, .ai-logs-head > div, .ai-log-card > div, .ai-log-actions { display: flex; align-items: center; gap: .5rem; flex-wrap: wrap; }
+.ai-logs-head { justify-content: space-between; margin-bottom: 1rem; }
+.ai-logs-head h3 { color: var(--text-color); font-size: 1rem; font-weight: 600; }
+.ai-logs-head button, .ai-log-actions button { display: inline-flex; align-items: center; gap: .5rem; min-height: 36px; padding: .5rem .75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: white; color: var(--hover-font-color); font-size: .8125rem; font-weight: 500; }
+.ai-logs-head button:hover { color: var(--main-color); background: var(--main-soft); border-color: var(--main-border); }
+.ai-logs-head button svg, .ai-log-actions svg { width: 16px; height: 16px; }
+.ai-log-list { display: grid; gap: .75rem; }
+.ai-log-card { min-width: 0; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--default-bg); }
+.ai-log-card strong { color: var(--text-color); font-size: .875rem; }
+.ai-log-card p, .ai-log-card small { color: var(--font-color); font-size: .8125rem; line-height: 1.6; }
+.ai-log-card pre { overflow: auto; max-height: 240px; margin: .75rem 0; padding: 1rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: white; font-size: .8125rem; line-height: 1.6; white-space: pre-wrap; overflow-wrap: anywhere; }
+.ai-log-evidence { display: block; max-width: min(100%, 320px); max-height: 220px; margin-top: .75rem; border: 1px solid var(--border-color); border-radius: var(--radius-sm); object-fit: contain; background: white; }
+.ai-log-status { padding: .25rem .625rem; border: 1px solid var(--warning-border); border-radius: 999px; background: var(--warning-soft); color: var(--warning-color); text-transform: capitalize; font-size: .75rem; font-weight: 500; }
+.ai-log-status.approved { color: var(--main-color); background: var(--main-soft); border-color: var(--main-border); }
+.ai-log-status.rejected { color: var(--danger-color); background: var(--danger-soft); border-color: var(--danger-border); }
+.ai-log-actions { justify-content: flex-end; margin-top: .875rem; }
+.ai-log-actions .approve { color: var(--main-color); background: var(--main-soft); border-color: var(--main-border); }
+.ai-log-actions .approve:hover { border-color: var(--main-color); }
+.ai-log-actions .reject { color: var(--danger-color); background: var(--danger-soft); border-color: var(--danger-border); }
+.ai-log-actions .reject:hover { border-color: var(--danger-color); }
+.ai-logs-area .ai-log-error { color: var(--danger-color); margin-bottom: .75rem; }
+@media (max-width: 600px) {
+    .ai-logs-area { padding: 1rem; }
+}

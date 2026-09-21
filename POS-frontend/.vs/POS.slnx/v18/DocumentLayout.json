@@ -1,0 +1,75 @@
+{
+  "Version": 1,
+  "WorkspaceRootPath": "C:\\Users\\salam\\source\\repos\\POS\\",
+  "Documents": [
+    {
+      "AbsoluteMoniker": "D:0:0:{81FC01E4-9E8F-D11D-6387-3CFFFE3CBF1E}|pos.esproj|c:\\users\\salam\\source\\repos\\pos\\src\\layout\\navbar.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{81FC01E4-9E8F-D11D-6387-3CFFFE3CBF1E}|pos.esproj|solutionrelative:src\\layout\\navbar.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{81FC01E4-9E8F-D11D-6387-3CFFFE3CBF1E}|pos.esproj|c:\\users\\salam\\source\\repos\\pos\\src\\page\\checkout.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{81FC01E4-9E8F-D11D-6387-3CFFFE3CBF1E}|pos.esproj|solutionrelative:src\\page\\checkout.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{81FC01E4-9E8F-D11D-6387-3CFFFE3CBF1E}|pos.esproj|c:\\users\\salam\\source\\repos\\pos\\src\\app.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}",
+      "RelativeMoniker": "D:0:0:{81FC01E4-9E8F-D11D-6387-3CFFFE3CBF1E}|pos.esproj|solutionrelative:src\\app.jsx||{14D17961-FE51-464D-9111-C4AF11D7D99A}"
+    }
+  ],
+  "DocumentGroupContainers": [
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
+            {
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "navbar.jsx",
+              "DocumentMoniker": "C:\\Users\\salam\\source\\repos\\POS\\src\\layout\\navbar.jsx",
+              "RelativeDocumentMoniker": "src\\layout\\navbar.jsx",
+              "ToolTip": "C:\\Users\\salam\\source\\repos\\POS\\src\\layout\\navbar.jsx",
+              "RelativeToolTip": "src\\layout\\navbar.jsx",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-07-05T13:10:31.656Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 1,
+              "Title": "checkOut.jsx",
+              "DocumentMoniker": "C:\\Users\\salam\\source\\repos\\POS\\src\\page\\checkOut.jsx",
+              "RelativeDocumentMoniker": "src\\page\\checkOut.jsx",
+              "ToolTip": "C:\\Users\\salam\\source\\repos\\POS\\src\\page\\checkOut.jsx",
+              "RelativeToolTip": "src\\page\\checkOut.jsx",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAAEAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-07-05T13:06:04.798Z",
+              "EditorCaption": ""
+            },
+            {
+              "$type": "Document",
+              "DocumentIndex": 2,
+              "Title": "App.jsx",
+              "DocumentMoniker": "C:\\Users\\salam\\source\\repos\\POS\\src\\App.jsx",
+              "RelativeDocumentMoniker": "src\\App.jsx",
+              "ToolTip": "C:\\Users\\salam\\source\\repos\\POS\\src\\App.jsx",
+              "RelativeToolTip": "src\\App.jsx",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAIAAAASAAAAAAAAAA==",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003663|",
+              "WhenOpened": "2026-07-05T12:59:37.43Z",
+              "EditorCaption": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -1,0 +1,42 @@
+    const handleStockChange = async (id, newStock) => {
+        try {
+            await axios.patch(`http://localhost:8080/api/stock/${id}`, { stock: newStock })
+            // await axios.patch(`http://localhost:8080/api/stock/${id}/stockStatus`)
+
+            setItems(prevItems =>
+                prevItems.map(item => {
+                    if (item.id === id) {
+                        let updatedStatus = 'Low';
+                        if (Number(newStock) === 0) updatedStatus = 'out of stock';
+                        else if (Number(newStock) > Number(item.limit)) updatedStatus = 'well';
+                        return { ...item, stock: newStock, stockStatus: updatedStatus };
+                    }
+                    return item;
+                })
+            );
+            const summary_res = await axios.get("http://localhost:8080/api/stock/summary")
+            setStockSummary(summary_res.data);
+        } catch (error) {
+            console.error("Failed to save stock update to database:", error);
+            alert("Could not save to database. Please try again.");
+        }
+    }
+        const updatedStockItem = async (id,updatedFields)=>{
+            try {
+                const res = await axios.patch(`http://localhost:8080/api/stock/${id}/edit`,{
+                    method: 'PATCH',
+                    headers:{
+                        "Content-type":"application/json",
+                    },
+                    body:JSON.stringify(updatedFields),
+                })
+                const data = await res.json();
+                if(!res.ok){
+                    throw new Error(data.error || data.message || "something went wrong");
+                }
+                return data
+            } catch (error) {
+                console.error("could not edit item,error: ",error.message);
+                throw error
+            }
+        }

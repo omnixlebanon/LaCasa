@@ -1,0 +1,23 @@
+.new-stock-td { display: flex; align-items: center; justify-content: center; }
+.add-stock-container { display: flex; gap: .5rem; align-items: center; justify-content: center; }
+.add-stock-td input {
+    min-height: 36px;
+    padding: .5rem .625rem;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    width: 92px;
+    background: white;
+    color: var(--text-color);
+}
+
+.add-stock-td button {
+    min-height: 36px;
+    padding: .5rem .75rem;
+    border: 1px solid var(--main-color);
+    border-radius: var(--radius-sm);
+    background-color: var(--main-color);
+    color: white;
+    font-weight: 500;
+}
+
+.add-stock-td button:hover { background: var(--main-color-hover); border-color: var(--main-color-hover); }

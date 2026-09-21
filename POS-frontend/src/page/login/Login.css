@@ -1,0 +1,103 @@
+.login-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 90vh;
+    padding: 32px 20px;
+}
+
+.login-container {
+    padding: 40px;
+    width: 100%;
+    max-width: 380px;
+    margin: auto;
+    background-color: white;
+    border: 1px solid var(--border-color);
+    border-top: 3px solid var(--main-color);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-md);
+}
+.login-head{
+    padding-bottom: 1.75rem;
+    background: transparent;
+    color: var(--text-color);
+    font-size: 1.5rem;
+    font-weight: 650;
+    line-height: 1.35;
+    letter-spacing: -0.035em;
+}
+.login-form{
+    background: transparent;
+}
+.login-label-input {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    background: transparent;
+    margin-bottom: 1.25rem;
+}
+
+.login-label-input label {
+    background: transparent;
+    color: var(--hover-font-color);
+    font-size: .875rem;
+    font-weight: 550;
+}
+
+.login-label-input input {
+    width: 100%;
+    min-height: 44px;
+    padding: .7rem 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: white;
+    color: var(--text-color);
+    font: inherit;
+    transition: border-color .15s ease, box-shadow .15s ease;
+}
+
+.login-label-input input:focus {
+    border-color: var(--main-color);
+    outline: none;
+    box-shadow: 0 0 0 3px var(--main-soft);
+}
+
+.login-form .save-btn {
+    width: 100%;
+    min-height: 44px;
+    margin-top: .25rem;
+    border: 1px solid var(--main-color);
+    border-radius: var(--radius-sm);
+    background: var(--main-color);
+    color: white;
+    font-size: .875rem;
+    font-weight: 600;
+    transition: background-color .15s ease, border-color .15s ease;
+}
+
+.login-form .save-btn:hover {
+    background: var(--main-color-hover);
+    border-color: var(--main-color-hover);
+}
+
+.login-form .save-btn:focus-visible {
+    outline: 2px solid var(--main-color);
+    outline-offset: 3px;
+}
+
+.login-container .error-message {
+    margin: 0 0 1.25rem;
+    padding: .75rem;
+    border: 1px solid var(--danger-border, #f4ccd2);
+    border-radius: var(--radius-sm);
+    background: var(--danger-soft, #fff0f2);
+    color: var(--danger-color, #b4233b);
+    font-size: .85rem;
+    line-height: 1.5;
+}
+
+@media (max-width: 480px) {
+    .login-container {
+        padding: 28px 24px;
+    }
+}

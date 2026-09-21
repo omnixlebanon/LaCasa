@@ -1,0 +1,719 @@
+@import "./SalesUtilities.css";
+
+#sales-dashboard {
+    margin-left: var(--sidebar-width);
+    min-height: 100vh;
+    padding: 30px;
+    background: var(--default-bg);
+    color: var(--text-color);
+    color-scheme: light;
+}
+
+#sales-dashboard *,
+#sales-dashboard *::before,
+#sales-dashboard *::after {
+    box-sizing: border-box;
+    border-width: 0;
+    border-style: solid;
+}
+
+#sales-dashboard button,
+#sales-dashboard input,
+#sales-dashboard select {
+    font: inherit;
+}
+
+#sales-dashboard button {
+    background-color: transparent;
+}
+
+#sales-dashboard button:disabled {
+    opacity: .5;
+    cursor: not-allowed;
+}
+
+#sales-dashboard table {
+    border-collapse: collapse;
+}
+
+#sales-dashboard svg {
+    display: inline-block;
+    vertical-align: middle;
+}
+
+#sales-dashboard .fixed.inset-0 {
+    z-index: 1100;
+    overflow-y: auto;
+}
+
+#sales-dashboard .grid>* {
+    min-width: 0;
+}
+
+#sales-dashboard .sales-timeframe-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 160px), 1fr));
+    gap: 10px;
+    width: 100%;
+}
+
+#sales-dashboard .sales-timeframe-buttons button {
+    min-height: 52px;
+    padding: 12px 18px;
+}
+
+#sales-dashboard .sales-timeframe-button {
+    color: var(--font-color);
+    border: 1px solid transparent;
+    border-radius: var(--radius-sm);
+}
+
+#sales-dashboard .sales-timeframe-button:hover {
+    color: var(--text-color);
+    background: var(--hover-bg);
+}
+
+#sales-dashboard .sales-timeframe-button.is-active {
+    color: white;
+    background: var(--main-color);
+    border-color: var(--main-color);
+    box-shadow: var(--shadow-sm);
+}
+
+#sales-dashboard .sales-timeframe-button.is-active:hover {
+    background: var(--main-color-hover);
+}
+
+#sales-dashboard .sales-timeframe-subtitle {
+    margin-top: 4px;
+    font-size: 11px;
+    font-weight: 400;
+    line-height: 1.4;
+    opacity: .85;
+}
+
+#sales-dashboard .sales-chart-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--sec-bg);
+    font-size: 12px;
+}
+
+#sales-dashboard .sales-chart-tab {
+    padding: 8px 10px;
+    border-radius: 6px;
+    color: var(--font-color);
+    font-weight: 500;
+}
+
+#sales-dashboard .sales-chart-tab:hover {
+    color: var(--main-color);
+    background: var(--hover-bg);
+}
+
+#sales-dashboard .sales-chart-tab.is-active {
+    color: white;
+    background: var(--main-color);
+    box-shadow: var(--shadow-sm);
+}
+
+#sales-dashboard .sales-chart-metric {
+    display: flex;
+    justify-content: flex-end;
+}
+
+#sales-dashboard .sales-chart-metric select {
+    min-height: 36px;
+    max-width: 160px;
+    padding: 4px 8px;
+    font-size: 12px;
+    color: var(--hover-font-color);
+    background: white;
+    border: 1px solid var(--border-color);
+}
+
+#sales-dashboard .sales-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+    gap: 16px;
+}
+
+#sales-dashboard .sales-kpi-grid>* {
+    min-width: 0;
+    padding: 20px;
+}
+
+#sales-dashboard .sales-page-header {
+    margin-bottom: 24px;
+}
+
+#sales-dashboard .sales-page-header .PageTitle {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+#sales-dashboard .sales-page-header .PageTitle svg {
+    width: 24px;
+    height: 24px;
+    color: var(--main-color);
+}
+
+#sales-dashboard .sales-page-header h2 {
+    font-size: 24px;
+    color: var(--text-color);
+}
+
+#sales-dashboard .sales-export-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 40px;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    color: var(--hover-font-color);
+    background-color: white;
+    box-shadow: var(--shadow-sm);
+    font-weight: 600;
+    font-size: 13px;
+}
+
+#sales-dashboard .sales-export-button:hover {
+    background: var(--hover-bg);
+    border-color: var(--main-border);
+    color: var(--main-color);
+}
+
+#sales-dashboard .sales-export-button svg {
+    width: 16px;
+    height: 16px;
+    color: var(--font-color);
+}
+
+#sales-dashboard>main {
+    width: 100%;
+    padding: 0;
+}
+
+#sales-dashboard h2 {
+    color: var(--text-color);
+}
+
+#sales-dashboard .rounded-2xl,
+#sales-dashboard .rounded-xl {
+    border-radius: var(--radius-md);
+}
+
+#sales-dashboard .shadow-sm {
+    box-shadow: var(--shadow-sm);
+}
+
+#sales-dashboard .shadow-md,
+#sales-dashboard .shadow-lg {
+    box-shadow: var(--shadow-md);
+}
+
+#sales-dashboard .border-slate-200 {
+    border-color: var(--border-color);
+}
+
+#sales-dashboard .bg-slate-50,
+#sales-dashboard .bg-slate-100 {
+    background-color: var(--sec-bg);
+}
+
+#sales-dashboard .text-slate-500,
+#sales-dashboard .text-slate-600 {
+    color: var(--font-color);
+}
+
+#sales-dashboard .text-slate-800,
+#sales-dashboard .text-slate-900 {
+    color: var(--text-color);
+}
+
+#sales-dashboard input,
+#sales-dashboard select {
+    min-height: 38px;
+    font-size: 13px;
+    border-radius: var(--radius-sm);
+}
+
+#sales-dashboard input:focus-visible,
+#sales-dashboard select:focus-visible,
+#sales-dashboard button:focus-visible {
+    outline: 2px solid var(--main-color);
+    outline-offset: 2px;
+}
+
+#sales-dashboard button {
+    transition: background-color 150ms, border-color 150ms, color 150ms, box-shadow 150ms;
+}
+
+#sales-dashboard button.bg-emerald-600 {
+    background: var(--main-color);
+    color: white;
+}
+
+#sales-dashboard button.bg-emerald-600:hover {
+    background: var(--main-color-hover);
+}
+
+#sales-dashboard button.bg-emerald-600 * {
+    color: inherit;
+}
+
+#sales-dashboard button.bg-gradient-to-r {
+    background-image: none;
+    background-color: var(--main-color);
+    color: white;
+}
+
+#sales-dashboard button.bg-gradient-to-r * {
+    color: inherit;
+}
+
+#sales-dashboard .bg-gradient-to-b {
+    background-image: none;
+    background-color: white;
+}
+
+#sales-dashboard .bg-gradient-to-r:not(button) {
+    background-image: none;
+    background-color: var(--main-soft);
+}
+
+#sales-dashboard .blur-xl {
+    display: none;
+}
+
+#sales-dashboard table {
+    font-size: 13px;
+    width: 100%;
+}
+
+#sales-dashboard thead {
+    background-color: var(--sec-bg);
+    color: var(--font-color);
+}
+
+#sales-dashboard th {
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+#sales-dashboard tbody tr {
+    border-bottom: 1px solid var(--border-color);
+}
+
+#sales-dashboard tbody tr:hover {
+    background-color: var(--hover-bg);
+}
+
+#sales-dashboard .recharts-default-tooltip {
+    color: var(--hover-font-color);
+}
+
+#sales-dashboard .sales-modal-backdrop {
+    background: rgb(20 42 30 / 42%);
+}
+
+@media (max-width: 1100px) {
+    #sales-dashboard {
+        padding: 20px;
+    }
+
+    #sales-dashboard>main>.grid {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    #sales-dashboard>main>.grid>.lg\:col-span-2 {
+        grid-column: auto;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+    #sales-dashboard *,
+    #sales-dashboard *::before,
+    #sales-dashboard *::after {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+/* Product performance table */
+#sales-dashboard .sales-products {
+    background: white;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+}
+
+#sales-dashboard .sales-products-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    padding: 20px;
+}
+
+#sales-dashboard .sales-products-header h2 {
+    font-size: 16px;
+    font-weight: 700;
+}
+
+#sales-dashboard .sales-products-controls {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+#sales-dashboard .sales-products-controls input,
+#sales-dashboard .sales-products-controls select {
+    height: 38px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: white;
+    color: var(--hover-font-color);
+}
+
+#sales-dashboard .sales-products-controls select {
+    padding: 0 30px 0 10px;
+    max-width: 200px;
+}
+
+#sales-dashboard .sales-products-search {
+    position: relative;
+}
+
+#sales-dashboard .sales-products-search svg {
+    position: absolute;
+    top: 11px;
+    left: 12px;
+    color: var(--font-color);
+}
+
+#sales-dashboard .sales-products-search input {
+    width: 240px;
+    padding: 0 12px 0 36px;
+}
+
+#sales-dashboard .sales-products-clear {
+    color: var(--main-color);
+    font-size: 12px;
+    padding: 8px;
+}
+
+#sales-dashboard .sales-products-scroll {
+    overflow: auto;
+    max-height: 620px;
+    border-top: 1px solid var(--border-color);
+}
+
+#sales-dashboard .sales-products-scroll:focus-visible {
+    outline: 2px solid var(--main-color);
+    outline-offset: -2px;
+}
+
+#sales-dashboard .sales-products table {
+    min-width: 880px;
+    width: 100%;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+#sales-dashboard .sales-products th {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--sec-bg);
+    padding: 14px 18px;
+    font-size: 11px;
+    color: var(--font-color);
+}
+
+#sales-dashboard .sales-products th button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 6px;
+    font-size: inherit;
+    font-weight: 600;
+    color: inherit;
+    white-space: nowrap;
+}
+
+#sales-dashboard .sales-products th button.is-sorted {
+    color: var(--main-color);
+}
+
+#sales-dashboard .sales-products th:first-child,
+#sales-dashboard .sales-products td:first-child {
+    text-align: left;
+    width: 30%;
+    min-width: 260px;
+}
+
+#sales-dashboard .sales-products td {
+    padding: 18px;
+    vertical-align: middle;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+#sales-dashboard .sales-products tbody tr:last-child {
+    border-bottom: 0;
+}
+
+#sales-dashboard .sales-products tbody tr:nth-child(even) {
+    background: #fafcfb;
+}
+
+#sales-dashboard .sales-products tbody tr:hover {
+    background: var(--hover-bg);
+}
+
+#sales-dashboard .sales-product-name {
+    color: var(--text-color);
+    font-weight: 600;
+    font-size: 13px;
+    white-space: normal;
+    line-height: 1.5;
+}
+
+#sales-dashboard .sales-product-meta,
+#sales-dashboard .sales-products small {
+    display: block;
+    color: var(--font-color);
+    font-size: 11px;
+    font-weight: 400;
+    margin-top: 4px;
+}
+
+#sales-dashboard .sales-product-meta {
+    white-space: normal;
+}
+
+#sales-dashboard .sales-product-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+}
+
+#sales-dashboard .sales-product-badges span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    border-radius: 6px;
+    padding: 4px 7px;
+    font-size: 10px;
+    font-weight: 500;
+}
+
+#sales-dashboard .sales-badge-volume {
+    color: #8b681d;
+    background: #fbf4e2;
+}
+
+#sales-dashboard .sales-badge-profit {
+    color: var(--main-color);
+    background: var(--main-soft);
+}
+
+#sales-dashboard .sales-value-revenue {
+    color: var(--main-color);
+}
+
+#sales-dashboard .sales-value-cost {
+    color: #9a6746;
+}
+
+#sales-dashboard .sales-products th:nth-child(5) button,
+#sales-dashboard .sales-products th:nth-child(5) button.is-sorted {
+    color: #9a6746;
+}
+
+#sales-dashboard .sales-value-profit {
+    color: var(--main-color);
+}
+
+#sales-dashboard .sales-value-loss {
+    color: #b54751;
+}
+
+#sales-dashboard .sales-margin-track {
+    height: 4px;
+    width: 64px;
+    margin: 7px 0 0 auto;
+    background: var(--sec-bg);
+    border-radius: 3px;
+    overflow: hidden;
+}
+
+#sales-dashboard .sales-margin-track>div {
+    height: 100%;
+    background: var(--main-color);
+    border-radius: inherit;
+}
+
+#sales-dashboard .sales-products td.sales-products-empty {
+    text-align: center;
+    padding: 48px 20px;
+    color: var(--font-color);
+}
+
+#sales-dashboard .sales-products-empty strong,
+#sales-dashboard .sales-products-empty span {
+    display: block;
+    margin-top: 10px;
+}
+
+#sales-dashboard .sales-products-empty span {
+    font-weight: 400;
+}
+
+#sales-dashboard .sales-products-empty button {
+    margin-top: 14px;
+    color: var(--main-color);
+}
+
+@media (max-width: 700px) {
+
+    #sales-dashboard .sales-products-controls,
+    #sales-dashboard .sales-products-search,
+    #sales-dashboard .sales-products-search input {
+        width: 100%;
+    }
+}
+
+/* Sales summaries share the app's card and status treatments. */
+#sales-dashboard .sales-alert {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 20px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+    background: white;
+}
+
+#sales-dashboard .sales-alert-green {
+    border-color: var(--main-border);
+}
+
+#sales-dashboard .sales-alert-red {
+    border-color: #efd9dc;
+}
+
+#sales-dashboard .sales-alert-cost {
+    border-color: #ecdfd4;
+}
+
+#sales-dashboard .sales-alert-yellow {
+    border-color: #eee2c5;
+}
+
+#sales-dashboard .sales-alert-type {
+    color: var(--font-color);
+    font-size: 13px;
+    font-weight: 500;
+}
+
+#sales-dashboard .sales-alert-value-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+#sales-dashboard .sales-alert-value {
+    color: var(--text-color);
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1.4;
+    overflow-wrap: anywhere;
+    letter-spacing: -.5px;
+    font-variant-numeric: tabular-nums;
+}
+
+#sales-dashboard .sales-alert-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 44px;
+    height: 44px;
+    border-radius: var(--radius-sm);
+}
+
+#sales-dashboard .sales-alert-green .sales-alert-icon {
+    color: var(--main-color);
+    background: var(--main-soft);
+}
+
+#sales-dashboard .sales-alert-red .sales-alert-icon {
+    color: #b54751;
+    background: #fceef0;
+}
+
+#sales-dashboard .sales-alert-cost .sales-alert-icon {
+    color: #9a6746;
+    background: #f8f1ea;
+}
+
+#sales-dashboard .sales-alert-yellow .sales-alert-icon {
+    color: #8b681d;
+    background: #fbf4e2;
+}
+
+#sales-dashboard .sales-alert-product {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--hover-font-color);
+    overflow-wrap: anywhere;
+}
+
+#sales-dashboard .sales-alert-description {
+    color: var(--hover-font-color);
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+#sales-dashboard .sales-alert-detail {
+    color: var(--font-color);
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+#sales-dashboard .sales-alert.sales-alert-selected {
+    border-color: var(--main-color);
+    box-shadow: 0 0 0 2px var(--main-soft);
+}
+
+#sales-dashboard .sales-alert-revenue {
+    border-color: var(--main-border);
+}
+
+#sales-dashboard .sales-alert-revenue .sales-alert-icon {
+    color: var(--main-color);
+    background: var(--main-soft);
+}
+
+#sales-dashboard .sales-alert-revenue .sales-alert-value {
+    color: var(--main-color);
+}
+
+#sales-dashboard .sales-products th:nth-child(4) button,
+#sales-dashboard .sales-products th:nth-child(4) button.is-sorted {
+    color: var(--main-color);
+}
