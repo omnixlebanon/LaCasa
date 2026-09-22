@@ -1,10 +1,12 @@
 import { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import './Login.css'
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const { login } = useAuth();
   const navigate = useNavigate();
@@ -37,8 +39,16 @@ const Login = () => {
           </div>
           <div className='login-label-input'>
             <label htmlFor="password">Password</label>
-            <input id="password" name="password" type="password" autoComplete="current-password" value={password} required
-              onChange={(e) => setPassword(e.target.value)}/>
+            <div className="login-password-field">
+              <input id="password" name="password" type={showPassword ? 'text' : 'password'} autoComplete="current-password" value={password} required
+                onChange={(e) => setPassword(e.target.value)}/>
+              <button type="button" className="login-password-toggle"
+                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                aria-controls="password"
+                onClick={() => setShowPassword(visible => !visible)}>
+                {showPassword ? <EyeOff size={20} aria-hidden="true" /> : <Eye size={20} aria-hidden="true" />}
+              </button>
+            </div>
           </div>
           <button className='save-btn' type="submit" style={{ padding: '8px 16px', cursor: 'pointer' }}>Login</button>
         </form>
