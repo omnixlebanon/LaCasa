@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState.jsx';
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Armchair, Settings, Trash2 } from "lucide-react";
@@ -39,6 +40,8 @@ function reindexGlobalTables(floorsArray) {
 }
 
 function Tables() {
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const navigate = useNavigate();
   const [activeFilter, setActiveFilter] = useState("all");
   const [isPopupOpen, setIsPopupOpen] = useState(false);
@@ -47,11 +50,16 @@ function Tables() {
   const [tempFloors, setTempFloors] = useState([]);
 
   const fetchLayout = async () => {
+    setLoading(true);
+    setLoadError('');
     try {
       const response = await api.get('/api/seating/floors');
       setFloors(response.data);
     } catch (err) {
       console.error("Error fetching restaurant layout: ", err);
+      setLoadError('Could not load tables. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -277,6 +285,8 @@ function Tables() {
       tables: matchingTables
     };
   }).filter(floor => floor.tables.length > 0 || activeFilter === "all");
+
+  if (loading || loadError) return <LoadingState page label="Loading tables..." error={loadError} onRetry={fetchLayout} />;
 
   return (
     <div>

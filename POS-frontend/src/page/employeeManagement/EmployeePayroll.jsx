@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState.jsx';
 import { useCallback, useEffect, useState } from 'react';
 import { Banknote, Check, ChevronDown, Clock3, Pencil, RefreshCw } from 'lucide-react';
 import api from '../../api.js';
@@ -79,11 +80,12 @@ function SalaryCard({ payroll, reload, disabled }) {
 export default function EmployeePayroll({ refreshKey }) {
   const [month, setMonth] = useState(currentMonth);
   const [rows, setRows] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const load = useCallback(async signal => {
     if (!month) return;
     setLoading(true);
+    setError('');
     try {
       const response = await api.get('/api/employees/payroll', { params: { month }, signal });
       if (!signal?.aborted) { setRows(response.data); setError(''); }
@@ -97,8 +99,8 @@ export default function EmployeePayroll({ refreshKey }) {
   return <section className="employee-payroll" aria-label="Monthly salaries">
     <div className="payroll-section-header"><div><h3><Banknote /> Monthly salaries</h3><p>Salary, refund deductions, and attendance for each employee.</p></div><div className="payroll-month-controls"><label>Salary month<input type="month" value={month} min="2000-01" max="9998-12" onChange={event => { if (event.target.value) setMonth(event.target.value); }} disabled={loading} /></label><button className="payroll-secondary" onClick={() => load()} disabled={loading}><RefreshCw /> Refresh</button></div></div>
     {error && <p className="employee-error" role="alert">{error}</p>}
-    {loading && <p className="payroll-loading" role="status">Loading salaries…</p>}
+    {loading && <LoadingState label="Loading salaries..." />}
     {!loading && !rows.length && !error && <p className="payroll-empty">Add an employee to start tracking their salary.</p>}
-    <div className="payroll-cards">{rows.map(payroll => <SalaryCard key={`${month}-${payroll.userId}`} payroll={payroll} reload={load} disabled={loading} />)}</div>
+    <div className="payroll-cards">{!loading && !error && rows.map(payroll => <SalaryCard key={`${month}-${payroll.userId}`} payroll={payroll} reload={load} disabled={loading} />)}</div>
   </section>;
 }

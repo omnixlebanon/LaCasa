@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState.jsx';
 import useMobile from '../../hooks/useMobile.js';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import './History.css';
@@ -7,6 +8,8 @@ import { useCurrency } from '../../global.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import WorkflowRequests from '../../components/workflow/WorkflowRequests.jsx';
 function OrderHistory() {
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
     const isMobile = useMobile();
     const [filter, setFilter] = useState('daily');
     const [statusFilter, setStatusFilter] = useState('');
@@ -17,20 +20,26 @@ function OrderHistory() {
     const evidenceDialogRef = useRef(null);
     useEffect(() => {
         const dialog = evidenceDialogRef.current;
+        if (!dialog) return;
         if (selectedEvidence && !dialog.open) dialog.showModal();
         else if (!selectedEvidence && dialog.open) dialog.close();
-    }, [selectedEvidence]);
+    }, [selectedEvidence, loading, loadError]);
     const [refundOpen, setRefundOpen] = useState(null)
     const [refundRequestId, setRefundRequestId] = useState(null);
     const { formatPrice } = useCurrency();
     const { user } = useAuth();
     const isManager = user?.accessLevel === 'admin' || /manager|owner|supervisor/i.test(user?.position || '');
     const fetchData = async () => {
+        setLoading(true);
+        setLoadError('');
         try {
             const response = await api.get('/api/history');
             setHistory(response.data || []);
         } catch (error) {
             console.error("Error fetching order history:", error);
+            setLoadError('Could not load order history. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -106,6 +115,8 @@ function OrderHistory() {
             setRefundRequestId(response.data.requestId);
         } catch (error) { alert(error.response?.data?.error || 'Refund failed.'); }
     };
+
+    if (loading || loadError) return <LoadingState page label="Loading order history..." error={loadError} onRetry={fetchData} />;
 
     return (
         <>

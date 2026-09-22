@@ -1,3 +1,4 @@
+import LoadingState from '../components/LoadingState.jsx';
 import { createContext, useState, useEffect, useContext } from 'react';
 import api from '/src/api.js';
 const AuthContext = createContext(null);
@@ -76,7 +77,7 @@ export const AuthProvider = ({ children }) => {
 
   return (
     <AuthContext.Provider value={{ user, login, logout, loading }}>
-      {!loading && children}
+      {loading ? <LoadingState label="Loading your session..." /> : children}
     </AuthContext.Provider>
   );
 };

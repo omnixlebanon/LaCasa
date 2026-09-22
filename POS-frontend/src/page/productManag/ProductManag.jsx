@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState.jsx';
 import { useCurrency } from '../../global.jsx';
 import MoneyInput from '../../components/MoneyInput.jsx';
 import './ProductManag.css';
@@ -8,6 +9,10 @@ import { useEffect, useState, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 
 function ProductManag() {
+    const [loadingProducts, setLoadingProducts] = useState(true);
+    const [loadingCategories, setLoadingCategories] = useState(true);
+    const [productError, setProductError] = useState('');
+    const [categoryError, setCategoryError] = useState('');
     const { currencyLabel } = useCurrency();
     const [products, setProducts] = useState([]);
     const [categories, setCategories] = useState([]); // Single source of truth for categories
@@ -24,16 +29,23 @@ function ProductManag() {
 
     // Fetch products
     const fetchData = async () => {
+        setLoadingProducts(true);
+        setProductError('');
         try {
             const res = await api.get('/api/products');
             setProducts(res.data);
         } catch (error) {
             console.error("Failed to get products data", error);
+            setProductError('Could not load products. Please try again.');
+        } finally {
+            setLoadingProducts(false);
         }
     };
 
     // Fetch categories from the database table
     const fetchCategories = async () => {
+        setLoadingCategories(true);
+        setCategoryError('');
         try {
             const res = await api.get('/api/products/categories');
             // Extract the name values from database query results
@@ -41,6 +53,9 @@ function ProductManag() {
             setCategories(categoryNames);
         } catch (error) {
             console.error("Failed to get categories data", error);
+            setCategoryError('Could not load categories. Please try again.');
+        } finally {
+            setLoadingCategories(false);
         }
     };
 
@@ -182,6 +197,8 @@ function ProductManag() {
         fetchData();
         fetchCategories();
     }, []);
+
+    if (loadingProducts || loadingCategories || productError || categoryError) return <LoadingState page label="Loading products and categories..." error={loadingProducts || loadingCategories ? null : productError || categoryError} onRetry={() => { fetchData(); fetchCategories(); }} />;
 
     return (
         <>

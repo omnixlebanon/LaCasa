@@ -1,0 +1,6 @@
+.fetch-state { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 100px; padding: 24px 16px; color: var(--font-color); text-align: center; }
+.fetch-state-spinner { flex-shrink: 0; color: var(--main-color); animation: fetch-state-spin 900ms linear infinite; }
+.fetch-state-error { flex-wrap: wrap; color: var(--danger-color); }
+.fetch-state-error button { min-height: 44px; padding: 8px 16px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: white; color: var(--main-color); }
+@keyframes fetch-state-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .fetch-state-spinner { animation: none; } }

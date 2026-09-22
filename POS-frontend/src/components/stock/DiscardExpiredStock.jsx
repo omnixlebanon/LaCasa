@@ -1,3 +1,4 @@
+import LoadingState from '../LoadingState.jsx';
 import { useRef, useState } from 'react';
 import { Trash2, X } from 'lucide-react';
 import api from '../../api.js';
@@ -40,7 +41,7 @@ export default function DiscardExpiredStock({ onRemoved }) {
             <header><h3 id="discard-expired-title">Remove expired stock</h3><button type="button" autoFocus aria-label="Close expired stock preview" disabled={phase === 'removing'} onClick={() => dialogRef.current.close()}><X /></button></header>
             <div className="discard-expired-body">
                 <p>These expired batch quantities will be set to zero. Stock expiring today or later will be kept.</p>
-                {phase === 'loading' && <p role="status">Loading expired stock…</p>}
+                {phase === 'loading' && <LoadingState label="Loading expired stock..." />}
                 {error && <p className="discard-expired-error" role="alert">{error}</p>}
                 {!phase && !error && !batches.length && <p>No expired stock to remove.</p>}
                 {!!batches.length && <ul>{batches.map(batch => <li key={batch.batch_id}>

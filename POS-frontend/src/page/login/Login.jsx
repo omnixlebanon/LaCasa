@@ -8,21 +8,30 @@ const Login = () => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
+  const [submitting, setSubmitting] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submitting) return;
+    setSubmitting(true);
     setError('');
 
     const formData = new FormData(e.currentTarget);
     const submittedUsername = String(formData.get('username') || '').trim();
     const submittedPassword = String(formData.get('password') || '');
+    try {
     const result = await login(submittedUsername, submittedPassword);
     if (result?.success) {
       navigate('/');
     } else {
       setError(result?.message || "Invalid credentials");
+    }
+    } catch {
+      setError("Could not log in. Please try again.");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -31,7 +40,7 @@ const Login = () => {
       <div className='login-container'>
         <h2 className='login-head'>Welcome to {"{Cafe name}"}</h2>
         {error && <p className='error-message'>{error}</p>}
-        <form className='login-form' onSubmit={handleSubmit}>
+        <form aria-busy={submitting} className='login-form' onSubmit={handleSubmit}>
           <div className='login-label-input'>
             <label htmlFor="username">Username</label>
             <input id="username" name="username" type="text" autoComplete="username" value={username} required
@@ -50,7 +59,7 @@ const Login = () => {
               </button>
             </div>
           </div>
-          <button className='save-btn' type="submit" style={{ padding: '8px 16px', cursor: 'pointer' }}>Login</button>
+          <button disabled={submitting} className='save-btn' type="submit" style={{ padding: '8px 16px', cursor: 'pointer' }}>{submitting ? 'Logging in...' : 'Login'}</button>
         </form>
       </div>
     </div>

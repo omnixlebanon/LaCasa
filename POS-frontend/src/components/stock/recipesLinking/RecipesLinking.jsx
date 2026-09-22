@@ -1,4 +1,5 @@
-import { Search, LoaderCircle } from 'lucide-react';
+import LoadingState from '../../LoadingState.jsx';
+import { Search } from 'lucide-react';
 import RecipeCard from "../recipeCard/RecipeCard.jsx";
 
 function RecipesLinking({
@@ -36,7 +37,7 @@ function RecipesLinking({
                     </>
                 )}
                 {loading && (
-                    <LoaderCircle className="loading" />
+                    <LoadingState label="Loading recipes..." />
                 )}
             </div>
         </>

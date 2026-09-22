@@ -1,5 +1,6 @@
+import LoadingState from '../../LoadingState.jsx';
 import { useState } from 'react';
-import { Search, LoaderCircle, Plus } from 'lucide-react';
+import { Search, Plus } from 'lucide-react';
 import StockItem from '../stockItem/StockItem.jsx';
 import AddCategoryPopup from '../addCategoryPopup/AddCategoryPopup.jsx';
 import AddIngredientPopup from '../addIngredientPopup/AddIngredientPopup.jsx';
@@ -90,7 +91,7 @@ function StockInventory({
                         </tbody>
                     )}
                 </table>
-                {loading && <LoaderCircle className="loading" />}
+                {loading && <LoadingState label="Loading ingredients..." />}
             </div>
         </>
     );

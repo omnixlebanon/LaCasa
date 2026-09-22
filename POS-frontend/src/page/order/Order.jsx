@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState.jsx';
 import './Order.css';
 import { Search, Plus, Minus, X, Ticket, SlidersHorizontal, CircleCheckBig } from 'lucide-react';
 import OrderButton from '../../components/orderButton/OrderButton.jsx';
@@ -7,6 +8,8 @@ import { useCurrency } from '../../global.jsx';
 import { useState, useEffect, useMemo, useRef } from 'react';
 
 function Order() {
+    const [loading, setLoading] = useState(true);
+    const [loadError, setLoadError] = useState('');
     const orderButtonsRef = useRef(null);
     const newlyAddedOrderRef = useRef(null);
     const [products, setProducts] = useState([]);
@@ -64,6 +67,8 @@ function Order() {
     }, [activeOrderId]);
 
     const fetchData = async () => {
+        setLoading(true);
+        setLoadError('');
         try {
             const [categories_res, product_res] = await Promise.all([
                 api.get('/api/products/categories'),
@@ -73,6 +78,9 @@ function Order() {
             setProducts(product_res.data);
         } catch (error) {
             console.error("Error fetching data from server: ", error);
+            setLoadError('Could not load POS products. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -294,6 +302,8 @@ function Order() {
             setIsProcessing(false);
         }
     };
+
+    if (loading || loadError) return <LoadingState page label="Loading POS products..." error={loadError} onRetry={fetchData} />;
 
     return (
         <>

@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState.jsx';
 import useMobile from '../../hooks/useMobile.js';
 import { useMemo, useState, useEffect } from 'react';
 import api from '/src/api.js';
@@ -34,6 +35,7 @@ function Stock() {
     const fetchData = async () => {
         try {
             setLoading(true);
+            setError(null);
             const [categories_res, items_res, summary_res, product_summary_res, recipe_res] = await Promise.all([
                 api.get("/api/stock/categories"),
                 api.get("/api/items"),
@@ -121,6 +123,8 @@ function Stock() {
         { id: 'btn3', label: 'Bulk Change', icon: <Warehouse /> },
         { id: 'btn4', label: 'AI Processing Logs', icon: <BotMessageSquare /> }
     ];
+
+    if (loading || error) return <LoadingState page label="Loading inventory..." error={error} onRetry={fetchData} />;
 
     return (
         <div>

@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState.jsx';
 import { useCurrency } from '../../global.jsx';
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import api from "../../api.js";
@@ -20,9 +21,12 @@ export default function Sales() {
 	const [transactions, setTransactions] = useState([]);
 	const [lastUpdated, setLastUpdated] = useState(new Date());
 	const [loading, setLoading] = useState(true);
+	const [refreshing, setRefreshing] = useState(false);
+	const [hasLoaded, setHasLoaded] = useState(false);
 	const [error, setError] = useState("");
 	const [skipped, setSkipped] = useState(0);
 	const fetchSales = useCallback(async (signal) => {
+		setRefreshing(true);
 		try {
 			const [history, summary] = await Promise.all([api.get("/api/history", { signal }), api.get("/api/products/summary", { signal })]);
 			if (signal?.aborted) return;
@@ -30,12 +34,13 @@ export default function Sales() {
 			setProducts(data.products);
 			setTransactions(data.transactions);
 			setSkipped(data.skipped);
+			setHasLoaded(true);
 			setLastUpdated(new Date());
 			setError("");
 		} catch {
 			if (!signal?.aborted) setError("Could not refresh sales. Displayed figures may be out of date.");
 		} finally {
-			if (!signal?.aborted) setLoading(false);
+			if (!signal?.aborted) { setLoading(false); setRefreshing(false); }
 		}
 	}, []);
 	useEffect(() => {
@@ -129,13 +134,14 @@ export default function Sales() {
 		link.click();
 		setTimeout(() => URL.revokeObjectURL(url), 1e3);
 	};
+	if (!hasLoaded) return <LoadingState page label="Loading sales..." error={loading || refreshing ? null : error} onRetry={() => fetchSales()} />;
 	return <div id="sales-dashboard" className="min-h-screen bg-slate-50 text-slate-800 font-sans antialiased pb-12">
       {	/* Header Navbar */}
       <Navbar onExportCSV={handleExportCSV} lastUpdated={lastUpdated} />
 
       {	/* Main Body */}
       <main className="space-y-6">
-        {loading && <p role="status">Loading sales...</p>}
+        {refreshing && <LoadingState label="Refreshing sales..." />}
         {error && <div role="alert" className="text-rose-700">{error} <button onClick={() => fetchSales()} className="underline">Retry</button></div>}
         {skipped > 0 && <p className="text-xs text-amber-700">{skipped} records with missing or invalid sales details were excluded.</p>}
         {timeframe === "custom" && (!customStartDate || !customEndDate || customStartDate > customEndDate) && <p role="status" className="text-amber-700">Select a valid start and end date.</p>}

@@ -1,4 +1,4 @@
-import { LoaderCircle } from 'lucide-react';
+import LoadingState from '../../LoadingState.jsx';
 import StockBulk from '../stockBulk/StockBulk.jsx';
 
 function BulkChange({
@@ -32,7 +32,7 @@ function BulkChange({
                     </tbody>
                 )}
                 {loading && (
-                    <LoaderCircle className="loading" />
+                    <LoadingState label="Loading stock batches..." />
                 )}
             </table>
         </div>

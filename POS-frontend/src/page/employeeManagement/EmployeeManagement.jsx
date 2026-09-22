@@ -1,3 +1,4 @@
+import LoadingState from '../../components/LoadingState.jsx';
 import { useCallback, useEffect, useState } from 'react';
 import { Pencil, Plus, Trash2, Users } from 'lucide-react';
 import api from '../../api.js';
@@ -11,18 +12,24 @@ export default function EmployeeManagement() {
   const { user } = useAuth();
   const isAdmin = user?.accessLevel === 'admin';
   const [employees, setEmployees] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
   const [employeeForm, setEmployeeForm] = useState(emptyEmployee);
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
 
   const loadData = useCallback(async () => {
+    setLoading(true);
+    setLoadError('');
     try {
       if (!isAdmin) return;
       const response = await api.get('/api/employees');
       setEmployees(response.data || []);
       setError('');
     } catch (requestError) {
-      setError(requestError.response?.data?.error || 'Could not load employee information.');
+      setLoadError(requestError.response?.data?.error || 'Could not load employee information.');
+    } finally {
+      setLoading(false);
     }
   }, [isAdmin]);
 
@@ -79,9 +86,9 @@ export default function EmployeeManagement() {
 
     {isAdmin && <section className="employee-panel employee-list">
       <h3>Employees</h3>
-      <div className="employee-table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Position</th><th>Access</th><th>Telegram ID</th><th>Joined</th><th>Actions</th></tr></thead>
+      {loading || loadError ? <LoadingState label="Loading employees..." error={loadError} onRetry={loadData} /> : <div className="employee-table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Position</th><th>Access</th><th>Telegram ID</th><th>Joined</th><th>Actions</th></tr></thead>
         <tbody>{employees.map(employee => <tr key={employee.user_id}><td>{employee.user_name}</td><td>{employee.user_email}</td><td>{employee.user_position}</td><td><span className={`access-badge ${employee.access_level}`}>{employee.access_level}</span></td><td>{employee.telegram_id || 'Not linked'}</td><td>{new Date(employee.created_at).toLocaleDateString()}</td><td><button className="icon-button edit" onClick={() => editEmployee(employee)} aria-label={`Edit ${employee.user_name}`}><Pencil /></button><button className="icon-button delete" onClick={() => deleteEmployee(employee.user_id)} aria-label={`Delete ${employee.user_name}`}><Trash2 /></button></td></tr>)}</tbody>
-      </table></div>
+      </table>{!employees.length && <p>No employees found.</p>}</div>}
     </section>}
 
     {isAdmin && <EmployeePayroll refreshKey={employees} />}
