@@ -1,3 +1,4 @@
+import useMobile from '../../hooks/useMobile.js';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import './History.css';
 import { History as HistoryIcon, X } from 'lucide-react';
@@ -6,6 +7,7 @@ import { useCurrency } from '../../global.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
 import WorkflowRequests from '../../components/workflow/WorkflowRequests.jsx';
 function OrderHistory() {
+    const isMobile = useMobile();
     const [filter, setFilter] = useState('daily');
     const [statusFilter, setStatusFilter] = useState('');
     const [history, setHistory] = useState([]);
@@ -146,7 +148,7 @@ function OrderHistory() {
                     </div>
                 </div>
             )}
-            {refundOpen && (
+            {!isMobile && refundOpen && (
                 <div className="editPopup">
                     <form className="editPopup-container" onSubmit={submitRefund}>
                         <div className="editPopup-head">
@@ -220,7 +222,7 @@ function OrderHistory() {
 
                 <div className='Gap-1rem' />
 
-                {isManager && statusFilter === 'refund_requests' && <><WorkflowRequests type="refund" title="Refund Requests" emptyMessage="No refund requests have been submitted." onReviewed={fetchData} /><div className='Gap-1rem' /></>}
+                {isManager && statusFilter === 'refund_requests' && <><WorkflowRequests readOnly={isMobile} type="refund" title="Refund Requests" emptyMessage="No refund requests have been submitted." onReviewed={fetchData} /><div className='Gap-1rem' /></>}
 
                 {statusFilter !== 'refund_requests' && <div className='history-display-area'>
                     <table border='1'>
@@ -240,14 +242,14 @@ function OrderHistory() {
                                 filteredHistory.map((item) => {
                                     return (
                                         <tr key={item.order_id || item.id}>
-                                            <td>{item.order_id || item.id}</td>
-                                            <td>{item.customer_name || getOrderDetails(item).order_label || 'Guest'}</td>
-                                            <td>
+                                            <td data-label="Order ID">{item.order_id || item.id}</td>
+                                            <td data-label="Customer / table">{item.customer_name || getOrderDetails(item).order_label || 'Guest'}</td>
+                                            <td data-label="Date">
                                                 {item.order_date
                                                     ? new Date(item.order_date).toLocaleString()
                                                     : 'N/A'}
                                             </td>
-                                            <td>
+                                            <td data-label="Details">
                                                 <button
                                                     className="view-details-btn"
                                                     onClick={() => setSelectedOrder(item)}
@@ -256,15 +258,16 @@ function OrderHistory() {
                                                     View details
                                                 </button>
                                             </td>
-                                            <td>{item.payment_method || 'N/A'}</td>
-                                            <td>
+                                            {isMobile && <td data-label="Total">{formatPrice(Number(item.total_amount) || 0)}</td>}
+                                            <td data-label="Payment">{item.payment_method || 'N/A'}</td>
+                                            <td data-label="Status / details">
                                                 {item.status?.toLowerCase() === 'refunded' ?
                                                         (statusFilter === 'refunded'
                                                             ? <span>{item.refund_reason || 'No reason'}{item.refund_evidence && <button type="button" className="refund-evidence" onClick={() => { setEvidenceError(false); setSelectedEvidence(item); }}>Evidence</button>}</span>
                                                             : <span className="history-refunded-status">Refunded</span>)
                                                         :
                                                         statusFilter === 'discounted' ? <span>{formatPrice(Number(getOrderDetails(item).discount) || 0)}</span> :
-                                                        <button className='refund-btn' onClick={() => { setRefundRequestId(null); setRefundOpen(item); }}>Refund</button>
+                                                        isMobile ? <span>{item.status || 'Completed'}</span> : <button className='refund-btn' onClick={() => { setRefundRequestId(null); setRefundOpen(item); }}>Refund</button>
                                                 }
                                             </td>
                                         </tr>
@@ -272,7 +275,7 @@ function OrderHistory() {
                                 })
                             ) : (
                                 <tr>
-                                    <td colSpan="6" style={{ textAlign: 'center', padding: '1rem' }}>
+                                    <td colSpan={isMobile ? 7 : 6} style={{ textAlign: 'center', padding: '1rem' }}>
                                         No records found matching the selection.
                                     </td>
                                 </tr>

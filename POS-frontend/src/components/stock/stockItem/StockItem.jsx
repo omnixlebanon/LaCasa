@@ -7,7 +7,7 @@ import { createPortal } from 'react-dom';
 import api from '/src/api.js';
 import { useCurrency } from '../../../global';
 
-function StockItem({ data, onItemEdit, categories = [] }) {
+function StockItem({ data, onItemEdit, categories = [], readOnly = false }) {
     // Standardizing values with default fallbacks matching the MySQL schema
     const itemId = data.item_id || data.id;
     const itemName = data.item_name || data.name || '';
@@ -96,7 +96,7 @@ function StockItem({ data, onItemEdit, categories = [] }) {
 
     return (
         <>
-            {isEditPopupOpen && createPortal(
+            {!readOnly && isEditPopupOpen && createPortal(
                 <div className='editPopup'>
                     <form className='editPopup-container' onSubmit={handleFormSubmit}>
                         <div className='editPopup-head'>
@@ -139,30 +139,30 @@ function StockItem({ data, onItemEdit, categories = [] }) {
                 </div>, document.body
             )}
             <tr>
-                <td>{itemName}</td>
-                <td><div className='category-td-container'><p>{itemCategory}</p></div></td>
-                <td>
+                <td data-label="Ingredient">{itemName}</td>
+                <td data-label="Category"><div className='category-td-container'><p>{itemCategory}</p></div></td>
+                <td data-label="Current stock">
                     <div className='stock-td-container'>
                         <div className='btns-stock'>
                             <p className={refill_level}>{data.stock} {data.uom}</p>
                         </div>
                     </div>
                 </td>
-                <td>{safetyLimit}{data.uom}</td>
-                <td>{formatPrice(itemCost)}</td>
-                <td><div className="stock-expiration">
+                <td data-label="Safety limit">{safetyLimit}{data.uom}</td>
+                <td data-label="Unit cost">{formatPrice(itemCost)}</td>
+                <td data-label="Expiration"><div className="stock-expiration">
                     <span className={`date-td-container ${expiration.className}`}>
                         {expiration.showDate ? <time dateTime={expiration.date}>{expirationLabel}</time> : expiration.label}
                     </span>
                 </div></td>
-                <td>
+                {!readOnly && <td data-label="Actions">
                     <div className='stock-action-btn-container'>
                         <button className='edit-btn action-btn' aria-label={`Edit ${itemName}`} onClick={() => { setSaveError(''); setIsEditPopupOpen(true); }}>
                             <PenLine />
                         </button>
                         <button className='delete-btn action-btn' onClick={(e) => handleDelete(e)}><Trash /></button>
                     </div>
-                </td>
+                </td>}
             </tr>
         </>
     );

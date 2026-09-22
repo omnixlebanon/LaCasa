@@ -4,7 +4,7 @@ import api, { apiAssetUrl } from '../../api.js';
 import './WorkflowRequests.css';
 import RequestMessage from './RequestMessage.jsx';
 
-export default function WorkflowRequests({ type, title, emptyMessage, onReviewed }) {
+export default function WorkflowRequests({ type, title, emptyMessage, onReviewed, readOnly = false }) {
   const [requests, setRequests] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -30,7 +30,7 @@ export default function WorkflowRequests({ type, title, emptyMessage, onReviewed
       <RequestMessage request={request} type={type} />
       {request.payload?.evidenceData && <img className="workflow-evidence" loading="lazy" src={apiAssetUrl(request.payload.evidenceData)} alt="Refund evidence" />}
       {!readyForReview && <p className="workflow-awaiting">Awaiting evidence from Telegram</p>}
-      {request.status === 'pending' && readyForReview && <div className="workflow-actions"><button className="approve" onClick={() => review(request.request_id, 'approved')}><Check /> Approve</button><button className="reject" onClick={() => review(request.request_id, 'rejected')}><X /> Reject</button></div>}
+      {!readOnly && request.status === 'pending' && readyForReview && <div className="workflow-actions"><button className="approve" onClick={() => review(request.request_id, 'approved')}><Check /> Approve</button><button className="reject" onClick={() => review(request.request_id, 'rejected')}><X /> Reject</button></div>}
     </article>})}</div>
   </section>;
 }

@@ -1,3 +1,4 @@
+import useMobile from '../../hooks/useMobile.js';
 import { useMemo, useState, useEffect } from 'react';
 import api from '/src/api.js';
 import './Stock.css';
@@ -11,6 +12,7 @@ import AIProcessingLogs from '../../components/stock/AIProcessingLogs/AIProcessi
 import DiscardExpiredStock from '../../components/stock/DiscardExpiredStock.jsx';
 
 function Stock() {
+    const isMobile = useMobile();
     const [categories, setCategories] = useState([]);
     const [items, setItems] = useState([]);
     const [productSummary, setProductSummary] = useState([]);
@@ -143,7 +145,7 @@ function Stock() {
                             <ShieldAlert className='red-alert' />
                         </div>
                         <p className='alert-desc'>Items near or past expiry</p>
-                        <DiscardExpiredStock onRemoved={fetchData} />
+                        {!isMobile && <DiscardExpiredStock onRemoved={fetchData} />}
                     </div>
                     <div className='alert lowStockAlert'>
                         <p className='alert-type'>Low Stock Alert</p>
@@ -154,7 +156,7 @@ function Stock() {
                         <p className='alert-desc'>Ingredients need stock refill</p>
                     </div>
                 </div>
-                <div className="stock-page-nav">
+                {!isMobile && <div className="stock-page-nav">
                     {buttons.map((btn) => (
                         <button 
                             key={btn.id} 
@@ -164,10 +166,10 @@ function Stock() {
                             {btn.icon}{btn.label}
                         </button>
                     ))}
-                </div>
+                </div>}
 
-                {activeID === "btn1" && (
-                    <StockInventory 
+                {(isMobile || activeID === "btn1") && (
+                    <StockInventory readOnly={isMobile}
                         loading={loading}
                         categories={categories}
                         sortedItems={sortedItems}
@@ -183,7 +185,7 @@ function Stock() {
                     />
                 )}
 
-                {activeID === "btn2" && (
+                {!isMobile && activeID === "btn2" && (
                     <RecipesLinking 
                         loading={loading}
                         searchQuery={searchQuery}
@@ -194,7 +196,7 @@ function Stock() {
                     />
                 )}
 
-                {activeID === "btn3" && (
+                {!isMobile && activeID === "btn3" && (
                     <BulkChange 
                         loading={loading}
                         items={items}
@@ -203,7 +205,7 @@ function Stock() {
                     />
                 )}
 
-                {activeID === 'btn4' && (
+                {!isMobile && activeID === 'btn4' && (
                     <AIProcessingLogs />
                 )}
             </div>

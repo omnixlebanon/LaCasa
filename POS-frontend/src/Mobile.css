@@ -1,0 +1,62 @@
+/* Keep this breakpoint aligned with useMobile. */
+.mobile-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: max(14px, env(safe-area-inset-top)) 16px 14px; background: white; border-bottom: 1px solid var(--border-color); }
+.mobile-header strong { display: block; font-size: 15px; }
+.mobile-header small { display: block; color: var(--font-color); font-size: 12px; }
+.mobile-header-actions { display: flex; gap: 8px; }
+.mobile-header button { display: grid; place-items: center; min-width: 44px; min-height: 44px; padding: 8px; border: 1px solid var(--border-color); border-radius: 10px; }
+.mobile-navigation { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; display: flex; padding: 6px 8px max(6px, env(safe-area-inset-bottom)); border-top: 1px solid var(--border-color); background: white; box-shadow: 0 -4px 20px #1839280a; }
+.mobile-navigation a { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 52px; border-radius: 10px; font-size: 12px; text-decoration: none; color: var(--font-color); }
+.mobile-navigation a.active { color: var(--main-color); background: var(--main-soft); font-weight: 700; }
+.shifts-mobile-count { display: none; }
+@media (max-width: 767px) {
+  :root { --sidebar-width: 0px; }
+  .main-area, #sales-dashboard { margin-left: 0; padding: 20px 12px calc(88px + env(safe-area-inset-bottom)); min-height: calc(100dvh - 80px); }
+  .head-area { gap: 12px; margin-bottom: 18px; flex-wrap: wrap; }
+  .PageTitle h2 { font-size: 21px; }
+  input, select, textarea { font-size: 16px; max-width: 100%; }
+  button { touch-action: manipulation; }
+  .main-area button, #sales-dashboard button { min-height: 44px; }
+  .searchButtons, .state-buttons { flex-wrap: wrap; gap: 6px; }
+  .history-nav .searchButtons { display: flex; width: 100%; }
+  .history-nav .searchButtons button { flex: 1; }
+  .history-display-area, .stock-display-area { overflow: visible; box-shadow: none; }
+  .history-display-area table, .stock-display-area table { display: block; min-width: 0; width: 100%; border: 0; background: transparent; }
+  .history-display-area thead, .stock-display-area thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .history-display-area tbody, .stock-display-area tbody { display: grid; gap: 12px; }
+  .history-display-area tbody tr, .stock-display-area tbody tr { display: block; border: 1px solid var(--border-color); border-radius: 12px; background: white; padding: 8px 12px; }
+  .history-display-area td, .stock-display-area td { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 9px 0; text-align: right; overflow-wrap: anywhere; border: 0; border-bottom: 1px solid var(--border-color); }
+  .history-display-area td::before, .stock-display-area td::before { content: attr(data-label); flex: 0 0 100px; text-align: left; font-size: 12px; font-weight: 500; color: var(--font-color); }
+  .history-display-area td:last-child, .stock-display-area td:last-child { border-bottom: 0; }
+  .history-display-area td[colspan] { display: block; }
+  .history-display-area td[colspan]::before { content: none; }
+  .stockAlerts { grid-template-columns: minmax(0, 1fr); display: grid; }
+  .stockAlerts .alert { width: 100%; min-width: 0; }
+  .stock-extra-nav, .stock-extra-nav .searchFilters { width: 100%; flex-wrap: wrap; }
+  .stock-extra-nav select { flex: 1 1 100%; width: 100%; }
+  .stock-search-nav { margin-bottom: 16px; }
+  .stock-td-container, .category-td-container { justify-content: flex-end; }
+  .stock-display-area td > * { min-width: 0; max-width: 100%; }
+  .category-td-container, .date-td-container, .stock-expiration, .btns-stock p { white-space: normal; overflow-wrap: anywhere; }
+  .category-td-container { margin: 0; }
+  .stock-display-area td[colspan] { display: block; text-align: center; }
+  .stock-display-area td[colspan]::before { content: none; }
+  .editPopup { padding: 12px; }
+  .editPopup .editPopup-container { width: 100%; max-width: 440px; max-height: 85dvh; overflow-y: auto; }
+  .shifts-month-grid { min-width: 0; }
+  .shifts-day { min-height: 66px; padding: 6px; align-items: center; }
+  .shifts-day .shifts-chip, .shifts-day .shifts-more { display: none; }
+  .shifts-mobile-count { display: inline-grid; place-items: center; min-width: 20px; height: 20px; padding: 0 4px; border-radius: 50%; background: var(--main-soft); color: var(--main-color); font-size: 11px; }
+  .shifts-weekday { font-size: 11px; }
+  .shifts-calendar, .shifts-detail { padding: 12px; }
+  .shifts-recurring-list article > div { min-width: 0; overflow-wrap: anywhere; }
+  .workflow-head, .workflow-card-head { flex-wrap: wrap; }
+  #sales-dashboard .sales-timeframe-buttons { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  #sales-dashboard .sales-timeframe-buttons button { padding: 10px; }
+  #sales-dashboard .sales-alert { padding: 16px; }
+  #sales-dashboard .sales-alert-value { font-size: 24px; }
+  #sales-dashboard .sales-products-controls { width: 100%; flex-wrap: wrap; }
+  #sales-dashboard .sales-products-search { width: 100%; min-width: 0; }
+  #sales-dashboard .sales-products-controls select { width: 100%; }
+  #sales-dashboard .sales-products-header { padding: 16px; }
+  #sales-dashboard .sales-products-scroll { max-width: 100%; }
+}

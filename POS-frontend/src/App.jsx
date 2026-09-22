@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet, Navigate, useLocation } from 'react-router-dom';
 import './App.css'
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './page/login/Login.jsx';
@@ -14,7 +14,12 @@ import EmployeeManagement from './page/employeeManagement/EmployeeManagement.jsx
 import Shifts from './page/shifts/Shifts.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
 
+import useMobile from './hooks/useMobile.js';
+import MobileNavigation from './layout/sidebar/MobileNavigation.jsx';
+
 const Layout = () => {
+  const isMobile = useMobile();
+  const { pathname } = useLocation();
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -23,10 +28,12 @@ const Layout = () => {
   if (loading==true || !user) {
     return <Navigate to="/login" replace />;
   }
+  const mobileHome = user.accessLevel === 'admin' ? '/sales' : '/history';
+  const mobileAllowed = ['/sales', '/history', '/stock', '/shifts'].includes(pathname.replace(/\/$/, ''));
   return (
     <>
-      <Sidebar />
-      <Outlet />
+      {isMobile ? <MobileNavigation /> : <Sidebar />}
+      {isMobile && !mobileAllowed ? <Navigate to={mobileHome} replace /> : <Outlet />}
     </>
   );
 };

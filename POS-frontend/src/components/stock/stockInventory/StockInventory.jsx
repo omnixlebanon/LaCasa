@@ -5,6 +5,7 @@ import AddCategoryPopup from '../addCategoryPopup/AddCategoryPopup.jsx';
 import AddIngredientPopup from '../addIngredientPopup/AddIngredientPopup.jsx';
 
 function StockInventory({
+    readOnly = false,
     loading,
     categories,
     sortedItems,
@@ -53,19 +54,19 @@ function StockInventory({
                             ))}
                         </select>
                     </div>
-                    <div className="stock-nav-action-btns">
+                    {!readOnly && <div className="stock-nav-action-btns">
                         <button className="add-btn" onClick={() => setIsIngModalOpen(true)}>
                             <Plus size={16} /> Ingredient
                         </button>
                         <button className='manage-categories-btn' onClick={() => setIsCatModalOpen(true)}>
                             <p>Manage Categories</p>
                         </button>
-                    </div>
+                    </div>}
                 </div>
             </div>
 
-            <AddIngredientPopup isOpen={isIngModalOpen} onClose={() => setIsIngModalOpen(false)} categories={categories} onSuccess={fetchData} />
-            <AddCategoryPopup isOpen={isCatModalOpen} onClose={() => setIsCatModalOpen(false)} categories={categories} onSuccess={fetchData} />
+            <AddIngredientPopup isOpen={!readOnly && isIngModalOpen} onClose={() => setIsIngModalOpen(false)} categories={categories} onSuccess={fetchData} />
+            <AddCategoryPopup isOpen={!readOnly && isCatModalOpen} onClose={() => setIsCatModalOpen(false)} categories={categories} onSuccess={fetchData} />
 
             <div className='stock-display-area'>
                 <table border="1">
@@ -77,13 +78,14 @@ function StockInventory({
                             <th>Safety Limit</th>
                             <th>Unit Cost</th>
                             <th>Expiration</th>
-                            <th>Actions</th>
+                            {!readOnly && <th>Actions</th>}
                         </tr>
                     </thead>
                     {!loading && (
                         <tbody>
+                            {!sortedItems.length && <tr><td colSpan={readOnly ? 6 : 7}>No ingredients match your filters.</td></tr>}
                             {sortedItems.map((item) => (
-                                <StockItem key={item.item_id} data={item} categories={categories} onItemEdit={fetchData} />
+                                <StockItem readOnly={readOnly} key={item.item_id} data={item} categories={categories} onItemEdit={fetchData} />
                             ))}
                         </tbody>
                     )}
