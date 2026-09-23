@@ -80,16 +80,16 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
 	}}>
               <defs>
                 <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#048853" stopOpacity={.2} />
-                  <stop offset="95%" stopColor="#048853" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#5185C5" stopOpacity={.2} />
+                  <stop offset="95%" stopColor="#5185C5" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="colorCost" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#ad7958" stopOpacity={.14} />
-                  <stop offset="95%" stopColor="#ad7958" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#D5A34B" stopOpacity={.14} />
+                  <stop offset="95%" stopColor="#D5A34B" stopOpacity={0} />
                 </linearGradient>
                 <linearGradient id="colorProfit" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#398d9c" stopOpacity={.2} />
-                  <stop offset="95%" stopColor="#398d9c" stopOpacity={0} />
+                  <stop offset="5%" stopColor="#46A28F" stopOpacity={.2} />
+                  <stop offset="95%" stopColor="#46A28F" stopOpacity={0} />
                 </linearGradient>
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#dfe7e2" vertical={false} />
@@ -106,9 +106,9 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
 		paddingBottom: "10px",
 		fontSize: "12px"
 	}} formatter={(value) => value === "revenue" ? "Sales Revenue" : value === "cost" ? "Total Cost" : "Est. Gross Profit"} />
-              {showRevenue && <Area type="monotone" dataKey="revenue" stroke="#048853" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRevenue)" />}
-              {showCost && <Area type="monotone" dataKey="cost" stroke="#ad7958" strokeWidth={2.5} fillOpacity={1} fill="url(#colorCost)" />}
-              {showProfit && <Area type="monotone" dataKey="profit" stroke="#398d9c" strokeWidth={2.5} fillOpacity={1} fill="url(#colorProfit)" />}
+              {showRevenue && <Area type="monotone" dataKey="revenue" stroke="#5185C5" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRevenue)" />}
+              {showCost && <Area type="monotone" dataKey="cost" stroke="#D5A34B" strokeWidth={2.5} fillOpacity={1} fill="url(#colorCost)" />}
+              {showProfit && <Area type="monotone" dataKey="profit" stroke="#46A28F" strokeWidth={2.5} fillOpacity={1} fill="url(#colorProfit)" />}
             </AreaChart> : chartMode === "units" ? <LineChart data={data} margin={{
 		top: 10,
 		right: 10,
@@ -125,8 +125,8 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
 		boxShadow: "0 8px 24px rgba(24, 57, 40, 0.07)",
 		fontSize: "12px"
 	}} formatter={(value) => [formatNumber(Number(value)), "Total Units Sold"]} />
-              <Line type="monotone" dataKey="units" stroke="#048853" strokeWidth={3} dot={{
-		fill: "#048853",
+              <Line type="monotone" dataKey="units" stroke="#9278BD" strokeWidth={3} dot={{
+		fill: "#9278BD",
 		r: 3
 	}} activeDot={{ r: 6 }} />
             </LineChart> : <LineChart data={data} margin={{
@@ -155,7 +155,7 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
 		const prod = products.find((p) => p.id === value);
 		return prod ? prod.name : value;
 	}} />
-              {products.filter((p) => selectedProductIds.includes(p.id)).map((p, idx) => <Line key={p.id} type="monotone" dataKey={p.id} stroke={PRODUCT_COLORS[idx % PRODUCT_COLORS.length]} strokeWidth={2} dot={false} />)}
+              {products.map((p, idx) => selectedProductIds.includes(p.id) && <Line key={p.id} type="monotone" dataKey={p.id} stroke={PRODUCT_COLORS[idx % PRODUCT_COLORS.length]} strokeWidth={2} dot={false} />)}
             </LineChart>}
         </ResponsiveContainer>
       </div>

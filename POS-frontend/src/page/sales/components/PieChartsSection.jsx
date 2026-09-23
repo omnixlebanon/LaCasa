@@ -17,14 +17,14 @@ export const PieChartsSection = ({ productMetrics, categorySummaries }) => {
 		margin: m.profitMargin
 	}));
 	// 2. Profit Share Pie Data (For Most Profitable Product breakdown)
-	const profitPieData = activeProducts.filter((m) => m.totalProfit > 0).map((m, idx) => ({
+	const profitPieData = activeProducts.map((m, idx) => ({
 		name: m.product.name,
 		value: m.totalProfit,
 		rawCurrency: m.totalProfit,
 		color: PRODUCT_COLORS[idx % PRODUCT_COLORS.length],
 		isHighlight: m.isMostProfitable,
 		margin: m.profitMargin
-	}));
+	})).filter((entry) => entry.value > 0);
 	// 3. Category Share Donut Data
 	const categoryPieData = categorySummaries.map((c) => ({
 		name: c.category,
@@ -66,7 +66,7 @@ export const PieChartsSection = ({ productMetrics, categorySummaries }) => {
           <ResponsiveContainer width="100%" height="100%">
             {activeTab === "units" ? <PieChart>
                 <Pie data={unitsPieData} cx="50%" cy="50%" outerRadius={100} innerRadius={50} paddingAngle={3} dataKey="value" label={({ percent }) => percent > .05 ? `${(percent * 100).toFixed(0)}%` : ""}>
-                  {unitsPieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke={entry.isHighlight ? "#048853" : "#ffffff"} strokeWidth={entry.isHighlight ? 3 : 1} />)}
+                  {unitsPieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke={entry.isHighlight ? "#34485E" : "#ffffff"} strokeWidth={entry.isHighlight ? 3 : 1} />)}
                 </Pie>
                 <Tooltip contentStyle={{
 		backgroundColor: "#ffffff",
@@ -80,7 +80,7 @@ export const PieChartsSection = ({ productMetrics, categorySummaries }) => {
 	}} />
               </PieChart> : activeTab === "profit" ? <PieChart>
                 <Pie data={profitPieData} cx="50%" cy="50%" outerRadius={100} innerRadius={50} paddingAngle={3} dataKey="value" label={({ percent }) => percent > .05 ? `${(percent * 100).toFixed(0)}%` : ""}>
-                  {profitPieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke={entry.isHighlight ? "#398d9c" : "#ffffff"} strokeWidth={entry.isHighlight ? 3 : 1} />)}
+                  {profitPieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke={entry.isHighlight ? "#34485E" : "#ffffff"} strokeWidth={entry.isHighlight ? 3 : 1} />)}
                 </Pie>
                 <Tooltip contentStyle={{
 		backgroundColor: "#ffffff",

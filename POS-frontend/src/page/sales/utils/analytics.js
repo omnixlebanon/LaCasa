@@ -1,4 +1,4 @@
-export const PRODUCT_COLORS = ['#048853', '#3b82a0', '#b58a35', '#9271a4', '#5b9d8a', '#c17b62'];
+export const PRODUCT_COLORS = ['#5185C5', '#46A28F', '#D5A34B', '#9278BD', '#D38470', '#B96F96', '#6BA5B4', '#92A568'];
 export const formatNumber = value => new Intl.NumberFormat('en-US').format(value);
 export function formatExportTimestamp(value) {
  const date = new Date(value);
