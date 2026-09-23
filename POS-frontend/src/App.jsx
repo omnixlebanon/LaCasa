@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider, Outlet, Navigate, useLocation } from 'react-router-dom';
 import './App.css'
+import RequestActivity from './components/RequestActivity.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './page/login/Login.jsx';
 import Sidebar from './layout/sidebar/Sidebar.jsx';
@@ -93,6 +94,7 @@ const router = createBrowserRouter([
 function App() {
   return (
     <AuthProvider>
+      <RequestActivity />
       <RouterProvider router={router} />
     </AuthProvider>
   );

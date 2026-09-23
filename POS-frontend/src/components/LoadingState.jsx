@@ -9,5 +9,5 @@ export default function LoadingState({ label = 'Loading...', error, onRetry, pag
     <LoaderCircle className="fetch-state-spinner" size={24} aria-hidden="true" />
     <span>{label}</span>
   </div>;
-  return page ? <div className="main-area" aria-busy={!error}>{content}</div> : content;
+  return page ? <div className="main-area fetch-state-page" aria-busy={!error}>{content}</div> : content;
 }

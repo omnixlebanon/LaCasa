@@ -1,6 +1,10 @@
 .fetch-state { display: flex; align-items: center; justify-content: center; gap: 12px; min-height: 100px; padding: 24px 16px; color: var(--font-color); text-align: center; }
 .fetch-state-spinner { flex-shrink: 0; color: var(--main-color); animation: fetch-state-spin 900ms linear infinite; }
 .fetch-state-error { flex-wrap: wrap; color: var(--danger-color); }
+.fetch-state-page { display: grid; place-items: center; }
+.fetch-state-page .fetch-state { flex-direction: column; gap: 18px; min-width: min(280px, 100%); padding: 36px 24px; border: 1px solid var(--border-color); border-radius: var(--radius-lg); background: white; box-shadow: var(--shadow-sm); }
+.fetch-state-page .fetch-state-spinner { width: 36px; height: 36px; }
+.request-activity { position: fixed; top: max(16px, env(safe-area-inset-top)); left: 50%; transform: translateX(-50%); z-index: 1500; display: flex; align-items: center; gap: 10px; max-width: calc(100vw - 24px); padding: 10px 16px; border: 1px solid var(--main-border); border-radius: 999px; background: white; box-shadow: var(--shadow-md); color: var(--main-color); font-size: 13px; pointer-events: none; }
 .fetch-state-error button { min-height: 44px; padding: 8px 16px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: white; color: var(--main-color); }
 @keyframes fetch-state-spin { to { transform: rotate(360deg); } }
 @media (prefers-reduced-motion: reduce) { .fetch-state-spinner { animation: none; } }
