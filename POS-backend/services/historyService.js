@@ -27,6 +27,27 @@ async function processOrderCheckout(totalAmount, customerName, details = {}) {
         const scrambledSequence = sqids.encode([tempUniqueInt]); 
         const publicOrderId = `${currentMonthString}-${scrambledSequence}`; 
 
+        // Snapshot server-calculated cost and the exact recipe used for stock deduction.
+        if (!Array.isArray(details.items) || !details.items.length) throw new Error('Order items are required.');
+        const recipes = new Map();
+        const savedItems = [];
+        for (const item of details.items) {
+            if (!Number.isSafeInteger(Number(item.product_id)) || Number(item.product_id) <= 0 || !Number.isFinite(Number(item.qty)) || Number(item.qty) <= 0) throw new Error('Invalid order item.');
+            if (!recipes.has(String(item.product_id))) {
+                const [[product]] = await connection.query('SELECT product_id FROM products WHERE product_id = ? FOR UPDATE', [item.product_id]);
+                if (!product) throw new Error('An ordered product no longer exists.');
+                const [recipe] = await connection.query('SELECT pi.item_id, pi.qty, i.item_cost FROM product_items pi JOIN items i ON i.item_id = pi.item_id WHERE pi.product_id = ? FOR UPDATE', [item.product_id]);
+                recipes.set(String(item.product_id), recipe);
+            }
+            const recipe = recipes.get(String(item.product_id));
+            const rawCost = recipe.reduce((sum, ingredient) => sum + Number(ingredient.qty) * Number(ingredient.item_cost), 0);
+            if (!Number.isFinite(rawCost) || rawCost < 0) throw new Error('Invalid ingredient cost.');
+            const unitCost = Math.round(rawCost * 100) / 100;
+            savedItems.push({ ...item, unit_cost: unitCost, total_cost: Math.round(unitCost * Number(item.qty) * 100) / 100, cost_source: recipe.length ? 'checkout_recipe' : 'no_recipe' });
+        }
+        details = { ...details, items: savedItems, cost_snapshot_version: 1,
+            total_cost: savedItems.reduce((cents, item) => cents + Math.round(item.total_cost * 100), 0) / 100 };
+
         // 2. Insert order history record
         const insertQuery = `
             INSERT INTO orders_history (order_id, customer_name, total_amount, details)
@@ -49,10 +70,7 @@ async function processOrderCheckout(totalAmount, customerName, details = {}) {
             if (!orderItem.product_id || !orderItem.qty) continue;
 
             // Fetch all recipe ingredients associated with this product
-            const [recipeIngredients] = await connection.query(
-                `SELECT item_id, qty FROM product_items WHERE product_id = ?`,
-                [orderItem.product_id]
-            );
+            const recipeIngredients = recipes.get(String(orderItem.product_id));
 
             // Deduct the corresponding stock quantity for each ingredient
             for (const ingredient of recipeIngredients) {

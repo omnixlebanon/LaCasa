@@ -1,23 +1,28 @@
-.expenses-hint { color: var(--font-color); margin-bottom: 20px; }
-.expenses-controls, .expenses-actions, .expenses-form-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.expenses-page label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; min-width: 0; }
-.expenses-page button { min-height: 44px; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
-.expenses-form { padding: 20px; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: 20px; }
-.expenses-form h3 { margin-bottom: 16px; }
-.expenses-form fieldset { border: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; min-width: 0; }
-.expenses-form input, .expenses-form select { width: 100%; }
-.expenses-form-actions { grid-column: 1 / -1; justify-content: flex-end; }
-.expenses-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
-.expenses-summary article { display: flex; flex-direction: column; gap: 8px; padding: 18px; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); min-width: 0; }
-.expenses-summary article:first-child { background: var(--main-soft); border-color: var(--main-border); }
-.expenses-summary strong { font-size: 23px; overflow-wrap: anywhere; }
-.expenses-summary span, .expenses-summary small, .expenses-list time { color: var(--font-color); }
-.expenses-list { display: grid; gap: 10px; }
-.expenses-list article { display: flex; align-items: center; gap: 16px; padding: 16px; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); }
-.expenses-list article > div:first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
-.expenses-list h3 { font-size: 15px; margin: 4px 0; }
-.expenses-list article > strong { overflow-wrap: anywhere; }
-.expenses-category { color: var(--main-color); font-size: 12px; }
-.expenses-message { background: var(--main-soft); padding: 12px; margin-bottom: 16px; border-radius: var(--radius-sm); }
-.expenses-empty { text-align: center; padding: 30px; color: var(--font-color); }
-@media (max-width: 767px) { .expenses-form fieldset { grid-template-columns: 1fr; } .expenses-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } .expenses-summary article:first-child { grid-column: 1 / -1; } .expenses-summary strong { font-size: 20px; } .expenses-list article { flex-wrap: wrap; } .expenses-controls { width: 100%; } }
+#sales-dashboard .expenses-hint { color: var(--font-color); margin-bottom: 20px; }
+#sales-dashboard .expenses-controls, #sales-dashboard .expenses-actions, #sales-dashboard .expenses-form-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+#sales-dashboard .expenses-page label { display: flex; flex-direction: column; gap: 6px; font-size: 13px; font-weight: 600; min-width: 0; }
+#sales-dashboard .expenses-page button { min-height: 44px; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); display: inline-flex; align-items: center; justify-content: center; gap: 6px; }
+#sales-dashboard .expenses-form { padding: 20px; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); margin-bottom: 20px; }
+#sales-dashboard .expenses-form h3 { margin-bottom: 16px; }
+#sales-dashboard .expenses-form fieldset { border: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; min-width: 0; }
+#sales-dashboard .expenses-form input, #sales-dashboard .expenses-form select { width: 100%; }
+#sales-dashboard .expenses-form-actions { grid-column: 1 / -1; justify-content: flex-end; }
+#sales-dashboard .expenses-summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 20px; }
+#sales-dashboard .expenses-summary article { display: flex; flex-direction: column; gap: 8px; padding: 18px; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); min-width: 0; }
+#sales-dashboard .expenses-summary article:first-child { background: var(--main-soft); border-color: var(--main-border); }
+#sales-dashboard .expenses-summary strong { font-size: 23px; overflow-wrap: anywhere; }
+#sales-dashboard .expenses-summary span, #sales-dashboard .expenses-summary small, #sales-dashboard .expenses-list time { color: var(--font-color); }
+#sales-dashboard .expenses-list { display: grid; gap: 10px; }
+#sales-dashboard .expenses-list article { display: flex; align-items: center; gap: 16px; padding: 16px; background: white; border: 1px solid var(--border-color); border-radius: var(--radius-md); }
+#sales-dashboard .expenses-list article > div:first-child { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+#sales-dashboard .expenses-list h3 { font-size: 15px; margin: 4px 0; }
+#sales-dashboard .expenses-list article > strong { overflow-wrap: anywhere; }
+#sales-dashboard .expenses-category { color: var(--main-color); font-size: 12px; }
+#sales-dashboard .expenses-message { background: var(--main-soft); padding: 12px; margin-bottom: 16px; border-radius: var(--radius-sm); }
+#sales-dashboard .expenses-empty { text-align: center; padding: 30px; color: var(--font-color); }
+@media (max-width: 767px) { #sales-dashboard .expenses-form fieldset { grid-template-columns: 1fr; } #sales-dashboard .expenses-summary { grid-template-columns: repeat(2, minmax(0, 1fr)); } #sales-dashboard .expenses-summary article:first-child { grid-column: 1 / -1; } #sales-dashboard .expenses-summary strong { font-size: 20px; } #sales-dashboard .expenses-list article { flex-wrap: wrap; } #sales-dashboard .expenses-controls { width: 100%; } }
+
+#sales-dashboard .expenses-page { scroll-margin-top: 24px; padding-top: 24px; border-top: 1px solid var(--border-color); }
+#sales-dashboard .expenses-page input:not([type="hidden"]), #sales-dashboard .expenses-page select { padding: 10px 12px; min-height: 44px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: white; }
+#sales-dashboard .expenses-page .add-btn { background: var(--main-color); color: white; border-color: var(--main-color); }
+#sales-dashboard .sales-expenses-link { color: var(--main-color); text-decoration: underline; text-underline-offset: 3px; }

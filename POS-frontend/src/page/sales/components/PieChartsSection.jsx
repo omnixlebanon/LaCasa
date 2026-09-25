@@ -17,7 +17,7 @@ export const PieChartsSection = ({ productMetrics, categorySummaries }) => {
 		margin: m.profitMargin
 	}));
 	// 2. Profit Share Pie Data (For Most Profitable Product breakdown)
-	const profitPieData = activeProducts.map((m, idx) => ({
+	const profitPieData = (productMetrics.some(m => m.missingCost) ? [] : activeProducts).map((m, idx) => ({
 		name: m.product.name,
 		value: m.totalProfit,
 		rawCurrency: m.totalProfit,
@@ -59,6 +59,7 @@ export const PieChartsSection = ({ productMetrics, categorySummaries }) => {
         </div>
       </div>
 
+      {activeTab === 'profit' && productMetrics.some(m => m.missingCost) && <p role="status">Profit share is unavailable because historical checkout costs are missing.</p>}
       {	/* Pie Chart */}
       <div className="w-full">
         {	/* Chart Canvas */}
@@ -101,7 +102,7 @@ export const PieChartsSection = ({ productMetrics, categorySummaries }) => {
 		borderColor: "#dfe7e2",
 		borderRadius: "12px",
 		fontSize: "12px"
-	}} formatter={(value, name, item) => [`${formatCurrency(Number(value))} Sales | Profit: ${formatCurrency(item.payload.profit)}`, item.payload.name]} />
+	}} formatter={(value, name, item) => [`${formatCurrency(Number(value))} Sales | Gross profit: ${item.payload.profit === null ? 'Unavailable' : formatCurrency(item.payload.profit)}`, item.payload.name]} />
                 <Legend verticalAlign="bottom" height={36} wrapperStyle={{
 		fontSize: "11px",
 		paddingTop: "10px"

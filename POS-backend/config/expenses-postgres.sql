@@ -13,3 +13,15 @@ DO $$ BEGIN
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN REVOKE ALL ON business_expenses FROM anon; END IF;
   IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN REVOKE ALL ON business_expenses FROM authenticated; END IF;
 END $$;
+
+CREATE TABLE IF NOT EXISTS expense_recurrences (
+  expense_id BIGINT PRIMARY KEY REFERENCES business_expenses(expense_id) ON DELETE CASCADE,
+  frequency VARCHAR(10) NOT NULL,
+  repeat_until DATE NULL,
+  stopped_before DATE NULL
+);
+ALTER TABLE expense_recurrences ENABLE ROW LEVEL SECURITY;
+DO $$ BEGIN
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN REVOKE ALL ON expense_recurrences FROM anon; END IF;
+  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN REVOKE ALL ON expense_recurrences FROM authenticated; END IF;
+END $$;

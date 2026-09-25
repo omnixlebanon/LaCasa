@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { Receipt, LayoutDashboard, History, Package, CalendarDays, LogOut } from 'lucide-react';
+import { LayoutDashboard, History, Package, CalendarDays, LogOut } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
 import { useCurrency } from '../../global.jsx';
 
@@ -12,7 +12,7 @@ export default function MobileNavigation() {
   const { user, logout } = useAuth();
   const { currency, toggleCurrency } = useCurrency();
   const links = [
-    ...(user?.accessLevel === 'admin' ? [{ to: '/sales', label: 'Sales', Icon: LayoutDashboard }, { to: '/expenses', label: 'Expenses', Icon: Receipt }] : []),
+    ...(user?.accessLevel === 'admin' ? [{ to: '/sales', label: 'Sales', Icon: LayoutDashboard }] : []),
     { to: '/history', label: 'History', Icon: History },
     { to: '/stock', label: 'Stock', Icon: Package },
     { to: '/shifts', label: 'Shifts', Icon: CalendarDays },

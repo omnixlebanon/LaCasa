@@ -1,6 +1,6 @@
 import './Sidebar.css';
 import {
-  Receipt, Armchair, ShoppingCart, LayoutDashboard, History as HistoryIcon, Package, Settings,
+  Armchair, ShoppingCart, LayoutDashboard, History as HistoryIcon, Package, Settings,
   ClipboardList, LayoutList, User, Coins, LogOut, X, CalendarDays, Menu
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
@@ -91,7 +91,6 @@ function Sidebar() {
               <LayoutDashboard />
               <p className='navTxt'>Sales</p>
             </NavLink>}
-          {isAdmin && <NavLink to='/expenses' title='Expenses'><Receipt /><p className='navTxt'>Expenses</p></NavLink>}
           <NavLink to='/history' title='Order History'>
             <HistoryIcon />
             <p className='navTxt'>Order History</p>

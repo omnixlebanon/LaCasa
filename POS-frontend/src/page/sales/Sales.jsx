@@ -1,3 +1,4 @@
+import Expenses from '../expenses/Expenses.jsx';
 import LoadingState from '../../components/LoadingState.jsx';
 import { useCurrency } from '../../global.jsx';
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -19,6 +20,7 @@ export default function Sales() {
 	const [customEndDate, setCustomEndDate] = useState("");
 	const [products, setProducts] = useState([]);
 	const [transactions, setTransactions] = useState([]);
+	const [expenses, setExpenses] = useState([]);
 	const [lastUpdated, setLastUpdated] = useState(new Date());
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
@@ -28,11 +30,15 @@ export default function Sales() {
 	const fetchSales = useCallback(async (signal) => {
 		setRefreshing(true);
 		try {
-			const [history, summary] = await Promise.all([api.get("/api/history", { signal }), api.get("/api/products/summary", { signal })]);
+			const now = new Date();
+            const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+            const through = timeframe === 'custom' && customEndDate ? customEndDate : today;
+            const [history, summary, expenseResponse] = await Promise.all([api.get("/api/history", { signal }), api.get("/api/products/summary", { signal }), api.get('/api/expenses', { params: { through }, signal })]);
 			if (signal?.aborted) return;
 			const data = normalizeSales(history.data, summary.data);
 			setProducts(data.products);
 			setTransactions(data.transactions);
+            setExpenses(expenseResponse.data.map(row => ({ ...row, timestamp: `${row.expense_date}T00:00:00`, totalRevenue: 0, totalCost: Number(row.amount), totalProfit: -Number(row.amount), quantity: 0 })));
 			setSkipped(data.skipped);
 			setHasLoaded(true);
 			setLastUpdated(new Date());
@@ -42,7 +48,7 @@ export default function Sales() {
 		} finally {
 			if (!signal?.aborted) { setLoading(false); setRefreshing(false); }
 		}
-	}, []);
+	}, [timeframe, customEndDate]);
 	useEffect(() => {
 		const controller = new AbortController();
 		let timer;
@@ -66,6 +72,10 @@ export default function Sales() {
 		customEndDate,
 		lastUpdated
 	]);
+    const filteredExpenses = useMemo(() => filterTransactionsByTimeframe(expenses, timeframe, lastUpdated, customStartDate || undefined, customEndDate || undefined), [expenses, timeframe, lastUpdated, customStartDate, customEndDate]);
+    const businessExpenses = filteredExpenses.reduce((cents, row) => cents + Math.round(row.totalCost * 100), 0) / 100;
+    const missingCosts = filteredTransactions.filter(tx => tx.totalCost === null).length;
+    const noRecipeCosts = filteredTransactions.filter(tx => tx.costSource === 'no_recipe').length;
 	// Product Metrics (Most Sold, Most Profitable)
 	const productMetrics = useMemo(() => {
 		return getProductMetrics(products, filteredTransactions);
@@ -85,9 +95,11 @@ export default function Sales() {
 	const mostProfitable = useMemo(() => productMetrics.find((m) => m.isMostProfitable) || null, [productMetrics]);
 	// Line Chart Data
 	const lineChartData = useMemo(() => {
-		return generateLineChartData(filteredTransactions, timeframe, products, undefined, customStartDate || undefined, customEndDate || undefined);
+		return generateLineChartData([...filteredTransactions, ...filteredExpenses], timeframe, products, lastUpdated, customStartDate || undefined, customEndDate || undefined);
 	}, [
 		filteredTransactions,
+        filteredExpenses,
+        lastUpdated,
 		timeframe,
 		products,
 		customStartDate,
@@ -108,9 +120,10 @@ export default function Sales() {
 			`Unit Cost (${currency})`,
 			`Total Revenue (${currency})`,
 			`Cost (${currency})`,
-			`Gross Profit (${currency})`,
+			`Profit / expense impact (${currency})`,
 			"Timestamp",
-			"Sale Channel"
+			"Sale Channel",
+            "Cost status"
 		];
 		const rows = filteredTransactions.map((tx) => [
 			tx.id,
@@ -118,13 +131,16 @@ export default function Sales() {
 			tx.category,
 			tx.quantity,
 			toDisplayAmount(tx.unitPrice),
-			toDisplayAmount(tx.unitCost),
+			tx.unitCost === null ? '' : toDisplayAmount(tx.unitCost),
 			toDisplayAmount(tx.totalRevenue),
-			toDisplayAmount(tx.totalCost),
-			toDisplayAmount(tx.totalProfit),
+			tx.totalCost === null ? '' : toDisplayAmount(tx.totalCost),
+			tx.totalProfit === null ? '' : toDisplayAmount(tx.totalProfit),
 			formatExportTimestamp(tx.timestamp),
-			tx.customerRegion
+			tx.customerRegion,
+            tx.costSource
 		]);
+        for (const row of filteredExpenses) rows.push([`expense-${row.occurrence_id}`, row.description, row.category, '', '', '', 0, row.totalCost === null ? '' : toDisplayAmount(row.totalCost), toDisplayAmount(-row.totalCost), row.expense_date, 'Business expense', row.recurring ? 'Repeating bill' : 'One-time bill']);
+        rows.push(['SUMMARY', 'Totals after business expenses', '', '', '', '', toDisplayAmount(totalRevenue), missingCosts ? '' : toDisplayAmount(totalCost + businessExpenses), missingCosts ? '' : toDisplayAmount(totalProfit - businessExpenses), '', '', missingCosts ? 'Historical order costs unavailable' : 'Complete']);
 		const escape = (value) => "\"" + String(value).replace(/^[=+@-]/, "'$&").replaceAll("\"", "\"\"") + "\"";
 		const csv = [headers, ...rows].map((row) => row.map(escape).join(",")).join("\r\n");
 		const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
@@ -143,24 +159,28 @@ export default function Sales() {
       <main className="space-y-6">
         {refreshing && <LoadingState label="Refreshing sales..." />}
         {error && <div role="alert" className="text-rose-700">{error} <button onClick={() => fetchSales()} className="underline">Retry</button></div>}
+        {missingCosts > 0 && <p role="status" className="text-amber-700">{missingCosts} sold item records have no saved checkout cost. Cost and profit totals are unavailable for this period; current recipe prices are not substituted.</p>}
+        {noRecipeCosts > 0 && <p role="status" className="text-amber-700">{noRecipeCosts} sold item records had no recipe at checkout and were saved with zero cost.</p>}
+        <p>Business expenses are counted on their bill dates, including scheduled repeats. Result after expenses excludes payroll and any costs not recorded in Expenses.</p>
         {skipped > 0 && <p className="text-xs text-amber-700">{skipped} records with missing or invalid sales details were excluded.</p>}
         {timeframe === "custom" && (!customStartDate || !customEndDate || customStartDate > customEndDate) && <p role="status" className="text-amber-700">Select a valid start and end date.</p>}
         {	/* Timeframe & Metric View Selector Controls */}
         <TimeframeSelector selectedTimeframe={timeframe} onSelectTimeframe={setTimeframe} customStartDate={customStartDate} onStartDateChange={setCustomStartDate} customEndDate={customEndDate} onEndDateChange={setCustomEndDate} />
 
         {	/* Top KPI Metric Cards */}
-        <KPICards totalRevenue={totalRevenue} totalCost={totalCost} totalProfit={totalProfit} profitMargin={profitMargin} totalUnitsSold={totalUnitsSold} avgOrderValue={avgOrderValue} mostSold={mostSold} mostProfitable={mostProfitable} timeframe={timeframe} metricView={metricView} />
+        <KPICards businessExpenses={businessExpenses} missingCosts={missingCosts} totalRevenue={totalRevenue} totalCost={totalCost} totalProfit={totalProfit} profitMargin={profitMargin} totalUnitsSold={totalUnitsSold} avgOrderValue={avgOrderValue} mostSold={mostSold} mostProfitable={mostProfitable} timeframe={timeframe} metricView={metricView} />
 
         {	/* Interactive Charts Section (Line Charts + Pie Charts Grid) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {	/* Line & Area Charts */}
-          <LineChartsSection key={products.map((p) => p.id).join(",")} data={lineChartData} products={products} timeframe={timeframe} metricView={metricView} onMetricViewChange={setMetricView} />
+          <LineChartsSection missingCosts={missingCosts} key={products.map((p) => p.id).join(",")} data={lineChartData} products={products} timeframe={timeframe} metricView={metricView} onMetricViewChange={setMetricView} />
 
           {	/* Pie & Donut Charts */}
           <PieChartsSection productMetrics={productMetrics} categorySummaries={categorySummaries} />
         </div>
 
         <ProductRankingTable metrics={productMetrics} metricView={metricView} />
+        <Expenses onChanged={() => fetchSales()} />
       </main>
     </div>;
 }

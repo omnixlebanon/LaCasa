@@ -91,6 +91,14 @@ test('stock, recipes, checkout, expiration triggers and transaction rollback', a
   assert.equal(typeof order.data.internalId, 'number');
   assert.equal(Number((await request('/items')).data[0].stock), 16);
   assert.equal((await request('/history')).data[0].details.items[0].qty, 2);
+  const snapshot = (await request('/history')).data[0].details;
+  assert.equal(snapshot.cost_snapshot_version, 1);
+  assert.equal(snapshot.total_cost, 12);
+  assert.equal(snapshot.items[0].unit_cost, 6);
+  await db.execute('UPDATE items SET item_cost = ? WHERE item_id = ?', [20, id]);
+  assert.equal((await request('/history')).data[0].details.total_cost, 12);
+  await db.execute('UPDATE items SET item_cost = ? WHERE item_id = ?', [3, id]);
+
   await db.beginTransaction();
   await db.execute('UPDATE items SET item_cost = ? WHERE item_id = ?', [999, id]);
   await db.rollback();
@@ -247,4 +255,45 @@ test('expenses CRUD, month filtering and admin permissions', async () => {
   assert.equal((await request(`/expenses/${created.data.id}`, 'DELETE')).status, 200);
   assert.equal((await request(`/expenses/${created.data.id}`, 'DELETE')).status, 404);
   await engine.exec(fs.readFileSync(path.join(__dirname, '../config/expenses-postgres.sql'), 'utf8'));
+});
+
+test('repeating expense records expand without duplicate writes and preserve history', async () => {
+  const auth = await request('/auth/login', 'POST', { username: 'admin', password: 'test-password' });
+  cookie = auth.headers.get('set-cookie').split(';')[0];
+  const input = { category: 'rent', description: 'Monthly rent', amount: '300.00', date: '2024-01-31', frequency: 'monthly', repeat_until: '2024-03-31' };
+  const created = await request('/expenses', 'POST', input);
+  assert.equal(created.status, 201);
+  const list = (await request('/expenses?from=2024-01-01&through=2024-12-31')).data.filter(row => row.expense_id === created.data.id);
+  assert.deepEqual(list.map(row => row.expense_date), ['2024-03-31', '2024-02-29', '2024-01-31']);
+  assert.equal((await request('/expenses?month=2024-02')).data.filter(row => row.expense_id === created.data.id).length, 1);
+  assert.equal((await request('/expenses?month=2024-02')).data.filter(row => row.expense_id === created.data.id).length, 1);
+  assert.equal((await request(`/expenses/${created.data.id}`, 'PATCH', input)).status, 409);
+  assert.equal((await request(`/expenses/${created.data.id}`, 'DELETE')).status, 409);
+  assert.equal((await request(`/expenses/${created.data.id}/stop`, 'PATCH', { from: '2024-02-01' })).status, 400);
+  assert.equal((await request(`/expenses/${created.data.id}/stop`, 'PATCH', { from: today })).status, 200);
+  assert.equal((await request(`/expenses/${created.data.id}/stop`, 'PATCH', { from: today })).status, 409);
+  assert.equal((await request('/expenses?month=2024-02')).data.filter(row => row.expense_id === created.data.id).length, 1);
+});
+
+test('checkout ignores supplied costs, flags missing recipes, and rolls back failed orders', async () => {
+  const checkout = require('../services/historyService');
+  const [[product]] = await db.query('SELECT product_id FROM products ORDER BY product_id LIMIT 1');
+  const [[beforeCount]] = await db.query('SELECT COUNT(*) AS count FROM orders_history');
+  const beforeStock = (await db.query('SELECT item_id, stock FROM items ORDER BY item_id'))[0];
+  const failed = await checkout(10, 'Rollback', { items: [{ product_id: product.product_id, qty: 1, price: 10 }], table_id: 'not-an-integer' });
+  assert.equal(failed.success, false);
+  const [[afterCount]] = await db.query('SELECT COUNT(*) AS count FROM orders_history');
+  assert.equal(afterCount.count, beforeCount.count);
+  assert.deepEqual((await db.query('SELECT item_id, stock FROM items ORDER BY item_id'))[0], beforeStock);
+  const result = await checkout(10, 'Snapshot', { cost_snapshot_version: 1, total_cost: 9999, items: [{ product_id: product.product_id, qty: 1, price: 10, unit_cost: 9999, total_cost: 9999 }] });
+  assert.equal(result.success, true);
+  const [[saved]] = await db.query('SELECT details FROM orders_history WHERE internal_id = ?', [result.internalId]);
+  assert.notEqual(saved.details.total_cost, 9999);
+  assert.notEqual(saved.details.items[0].unit_cost, 9999);
+  const [bare] = await db.execute('INSERT INTO products (product_name, product_price) VALUES (?, ?)', ['No recipe', 5]);
+  const zero = await checkout(5, 'No recipe', { items: [{ product_id: bare.insertId, qty: 1, price: 5, unit_cost: 500 }] });
+  assert.equal(zero.success, true);
+  const [[zeroSaved]] = await db.query('SELECT details FROM orders_history WHERE internal_id = ?', [zero.internalId]);
+  assert.equal(zeroSaved.details.items[0].unit_cost, 0);
+  assert.equal(zeroSaved.details.items[0].cost_source, 'no_recipe');
 });

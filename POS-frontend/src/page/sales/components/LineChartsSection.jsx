@@ -2,7 +2,7 @@ import { useCurrency } from '../../../global.jsx';
 import React, { useState } from "react";
 import { formatNumber, PRODUCT_COLORS } from "../utils/analytics";
 import { ResponsiveContainer, AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
-export const LineChartsSection = ({ data, products, metricView = "all", onMetricViewChange }) => {
+export const LineChartsSection = ({ data, products, metricView = "all", onMetricViewChange, missingCosts = 0 }) => {
   const { formatPrice: formatCurrency, formatCompactPrice } = useCurrency();
 	const [chartMode, setChartMode] = useState("financials");
 	const [selectedProductIds, setSelectedProductIds] = useState(products.slice(0, 4).map((p) => p.id));
@@ -16,8 +16,8 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
 		}
 	};
 	const showRevenue = metricView === "all" || metricView === "sales";
-	const showCost = metricView === "all" || metricView === "cost";
-	const showProfit = metricView === "all" || metricView === "profit";
+	const showCost = !missingCosts && (metricView === "all" || metricView === "cost");
+	const showProfit = !missingCosts && (metricView === "all" || metricView === "profit");
 	return <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
       {	/* Chart Header & Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-200 pb-4">
@@ -50,7 +50,7 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
           <option value="all">All metrics</option>
           <option value="sales">Sales</option>
           <option value="cost">Cost</option>
-          <option value="profit">Est. gross profit</option>
+          <option value="profit">Result after expenses</option>
         </select>
       </div>
 
@@ -101,11 +101,11 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
 		borderRadius: "12px",
 		boxShadow: "0 8px 24px rgba(24, 57, 40, 0.07)",
 		fontSize: "12px"
-	}} formatter={(value, name) => [formatCurrency(Number(value)), name === "revenue" ? "Sales Revenue" : name === "cost" ? "Total Cost" : "Est. Gross Profit"]} />
+	}} formatter={(value, name) => [formatCurrency(Number(value)), name === "revenue" ? "Sales Revenue" : name === "cost" ? "Total Cost" : "Result After Expenses"]} />
               <Legend verticalAlign="top" align="right" wrapperStyle={{
 		paddingBottom: "10px",
 		fontSize: "12px"
-	}} formatter={(value) => value === "revenue" ? "Sales Revenue" : value === "cost" ? "Total Cost" : "Est. Gross Profit"} />
+	}} formatter={(value) => value === "revenue" ? "Sales Revenue" : value === "cost" ? "Total Cost" : "Result After Expenses"} />
               {showRevenue && <Area type="monotone" dataKey="revenue" stroke="#5185C5" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRevenue)" />}
               {showCost && <Area type="monotone" dataKey="cost" stroke="#D5A34B" strokeWidth={2.5} fillOpacity={1} fill="url(#colorCost)" />}
               {showProfit && <Area type="monotone" dataKey="profit" stroke="#46A28F" strokeWidth={2.5} fillOpacity={1} fill="url(#colorProfit)" />}

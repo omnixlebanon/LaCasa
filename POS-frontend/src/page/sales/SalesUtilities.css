@@ -146,6 +146,9 @@
 #sales-dashboard .grid {
     display: grid
 }
+#sales-dashboard .hidden {
+    display: none
+}
 #sales-dashboard .h-2 {
     height: 0.5rem
 }

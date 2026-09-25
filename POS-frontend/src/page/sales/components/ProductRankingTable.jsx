@@ -73,14 +73,14 @@ export const ProductRankingTable = ({ metrics }) => {
                                     {item.isMostProfitable && <span className="sales-badge-profit"><Crown size={12} />Most profitable</span>}
                                 </div>}
                             </td>
-                            <td>{formatCurrency(item.product.unitPrice)}<small>Cost {formatCurrency(item.product.unitCost)}</small></td>
+                            <td>{formatCurrency(item.product.unitPrice)}<small>Current catalog price</small></td>
                             <td>{formatNumber(item.unitsSold)}<small>{item.percentageOfTotalSales}% share</small></td>
                             <td className="sales-value-revenue">{formatCurrency(item.totalRevenue)}</td>
-                            <td className="sales-value-cost">{formatCurrency(item.totalCost)}</td>
-                            <td className={item.totalProfit < 0 ? 'sales-value-loss' : 'sales-value-profit'}>{formatCurrency(item.totalProfit)}</td>
+                            <td className="sales-value-cost">{item.missingCost ? 'Unavailable' : formatCurrency(item.totalCost)}</td>
+                            <td className={item.totalProfit < 0 ? 'sales-value-loss' : 'sales-value-profit'}>{item.missingCost ? 'Unavailable' : formatCurrency(item.totalProfit)}</td>
                             <td>
-                                <div className={item.profitMargin < 0 ? 'sales-value-loss' : ''}>{item.profitMargin}%</div>
-                                <div className="sales-margin-track" aria-hidden="true"><div style={{ width: `${Math.max(0, Math.min(item.profitMargin, 100))}%` }} /></div>
+                                <div className={item.profitMargin < 0 ? 'sales-value-loss' : ''}>{item.missingCost ? 'Unavailable' : `${item.profitMargin}%`}</div>
+                                <div className="sales-margin-track" aria-hidden="true" hidden={item.missingCost}><div style={{ width: `${Math.max(0, Math.min(item.profitMargin, 100))}%` }} /></div>
                             </td>
                         </tr>)}
                         {!rows.length && <tr><td colSpan={7} className="sales-products-empty">

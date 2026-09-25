@@ -2,7 +2,7 @@ import { useCurrency } from '../../../global.jsx';
 import { DollarSign, TrendingUp, ShoppingBag, Crown, Receipt } from 'lucide-react';
 import { formatNumber } from '../utils/analytics';
 
-export const KPICards = ({ totalRevenue, totalCost, totalProfit, profitMargin, totalUnitsSold, avgOrderValue, mostSold, mostProfitable, timeframe, metricView = 'all' }) => {
+export const KPICards = ({ totalRevenue, totalCost, totalProfit, profitMargin, totalUnitsSold, avgOrderValue, mostSold, mostProfitable, timeframe, metricView = 'all', businessExpenses = 0, missingCosts = 0 }) => {
   const { formatPrice: formatCurrency } = useCurrency();
     const period = { daily: 'Today', monthly: 'This month', yearly: 'This year', 'all-time': 'All time', custom: 'Custom range' }[timeframe];
     const cards = [
@@ -14,16 +14,19 @@ export const KPICards = ({ totalRevenue, totalCost, totalProfit, profitMargin, t
         },
         {
             title: 'Total Cost', tone: 'cost', icon: Receipt, metric: 'cost',
-            value: formatCurrency(totalCost),
-            description: <>Cost ratio: <strong>{totalRevenue > 0 ? Math.round(totalCost / totalRevenue * 100) : 0}%</strong></>,
-            detail: `${formatNumber(totalUnitsSold)} units sold`,
+            value: missingCosts ? 'Unavailable' : formatCurrency(totalCost + businessExpenses),
+            description: <>Cost ratio: <strong>{missingCosts ? 'Unavailable' : `${totalRevenue > 0 ? Math.round((totalCost + businessExpenses) / totalRevenue * 100) : 0}%`}</strong></>,
+            detail: 'Saved order costs + business expenses',
         },
         {
-            title: 'Est. Gross Profit', tone: totalProfit < 0 ? 'red' : 'green', icon: TrendingUp, metric: 'profit',
-            value: formatCurrency(totalProfit),
-            description: <>Profit margin: <strong>{profitMargin}%</strong></>,
-            detail: `ROI: ${totalCost > 0 ? Math.round(totalProfit / totalCost * 100) : 0}%`,
+            title: 'Est. Gross Profit', tone: totalProfit < 0 ? 'red' : 'green', icon: TrendingUp,
+            value: missingCosts ? 'Unavailable' : formatCurrency(totalProfit),
+            description: <>Profit margin: <strong>{missingCosts ? 'Unavailable' : `${profitMargin}%`}</strong></>,
+            detail: missingCosts ? 'Historical costs missing' : `ROI: ${totalCost > 0 ? Math.round(totalProfit / totalCost * 100) : 0}%`,
         },
+        { title: 'Saved Order Costs', tone: 'cost', icon: Receipt, value: missingCosts ? 'Unavailable' : formatCurrency(totalCost), description: 'Ingredient costs saved at checkout', detail: `${formatNumber(totalUnitsSold)} units sold` },
+        { title: 'Total Expenses', tone: 'yellow', icon: Receipt, value: formatCurrency(businessExpenses), description: 'Utilities, rent, purchases and repeating bills', detail: period },
+        { title: 'Result After Expenses', metric: 'profit', tone: totalProfit - businessExpenses < 0 ? 'red' : 'green', icon: TrendingUp, value: missingCosts ? 'Unavailable' : formatCurrency(totalProfit - businessExpenses), description: 'Sales minus saved order costs and business expenses', detail: 'Excludes payroll and unrecorded costs' },
         {
             title: 'Most Sold Product', tone: 'yellow', icon: ShoppingBag,
             value: mostSold ? `${formatNumber(mostSold.unitsSold)} units` : '—',
@@ -35,7 +38,7 @@ export const KPICards = ({ totalRevenue, totalCost, totalProfit, profitMargin, t
             title: 'Most Profitable', tone: 'green', icon: Crown,
             value: mostProfitable ? formatCurrency(mostProfitable.totalProfit) : '—',
             product: mostProfitable?.product.name,
-            description: mostProfitable ? <>Margin: <strong>{mostProfitable.profitMargin}%</strong></> : 'No data for period',
+            description: mostProfitable ? <>Margin: <strong>{mostProfitable.profitMargin}%</strong></> : missingCosts ? 'Historical checkout costs are missing' : 'No data for period',
             detail: mostProfitable ? `${formatNumber(mostProfitable.unitsSold)} units · ${mostProfitable.percentageOfTotalProfit}% profit share` : '',
         },
     ];
@@ -51,6 +54,7 @@ export const KPICards = ({ totalRevenue, totalCost, totalProfit, profitMargin, t
                 {product && <p className="sales-alert-product">{product}</p>}
                 <p className="sales-alert-description">{description}</p>
                 {detail && <p className="sales-alert-detail">{detail}</p>}
+                {title === 'Total Expenses' && <a href="#sales-expenses" className="sales-expenses-link">View expenses</a>}
             </article>
         ))}
     </div>;

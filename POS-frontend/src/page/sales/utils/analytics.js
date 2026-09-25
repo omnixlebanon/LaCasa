@@ -22,22 +22,23 @@ export function filterTransactionsByTimeframe(transactions, timeframe, now = new
  return transactions.filter(tx => { const time = new Date(tx.timestamp); return time >= from && time <= to; });
 }
 export function getProductMetrics(products, transactions) {
- const metrics = products.map(product => ({product, unitsSold:0, totalRevenue:0, totalCost:0, totalProfit:0}));
+ const metrics = products.map(product => ({product, unitsSold:0, totalRevenue:0, totalCost:0, totalProfit:0,missingCost:false}));
  const byId = new Map(metrics.map(m => [m.product.id, m]));
  for (const tx of transactions) {
   const metric = byId.get(tx.productId); if (!metric) continue;
+  metric.missingCost ||= tx.totalCost === null;
   metric.unitsSold += tx.quantity; metric.totalRevenue += tx.totalRevenue; metric.totalCost += tx.totalCost; metric.totalProfit += tx.totalProfit;
  }
  const units = metrics.reduce((s,m) => s+m.unitsSold,0), profit = metrics.reduce((s,m) => s+m.totalProfit,0);
  const sold = Math.max(0,...metrics.map(m=>m.unitsSold));
- const profitable = Math.max(...metrics.filter(m=>m.unitsSold>0).map(m=>m.totalProfit));
- return metrics.map(m=>({...m, profitMargin:percent(m.totalProfit,m.totalRevenue), percentageOfTotalSales:percent(m.unitsSold,units), percentageOfTotalProfit:percent(m.totalProfit,profit), isMostSold:m.unitsSold>0 && m.unitsSold===sold, isMostProfitable:m.unitsSold>0 && m.totalProfit===profitable}));
+ const profitable = Math.max(...metrics.filter(m=>m.unitsSold>0 && !m.missingCost).map(m=>m.totalProfit));
+ return metrics.map(m=>({...m, profitMargin:percent(m.totalProfit,m.totalRevenue), percentageOfTotalSales:percent(m.unitsSold,units), percentageOfTotalProfit:percent(m.totalProfit,profit), isMostSold:m.unitsSold>0 && m.unitsSold===sold, isMostProfitable:!metrics.some(value=>value.missingCost) && m.unitsSold>0 && m.totalProfit===profitable}));
 }
 export function getCategorySummaries(transactions) {
  const groups = new Map();
  for (const tx of transactions) {
   const value = groups.get(tx.category) || {category:tx.category, revenue:0, profit:0, color:PRODUCT_COLORS[groups.size % PRODUCT_COLORS.length]};
-  value.revenue += tx.totalRevenue; value.profit += tx.totalProfit; groups.set(tx.category,value);
+  value.revenue += tx.totalRevenue; value.profit = value.profit === null || tx.totalProfit === null ? null : value.profit + tx.totalProfit; groups.set(tx.category,value);
  }
  return [...groups.values()];
 }
@@ -57,7 +58,7 @@ export function generateLineChartData(transactions, timeframe, products, now = n
   if ((last-date)/86400000 <= 366) for (;date<=last;date.setDate(date.getDate()+1)) add(date);
  }
  for(const tx of [...transactions].sort((a,b)=>new Date(a.timestamp)-new Date(b.timestamp))) {
-  const row=add(new Date(tx.timestamp)); row.revenue+=tx.totalRevenue;row.cost+=tx.totalCost;row.profit+=tx.totalProfit;row.units+=tx.quantity;row[tx.productId]=(row[tx.productId]||0)+tx.totalRevenue;
+  const row=add(new Date(tx.timestamp)); row.revenue+=tx.totalRevenue;row.cost+=tx.totalCost;row.profit+=tx.totalProfit;row.units+=tx.quantity;if(tx.productId) row[tx.productId]=(row[tx.productId]||0)+tx.totalRevenue;
  }
  return [...groups.values()];
 }
@@ -82,8 +83,10 @@ export function normalizeSales(history, summary) {
    const id=String(item.product_id ?? 'archived-'+item.product_name);
    let product=byId.get(id);
    if(!product) { product={id,name:item.product_name||'Archived product',sku:id,category:'Uncategorized',unitPrice:price,unitCost:0,archived:true}; products.push(product);byId.set(id,product); }
-   const revenue=quantity*price*revenueFactor, cost=quantity*product.unitCost;
-   transactions.push({id:String(order.order_id)+'-'+index,orderId:String(order.order_id),productId:id,productName:item.product_name||product.name,category:product.category,quantity,unitPrice:price,unitCost:product.unitCost,totalRevenue:revenue,totalCost:cost,totalProfit:revenue-cost,timestamp,customerRegion:details.channel||'In store'});
+   const snapshot = details.cost_snapshot_version === 1 && typeof item.unit_cost === 'number' && Number.isFinite(item.unit_cost) && item.unit_cost >= 0 && typeof item.total_cost === 'number' && Number.isFinite(item.total_cost) && item.total_cost >= 0;
+   const unitCost = snapshot ? item.unit_cost : null;
+   const revenue=quantity*price*revenueFactor, cost=snapshot ? item.total_cost : null;
+   transactions.push({id:String(order.order_id)+'-'+index,orderId:String(order.order_id),productId:id,productName:item.product_name||product.name,category:product.category,quantity,unitPrice:price,unitCost,totalRevenue:revenue,totalCost:cost,totalProfit:cost === null ? null : revenue-cost,costSource:snapshot ? item.cost_source : 'unavailable',timestamp,customerRegion:details.channel||'In store'});
   });
  }
  transactions.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
