@@ -11,3 +11,5 @@ telegram-bot/receipts/
 *.traineddata
 
 POS-backend/catalog-backups/
+
+POS-backend/firestore-exports/

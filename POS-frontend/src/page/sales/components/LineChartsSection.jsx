@@ -55,18 +55,20 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
       </div>
 
       {	/* Product Filter Chips for Product Breakdown Mode */}
-      {chartMode === "products" && <div className="flex flex-wrap items-center gap-1.5 bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs">
+      {chartMode === "products" && <div className="sales-breakdown-filters">
           <span className="text-slate-500 font-medium flex items-center gap-1 mr-1">
              Toggle Products:
           </span>
+          <div className="sales-breakdown-slider" role="region" aria-label="Choose products for the breakdown; scroll horizontally for more" tabIndex={0}>
           {products.map((p, idx) => {
 		const isChecked = selectedProductIds.includes(p.id);
 		const color = PRODUCT_COLORS[idx % PRODUCT_COLORS.length];
-		return <button key={p.id} onClick={() => toggleProductFilter(p.id)} className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 ${isChecked ? "bg-slate-100 text-slate-800 border border-slate-200" : "bg-white text-slate-500 border border-slate-200 opacity-60"}`}>
+		return <button key={p.id} aria-pressed={isChecked} onClick={() => toggleProductFilter(p.id)} className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 ${isChecked ? "bg-slate-100 text-slate-800 border border-slate-200" : "bg-white text-slate-500 border border-slate-200 opacity-60"}`}>
                 <span className="w-2 h-2 rounded-full" style={{ backgroundColor: color }}></span>
                 <span>{p.name}</span>
               </button>;
 	})}
+          </div>
         </div>}
 
       {	/* Main Chart Canvas */}

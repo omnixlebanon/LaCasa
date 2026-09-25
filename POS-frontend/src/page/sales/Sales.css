@@ -717,3 +717,31 @@
 #sales-dashboard .sales-products th:nth-child(4) button.is-sorted {
     color: var(--main-color);
 }
+
+/* Keep the full catalog selector to one swipeable row. */
+#sales-dashboard .sales-breakdown-filters {
+    min-width: 0;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: 12px;
+    background: var(--sec-bg);
+    font-size: 12px;
+}
+#sales-dashboard .sales-breakdown-slider {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    max-width: 100%;
+    overflow-x: auto;
+    padding: 8px 3px 10px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--main-color) var(--border-color);
+}
+#sales-dashboard .sales-breakdown-slider button {
+    flex: 0 0 auto;
+    min-height: 44px;
+    white-space: nowrap;
+}
+#sales-dashboard .sales-breakdown-slider::-webkit-scrollbar { height: 8px; }
+#sales-dashboard .sales-breakdown-slider::-webkit-scrollbar-track { background: var(--border-color); border-radius: 8px; }
+#sales-dashboard .sales-breakdown-slider::-webkit-scrollbar-thumb { background: var(--main-color); border-radius: 8px; }
