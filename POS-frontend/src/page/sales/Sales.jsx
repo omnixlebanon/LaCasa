@@ -161,7 +161,6 @@ export default function Sales() {
         {error && <div role="alert" className="text-rose-700">{error} <button onClick={() => fetchSales()} className="underline">Retry</button></div>}
         {missingCosts > 0 && <p role="status" className="text-amber-700">{missingCosts} sold item records have no saved checkout cost. Cost and profit totals are unavailable for this period; current recipe prices are not substituted.</p>}
         {noRecipeCosts > 0 && <p role="status" className="text-amber-700">{noRecipeCosts} sold item records had no recipe at checkout and were saved with zero cost.</p>}
-        <p>Business expenses are counted on their bill dates, including scheduled repeats. Result after expenses excludes payroll and any costs not recorded in Expenses.</p>
         {skipped > 0 && <p className="text-xs text-amber-700">{skipped} records with missing or invalid sales details were excluded.</p>}
         {timeframe === "custom" && (!customStartDate || !customEndDate || customStartDate > customEndDate) && <p role="status" className="text-amber-700">Select a valid start and end date.</p>}
         {	/* Timeframe & Metric View Selector Controls */}

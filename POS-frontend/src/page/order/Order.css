@@ -443,24 +443,73 @@
 
 .order-btn:focus-within .close-btn { display: flex; }
 
+/* Keep the catalog and checkout independently scrollable at every size. */
+.main-order-area { height: 100dvh; min-height: 0; overflow: hidden; }
+.order-area { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.order-area .head-area { flex-shrink: 0; min-width: 0; }
+.order-area .search-nav { min-width: 0; }
+.order-area .searchButtons { flex-wrap: nowrap; min-width: 0; max-width: 100%; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; }
+.order-area .search-button { flex-shrink: 0; min-height: 44px; }
+.display-products-area { overflow-y: auto; min-height: 0; flex: 1; overscroll-behavior-y: contain; }
+.check-area { position: static; height: 100%; min-height: 0; }
+.order-items-list { overscroll-behavior-y: contain; }
+.mobile-order-tabs, .mobile-order-context { display: none; }
+.item-name-price-area { flex: 1; }
+.item-name { white-space: normal; max-width: none; overflow-wrap: anywhere; }
+.item-price { overflow-wrap: anywhere; }
+.order-item-row { flex-shrink: 0; }
+.order-options, .check-in-btn { min-height: 48px; }
+
 @media (max-width: 1100px) {
-    .display-products-area { padding: 16px; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
-    .order-area .head-area .search-nav { padding: 16px; }
-    .check-area { width: 300px; }
+  .display-products-area { padding: 12px; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
+  .order-area .head-area .search-nav { padding: 12px; }
+  .check-area { width: 320px; }
 }
 
-@media (max-width: 900px) {
-    .main-order-area { flex-direction: column; }
-    .check-area { position: static; width: 100%; height: auto; min-height: 360px; border-left: none; border-top: 1px solid var(--border-color); }
-    .order-items-list { flex: auto; max-height: 360px; }
+/* Tablets and phones use full-width catalog / cart panels. */
+@media (max-width: 1000px) {
+  .main-order-area { flex-direction: column; }
+  .mobile-order-tabs { display: grid; grid-template-columns: 1fr 1fr; flex-shrink: 0; gap: 8px; padding: 10px 12px; background: white; border-bottom: 1px solid var(--border-color); }
+  .mobile-order-tabs button { min-width: 0; min-height: 48px; padding: 8px; border: 1px solid var(--border-color); border-radius: 10px; font-weight: 600; }
+  .mobile-order-tabs button[aria-pressed="true"] { background: var(--main-color); color: white; border-color: var(--main-color); }
+  .mobile-cart-total { display: block; font-size: 12px; overflow-wrap: anywhere; }
+  .main-order-area.mobile-panel-products .check-area, .main-order-area.mobile-panel-cart .order-area { display: none; }
+  .main-order-area .order-area, .main-order-area .check-area { width: 100%; min-height: 0; flex: 1; height: auto; border-left: 0; }
+  .mobile-order-context { display: flex; flex-shrink: 0; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 12px 0; font-size: 13px; }
+  .mobile-order-context span { min-width: 0; overflow-wrap: anywhere; }
+  .mobile-order-context button { display: flex; align-items: center; justify-content: center; gap: 4px; flex-shrink: 0; min-height: 44px; padding: 8px 12px; border: 1px solid var(--main-border); border-radius: 8px; background: var(--main-soft); color: var(--main-color); }
+  .check-area .orders { flex-wrap: nowrap; overflow-x: auto; overflow-y: hidden; max-height: none; gap: 10px; padding: 10px 12px; }
+  .check-area .order-btn { flex-shrink: 0; width: 112px; height: 54px; padding-right: 40px; }
+  .check-area .order-label { width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .check-area .order-btn .close-btn { display: flex; width: 40px; height: 44px; right: 0; top: 4px; border-radius: 8px; }
+  .check-area .new-order-btn { flex-shrink: 0; height: 54px; }
+  .check-area .order-items-list { flex: 1; min-height: 0; max-height: none; overflow-y: auto; padding: 12px; }
+  .qty-control-area { gap: 6px; }
+  .decrease-qty, .increase-qty { width: 44px; height: 44px; }
+  .check-area .order-bottom-area { padding: 12px; background: white; }
+  .order-total { padding-bottom: 8px; }
+  .order-total .total-text, .order-total .total-price { font-size: 22px; }
 }
 
-@media (max-width: 430px) {
-    .display-products-area { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; padding: 12px; }
-    .order-area .head-area .search-nav { padding: 12px; }
-    .search-button { padding: 8px 12px; }
+@media (max-width: 767px) {
+  .main-order-area { margin-left: 0; height: calc(100dvh - 73px - max(0px, env(safe-area-inset-top) - 14px) - 64px - env(safe-area-inset-bottom)); padding: 0; }
+  .main-order-area .display-products-area { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .main-order-area .searchbar input { font-size: 16px; height: 44px; }
+  .main-order-area .head-area { margin-bottom: 0; }
+  .main-order-area .product-card-btn { min-height: 136px; padding: 12px; }
+  .main-order-area .product-title { font-size: 14px; }
+  .main-order-area .price-tag { font-size: 18px; }
 }
 
-@media (max-width: 360px) {
-    .display-products-area { grid-template-columns: minmax(0, 1fr); }
+@media (max-width: 359px) {
+  .order-item-row { flex-wrap: wrap; }
+  .order-item-row .item-name-price-area { flex-basis: 100%; }
+  .order-item-row .qty-control-area { margin-left: auto; }
+}
+@media (max-height: 500px) and (max-width: 1000px) {
+  .main-order-area { height: auto; min-height: 100dvh; overflow: visible; padding-bottom: calc(80px + env(safe-area-inset-bottom)); }
+  .main-order-area .order-area { overflow: visible; }
+  .main-order-area .display-products-area { overflow: visible; flex: auto; }
+  .main-order-area .check-area { flex: auto; }
+  .main-order-area .order-items-list { overflow: visible; flex: auto; }
 }

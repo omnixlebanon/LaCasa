@@ -320,7 +320,7 @@ function Order() {
             <div className={`main-order-area mobile-panel-${mobilePanel}`}>
                 <div className="mobile-order-tabs" aria-label="Order view">
                     <button aria-pressed={mobilePanel === 'products'} onClick={() => setMobilePanel('products')}>Products</button>
-                    <button aria-pressed={mobilePanel === 'cart'} onClick={() => setMobilePanel('cart')}>Cart / {activeOrder?.items?.reduce((sum, item) => sum + item.qty, 0) || 0} / {formatPrice(totalPrice)}</button>
+                    <button aria-pressed={mobilePanel === 'cart'} onClick={() => setMobilePanel('cart')}><span>Cart ({activeOrder?.items?.reduce((sum, item) => sum + item.qty, 0) || 0})</span><span className="mobile-cart-total">{formatPrice(totalPrice)}</span></button>
                 </div>
                 <div className='order-area'>
                     <div className="mobile-order-context">
@@ -378,7 +378,7 @@ function Order() {
                                         className={`order-btn ${activeOrderId === order.id ? 'active' : ''}`}
                                         onClick={() => setActiveOrderId(order.id)}
                                     >
-                                        <button className="close-btn" onClick={(e) => handleCloseOrder(order.id, e)}>
+                                        <button className="close-btn" aria-label={`Close ${order.label}`} onClick={(e) => handleCloseOrder(order.id, e)}>
                                             <X />
                                         </button>
                                         <Ticket className="order-icon" />
@@ -399,9 +399,9 @@ function Order() {
                                         <span className='item-price'>{formatPrice(item.product_price * item.qty)}</span>
                                     </div>
                                     <span className="qty-control-area">
-                                        <button className='decrease-qty' onClick={() => removeProductFromOrder(item)}><Minus /></button>
+                                        <button aria-label={`Remove one ${item.product_name}`} className='decrease-qty' onClick={() => removeProductFromOrder(item)}><Minus /></button>
                                         <span className="item-qty">{item.qty}x</span>
-                                        <button className='increase-qty' onClick={() => addProductToOrder(item)}><Plus /></button>
+                                        <button aria-label={`Add one ${item.product_name}`} className='increase-qty' onClick={() => addProductToOrder(item)}><Plus /></button>
                                     </span>
                                 </div>
                             ))
@@ -419,7 +419,7 @@ function Order() {
                         </div>
                         <div className='order-action-buttons'>
                             <button
-                                className='order-options'
+                                aria-label='Order options' className='order-options'
                                 onClick={() => setOptionsOpen(true)}
                                 disabled={isProcessing}
                             >
