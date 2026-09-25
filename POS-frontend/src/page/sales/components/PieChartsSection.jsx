@@ -63,7 +63,7 @@ export const PieChartsSection = ({ productMetrics, categorySummaries }) => {
       {	/* Pie Chart */}
       <div className="w-full">
         {	/* Chart Canvas */}
-        <div className="h-72 w-full flex items-center justify-center">
+        <div className="sales-pie-canvas h-72 w-full flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
             {activeTab === "units" ? <PieChart>
                 <Pie data={unitsPieData} cx="50%" cy="50%" outerRadius={100} innerRadius={50} paddingAngle={3} dataKey="value" label={({ percent }) => percent > .05 ? `${(percent * 100).toFixed(0)}%` : ""}>

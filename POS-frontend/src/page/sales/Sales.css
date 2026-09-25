@@ -752,3 +752,21 @@
 #sales-dashboard .sales-breakdown-search input { width: 100%; min-width: 0; min-height: 44px; border: 0; background: transparent; font-size: 16px; padding: 8px 0; }
 #sales-dashboard .sales-breakdown-search button { display: grid; place-items: center; flex-shrink: 0; width: 44px; min-height: 44px; }
 @media (max-width: 600px) { #sales-dashboard .sales-breakdown-search { flex-basis: 100%; } }
+
+/* Highlight the complete search control, including its icon and clear button. */
+#sales-dashboard .sales-breakdown-search:focus-within {
+    border-color: var(--main-color);
+    box-shadow: 0 0 0 3px var(--main-soft);
+}
+#sales-dashboard .sales-breakdown-search input:focus {
+    outline: none;
+    box-shadow: none;
+}
+/* Pointer interaction should not draw browser outlines around SVG charts. */
+#sales-dashboard .sales-pie-canvas :focus:not(:focus-visible) {
+    outline: none;
+}
+#sales-dashboard .sales-pie-canvas :focus-visible {
+    outline: 2px solid var(--main-color);
+    outline-offset: 3px;
+}
