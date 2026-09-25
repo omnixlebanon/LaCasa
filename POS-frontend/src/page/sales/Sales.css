@@ -745,3 +745,10 @@
 #sales-dashboard .sales-breakdown-slider::-webkit-scrollbar { height: 8px; }
 #sales-dashboard .sales-breakdown-slider::-webkit-scrollbar-track { background: var(--border-color); border-radius: 8px; }
 #sales-dashboard .sales-breakdown-slider::-webkit-scrollbar-thumb { background: var(--main-color); border-radius: 8px; }
+
+#sales-dashboard .sales-breakdown-toolbar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+#sales-dashboard .sales-breakdown-search { display: flex; align-items: center; gap: 8px; flex: 0 1 300px; min-width: 0; max-width: 100%; padding-left: 12px; border: 1px solid var(--border-color); border-radius: 8px; background: white; }
+#sales-dashboard .sales-breakdown-search > svg { flex-shrink: 0; color: var(--font-color); }
+#sales-dashboard .sales-breakdown-search input { width: 100%; min-width: 0; min-height: 44px; border: 0; background: transparent; font-size: 16px; padding: 8px 0; }
+#sales-dashboard .sales-breakdown-search button { display: grid; place-items: center; flex-shrink: 0; width: 44px; min-height: 44px; }
+@media (max-width: 600px) { #sales-dashboard .sales-breakdown-search { flex-basis: 100%; } }

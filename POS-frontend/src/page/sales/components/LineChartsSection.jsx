@@ -1,9 +1,18 @@
 import { useCurrency } from '../../../global.jsx';
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
+import { Search, X } from "lucide-react";
 import { formatNumber, PRODUCT_COLORS } from "../utils/analytics";
 import { ResponsiveContainer, AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 export const LineChartsSection = ({ data, products, metricView = "all", onMetricViewChange, missingCosts = 0 }) => {
   const { formatPrice: formatCurrency, formatCompactPrice } = useCurrency();
+	const [productSearch, setProductSearch] = useState("");
+	const productSliderRef = useRef(null);
+	const productSearchRef = useRef(null);
+	const filteredProducts = products.map((product, index) => ({ product, index })).filter(({ product }) => product.name.toLowerCase().includes(productSearch.trim().toLowerCase()));
+	const updateProductSearch = value => {
+		setProductSearch(value);
+		if (productSliderRef.current) productSliderRef.current.scrollLeft = 0;
+	};
 	const [chartMode, setChartMode] = useState("financials");
 	const [selectedProductIds, setSelectedProductIds] = useState(products.slice(0, 4).map((p) => p.id));
 	const toggleProductFilter = (id) => {
@@ -56,11 +65,16 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
 
       {	/* Product Filter Chips for Product Breakdown Mode */}
       {chartMode === "products" && <div className="sales-breakdown-filters">
-          <span className="text-slate-500 font-medium flex items-center gap-1 mr-1">
-             Toggle Products:
-          </span>
-          <div className="sales-breakdown-slider" role="region" aria-label="Choose products for the breakdown; scroll horizontally for more" tabIndex={0}>
-          {products.map((p, idx) => {
+          <div className="sales-breakdown-toolbar">
+            <span>Toggle Products:</span>
+            <div className="sales-breakdown-search">
+              <Search size={16} aria-hidden="true" />
+              <input ref={productSearchRef} type="search" aria-label="Search products in breakdown" placeholder="Search products..." value={productSearch} onChange={event => updateProductSearch(event.target.value)} />
+              {productSearch && <button type="button" aria-label="Clear product search" onClick={() => { updateProductSearch(''); productSearchRef.current?.focus(); }}><X size={16} aria-hidden="true" /></button>}
+            </div>
+          </div>
+          <div ref={productSliderRef} className="sales-breakdown-slider" role="region" aria-label="Choose products for the breakdown; scroll horizontally for more" tabIndex={0}>
+          {filteredProducts.map(({ product: p, index: idx }) => {
 		const isChecked = selectedProductIds.includes(p.id);
 		const color = PRODUCT_COLORS[idx % PRODUCT_COLORS.length];
 		return <button key={p.id} aria-pressed={isChecked} onClick={() => toggleProductFilter(p.id)} className={`px-2.5 py-1 rounded-lg font-medium transition-all flex items-center gap-1.5 ${isChecked ? "bg-slate-100 text-slate-800 border border-slate-200" : "bg-white text-slate-500 border border-slate-200 opacity-60"}`}>
@@ -69,6 +83,7 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
               </button>;
 	})}
           </div>
+          {!filteredProducts.length && <p role="status">No products match your search.</p>}
         </div>}
 
       {	/* Main Chart Canvas */}
