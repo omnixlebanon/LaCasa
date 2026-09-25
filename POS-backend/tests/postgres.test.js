@@ -297,3 +297,31 @@ test('checkout ignores supplied costs, flags missing recipes, and rolls back fai
   assert.equal(zeroSaved.details.items[0].unit_cost, 0);
   assert.equal(zeroSaved.details.items[0].cost_source, 'no_recipe');
 });
+
+test('POS visibility filters products/categories while keeping management and history intact', async () => {
+  const auth = await request('/auth/login', 'POST', { username: 'admin', password: 'test-password' });
+  cookie = auth.headers.get('set-cookie').split(';')[0];
+  const [category] = await db.execute('INSERT INTO product_categories (p_category_name) VALUES (?)', ['Visibility test']);
+  const [one] = await db.execute('INSERT INTO products (product_name, product_category, product_price) VALUES (?, ?, ?)', ['Visible one', 'Visibility test', 5]);
+  const [two] = await db.execute('INSERT INTO products (product_name, product_category, product_price) VALUES (?, ?, ?)', ['Hidden two', 'Visibility test', 6]);
+  assert.equal((await request(`/products/${two.insertId}/visibility`, 'PATCH', { hidden: true })).status, 200);
+  let visible = (await request('/products?scope=pos')).data;
+  assert.ok(visible.some(p => p.product_id === one.insertId));
+  assert.ok(!visible.some(p => p.product_id === two.insertId));
+  assert.ok((await request('/products')).data.some(p => p.product_id === two.insertId));
+  assert.equal((await request(`/products/categories/${category.insertId}/visibility`, 'PATCH', { hidden: true })).status, 200);
+  assert.ok(!(await request('/products?scope=pos')).data.some(p => p.product_category === 'Visibility test'));
+  assert.ok(!(await request('/products/categories?scope=pos')).data.some(c => c.p_category_id === category.insertId));
+  assert.ok((await request('/products/categories')).data.some(c => c.p_category_id === category.insertId));
+  assert.equal((await request(`/products/categories/${category.insertId}/visibility`, 'PATCH', { hidden: false })).status, 200);
+  visible = (await request('/products?scope=pos')).data;
+  assert.ok(visible.some(p => p.product_id === one.insertId));
+  assert.ok(!visible.some(p => p.product_id === two.insertId));
+  assert.equal((await request(`/products/${two.insertId}/visibility`, 'PATCH', { hidden: 'false' })).status, 400);
+  assert.equal((await request('/products/9999999/visibility', 'PATCH', { hidden: true })).status, 404);
+  const admin = cookie;
+  cookie = 'token=' + require('jsonwebtoken').sign({ user_id: 1, access_level: 'employee' }, process.env.JWT_TOKEN);
+  assert.equal((await request(`/products/${one.insertId}/visibility`, 'PATCH', { hidden: true })).status, 403);
+  assert.equal((await request(`/products/categories/${category.insertId}/visibility`, 'PATCH', { hidden: true })).status, 403);
+  cookie = admin;
+});

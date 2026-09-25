@@ -12,7 +12,8 @@
     "test:postgres": "node --test tests/postgres.test.js",
     "test": "node --test tests/*.test.js",
     "test:integration": "node --test tests/integration/*.integration.js",
-    "migrate:expenses": "node scripts/migrate-expenses.js"
+    "migrate:expenses": "node scripts/migrate-expenses.js",
+    "migrate:product-visibility": "node scripts/migrate-product-visibility.js"
   },
   "keywords": [],
   "author": "",

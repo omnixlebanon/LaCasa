@@ -15,6 +15,10 @@ function ProductManag() {
     const [categoryError, setCategoryError] = useState('');
     const { currencyLabel } = useCurrency();
     const [products, setProducts] = useState([]);
+    const [categoryRecords, setCategoryRecords] = useState([]);
+    const [visibilityBusy, setVisibilityBusy] = useState(null);
+    const [visibilityError, setVisibilityError] = useState('');
+    const [visibilityFilter, setVisibilityFilter] = useState('');
     const [categories, setCategories] = useState([]); // Single source of truth for categories
     const [categoryFilter, setCategoryFilter] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
@@ -26,6 +30,16 @@ function ProductManag() {
     const [selectedCatId, setSelectedCatId] = useState("");
     const [editCatName, setEditCatName] = useState("");
     const [newCatName, setNewCatName] = useState("");
+
+    const toggleCategoryVisibility = async category => {
+        if (visibilityBusy !== null) return;
+        setVisibilityBusy(category.p_category_id); setVisibilityError('');
+        try {
+            await api.patch(`/api/products/categories/${category.p_category_id}/visibility`, { hidden: Number(category.pos_hidden) !== 1 });
+            await Promise.all([fetchData(), fetchCategories()]);
+        } catch (error) { setVisibilityError(error.response?.data?.error || 'Could not change category visibility.'); }
+        finally { setVisibilityBusy(null); }
+    };
 
     // Fetch products
     const fetchData = async () => {
@@ -51,6 +65,7 @@ function ProductManag() {
             // Extract the name values from database query results
             const categoryNames = res.data.map(cat => cat.p_category_name || cat.category_name);
             setCategories(categoryNames);
+            setCategoryRecords(res.data);
         } catch (error) {
             console.error("Failed to get categories data", error);
             setCategoryError('Could not load categories. Please try again.');
@@ -61,6 +76,7 @@ function ProductManag() {
 
     const sortedProducts = useMemo(() => {
         let result = [...products];
+        if (visibilityFilter) result = result.filter(product => (Number(product.pos_hidden) === 1 || Number(product.category_hidden) === 1) === (visibilityFilter === 'hidden'));
 
         if (searchQuery.trim() !== "") {
             const term = searchQuery.toLowerCase();
@@ -75,7 +91,7 @@ function ProductManag() {
             });
         }
         return result;
-    }, [products, searchQuery, categoryFilter]);
+    }, [products, searchQuery, categoryFilter, visibilityFilter]);
 
     const handleAdd = async (e) => {
         if (e) e.preventDefault();
@@ -315,6 +331,7 @@ function ProductManag() {
                         <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </div>
                     <div className="searchFilters">
+                        <select aria-label="POS visibility" value={visibilityFilter} onChange={event => setVisibilityFilter(event.target.value)}><option value="">All visibility</option><option value="visible">Visible in POS</option><option value="hidden">Hidden from POS</option></select>
                         <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
                             <option value="">All Categories</option>
                             {categories.map((category, index) => (
@@ -332,6 +349,14 @@ function ProductManag() {
                     </div>
                 </div>
 
+                <section className="category-visibility-panel" aria-label="Category POS visibility">
+                    <h3>Categories in POS</h3><p>Hiding a category hides all its products. Showing it again keeps individually hidden products hidden.</p>
+                    {visibilityError && <p role="alert">{visibilityError}</p>}
+                    <div>{categoryRecords.map(category => <button type="button" key={category.p_category_id} disabled={visibilityBusy !== null} onClick={() => toggleCategoryVisibility(category)} aria-pressed={Number(category.pos_hidden) !== 1}>
+                        <strong>{category.p_category_name}</strong><span>{visibilityBusy === category.p_category_id ? 'Saving...' : Number(category.pos_hidden) === 1 ? 'Hidden - show in POS' : 'Visible - hide from POS'}</span>
+                    </button>)}</div>
+                </section>
+                {!sortedProducts.length && <p className="product-empty">No products match your filters.</p>}
                 <div className='display-area'>
                     {sortedProducts.map((product) => (
                         <ProductCard key={product.product_id} data={product} categories={categories} onProductEdit={fetchData} />

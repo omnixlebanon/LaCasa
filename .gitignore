@@ -9,3 +9,5 @@ obj/
 telegram-bot/receipts/
 **/batch-expiration-backup-*.json
 *.traineddata
+
+POS-backend/catalog-backups/

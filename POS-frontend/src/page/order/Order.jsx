@@ -71,8 +71,8 @@ function Order() {
         setLoadError('');
         try {
             const [categories_res, product_res] = await Promise.all([
-                api.get('/api/products/categories'),
-                api.get('/api/products')
+                api.get('/api/products/categories', { params: { scope: 'pos' } }),
+                api.get('/api/products', { params: { scope: 'pos' } })
             ]);
             setCategories(categories_res.data);
             setProducts(product_res.data);

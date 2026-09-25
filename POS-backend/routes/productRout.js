@@ -1,11 +1,25 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
+const { requireAdmin } = require('../middleware/auth');
+
+// Visibility only controls the POS catalog; records and sales history stay intact.
+for (const [route, table, key] of [['/products/:id/visibility', 'products', 'product_id'], ['/products/categories/:id/visibility', 'product_categories', 'p_category_id']]) {
+  router.patch(route, requireAdmin, async (req, res) => {
+    if (typeof req.body?.hidden !== 'boolean' || !/^[1-9]\d*$/.test(req.params.id) || !Number.isSafeInteger(Number(req.params.id))) return res.status(400).json({ error: 'Provide a valid ID and hidden boolean.' });
+    try {
+      const [[record]] = await db.query(`SELECT ${key} FROM ${table} WHERE ${key} = ?`, [req.params.id]);
+      if (!record) return res.status(404).json({ error: 'Product or category not found.' });
+      await db.query(`UPDATE ${table} SET pos_hidden = ? WHERE ${key} = ?`, [req.body.hidden ? 1 : 0, req.params.id]);
+      res.json({ success: true });
+    } catch (error) { console.error('Visibility update failed:', error); res.status(500).json({ error: 'Could not update POS visibility. Check the product visibility migration has run.' }); }
+  });
+}
 
 // GET catefories
 router.get('/products/categories', async (req,res) => {
     try{
-        const [rows] = await db.query(`SELECT * FROM product_categories`);
+        const [rows] = await db.query(`SELECT * FROM product_categories ${req.query.scope === 'pos' ? 'WHERE pos_hidden = 0' : ''}`);
         res.json(rows);
     }catch (err){
         res.status(500).json({error:"Error getting products categories: " + err.message})
@@ -66,7 +80,7 @@ router.delete('/products/category/:name', async (req, res) => {
 // GET /products
 router.get('/products', async (req, res) => {
     try {
-        const [rows] = await db.query(`SELECT * FROM products`);
+        const [rows] = await db.query(`SELECT p.*, COALESCE(c.pos_hidden, 0) AS category_hidden FROM products p LEFT JOIN product_categories c ON c.p_category_name = p.product_category ${req.query.scope === 'pos' ? 'WHERE p.pos_hidden = 0 AND COALESCE(c.pos_hidden, 0) = 0' : ''}`);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: "Error getting products: " + err.message });

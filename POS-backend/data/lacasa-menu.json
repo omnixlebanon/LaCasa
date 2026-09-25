@@ -1,0 +1,821 @@
+[
+  {
+    "name": "Espresso",
+    "category": "Hot Drinks",
+    "price": 1,
+    "description": "",
+    "image": "imgs/items/Espresso.png",
+    "sourcePath": "hotDrinks",
+    "productName": "Espresso"
+  },
+  {
+    "name": "Double Espresso",
+    "category": "Hot Drinks",
+    "price": 1.5,
+    "description": "",
+    "image": "imgs/items/Espresso.png",
+    "sourcePath": "hotDrinks",
+    "productName": "Double Espresso"
+  },
+  {
+    "name": "Sip & Snap",
+    "category": "Hot Drinks",
+    "price": 1.5,
+    "description": "A bold shot of espresso served in a fully edible mug",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Sip & Snap"
+  },
+  {
+    "name": "Chocolate Bombs",
+    "category": "Hot Drinks",
+    "price": 4.5,
+    "description": "Spiced holiday warmth",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Chocolate Bombs"
+  },
+  {
+    "name": "Latte",
+    "category": "Hot Drinks",
+    "price": 2.5,
+    "description": "Coffee with steamed milk.",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Latte"
+  },
+  {
+    "name": "White Latte",
+    "category": "Hot Drinks",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "White Latte"
+  },
+  {
+    "name": "Spanish Latte",
+    "category": "Hot Drinks",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Spanish Latte"
+  },
+  {
+    "name": "Mocha Latte",
+    "category": "Hot Drinks",
+    "price": 3.5,
+    "description": "",
+    "image": "imgs/items/mocca_hot.jpeg",
+    "sourcePath": "hotDrinks",
+    "productName": "Mocha Latte"
+  },
+  {
+    "name": "Flavored Latte",
+    "category": "Hot Drinks",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Flavored Latte"
+  },
+  {
+    "name": "Flat white",
+    "category": "Hot Drinks",
+    "price": 3,
+    "description": "",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Flat white"
+  },
+  {
+    "name": "Nescafe",
+    "category": "Hot Drinks",
+    "price": 1.5,
+    "description": "coffemate/ milk /nestle",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Nescafe (Milk/Coffeemate/Nestle)"
+  },
+  {
+    "name": "Nescafe",
+    "category": "Hot Drinks",
+    "price": 1,
+    "description": "3in 1",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Nescafe (3 in 1)"
+  },
+  {
+    "name": "Cappuccino",
+    "category": "Hot Drinks",
+    "price": 3.5,
+    "description": "Espresso, steamed milk, foam.",
+    "image": "imgs/items/Cappuccino.png",
+    "sourcePath": "hotDrinks",
+    "productName": "Cappuccino"
+  },
+  {
+    "name": "Cappuccino Turbica",
+    "category": "Hot Drinks",
+    "price": 1.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Cappuccino Turbica"
+  },
+  {
+    "name": "Hot chocolate",
+    "category": "Hot Drinks",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Hot chocolate"
+  },
+  {
+    "name": "Cortado",
+    "category": "Hot Drinks",
+    "price": 2,
+    "description": "",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Cortado"
+  },
+  {
+    "name": "Matcha",
+    "category": "Hot Drinks",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Matcha"
+  },
+  {
+    "name": "Vanillia Matcha",
+    "category": "Hot Drinks",
+    "price": 4.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Vanillia Matcha"
+  },
+  {
+    "name": "Sahlab",
+    "category": "Hot Drinks",
+    "price": 2.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Sahlab"
+  },
+  {
+    "name": "Tea",
+    "category": "Hot Drinks",
+    "price": 1,
+    "description": "",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Tea"
+  },
+  {
+    "name": "Zhorat",
+    "category": "Hot Drinks",
+    "price": 1,
+    "description": "",
+    "image": "",
+    "sourcePath": "hotDrinks",
+    "productName": "Zhorat"
+  },
+  {
+    "name": "Chocolate Milkshake",
+    "category": "Milkshakes",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.milkshakes",
+    "productName": "Chocolate Milkshake"
+  },
+  {
+    "name": "Strawberry Milkshake",
+    "category": "Milkshakes",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.milkshakes",
+    "productName": "Strawberry Milkshake"
+  },
+  {
+    "name": "Oreo Milkshake",
+    "category": "Milkshakes",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.milkshakes",
+    "productName": "Oreo Milkshake"
+  },
+  {
+    "name": "lotus Milkshake",
+    "category": "Milkshakes",
+    "price": 3.5,
+    "description": "",
+    "image": "imgs/items/lutes_shaks.jpeg",
+    "sourcePath": "coldDrinks.milkshakes",
+    "productName": "lotus Milkshake"
+  },
+  {
+    "name": "Vanillia Milkshake",
+    "category": "Milkshakes",
+    "price": 3.5,
+    "description": "",
+    "image": "imgs/items/vanila_shake.jpeg",
+    "sourcePath": "coldDrinks.milkshakes",
+    "productName": "Vanillia Milkshake"
+  },
+  {
+    "name": "Iced Latte",
+    "category": "Iced Coffee",
+    "price": 3,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.iceCoffee",
+    "productName": "Iced Latte"
+  },
+  {
+    "name": "Flavored Iced Latte",
+    "category": "Iced Coffee",
+    "price": 3.5,
+    "description": "caramel/hazelnut/vanilla/mocha",
+    "image": "",
+    "sourcePath": "coldDrinks.iceCoffee",
+    "productName": "Flavored Iced Latte"
+  },
+  {
+    "name": "Suger Free Flavored Iced Latte",
+    "category": "Iced Coffee",
+    "price": 3.5,
+    "description": "careml/vanilla",
+    "image": "",
+    "sourcePath": "coldDrinks.iceCoffee",
+    "productName": "Suger Free Flavored Iced Latte"
+  },
+  {
+    "name": "Iced Spanish",
+    "category": "Iced Coffee",
+    "price": 4,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.iceCoffee",
+    "productName": "Iced Spanish"
+  },
+  {
+    "name": "Iced Americano",
+    "category": "Iced Coffee",
+    "price": 2.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.iceCoffee",
+    "productName": "Iced Americano"
+  },
+  {
+    "name": "Iced Vanilla Matcha",
+    "category": "Iced Coffee",
+    "price": 5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.iceCoffee",
+    "productName": "Iced Vanilla Matcha"
+  },
+  {
+    "name": "Iced Strawberry Matcha",
+    "category": "Iced Coffee",
+    "price": 5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.iceCoffee",
+    "productName": "Iced Strawberry Matcha"
+  },
+  {
+    "name": "vanillia frappe",
+    "category": "Frappes",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.frappes",
+    "productName": "vanillia frappe"
+  },
+  {
+    "name": "White Mocha frappe",
+    "category": "Frappes",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.frappes",
+    "productName": "White Mocha frappe"
+  },
+  {
+    "name": "Mocha frappe",
+    "category": "Frappes",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.frappes",
+    "productName": "Mocha frappe"
+  },
+  {
+    "name": "Caramel frappe",
+    "category": "Frappes",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.frappes",
+    "productName": "Caramel frappe"
+  },
+  {
+    "name": "Salted Caramel frappe",
+    "category": "Frappes",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.frappes",
+    "productName": "Salted Caramel frappe"
+  },
+  {
+    "name": "Mango",
+    "category": "Smoothies",
+    "price": 3,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.smoothies",
+    "productName": "Mango (Smoothies)"
+  },
+  {
+    "name": "Strawberry",
+    "category": "Smoothies",
+    "price": 3,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.smoothies",
+    "productName": "Strawberry"
+  },
+  {
+    "name": "Mango & Strawberry",
+    "category": "Smoothies",
+    "price": 3,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.smoothies",
+    "productName": "Mango & Strawberry"
+  },
+  {
+    "name": "Blueberry",
+    "category": "Smoothies",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.smoothies",
+    "productName": "Blueberry (Smoothies)"
+  },
+  {
+    "name": "Raspberry",
+    "category": "Smoothies",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.smoothies",
+    "productName": "Raspberry"
+  },
+  {
+    "name": "Mix berries",
+    "category": "Smoothies",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.smoothies",
+    "productName": "Mix berries"
+  },
+  {
+    "name": "Passion Fruit",
+    "category": "Smoothies",
+    "price": 3,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.smoothies",
+    "productName": "Passion Fruit"
+  },
+  {
+    "name": "Mango and Passion Friut",
+    "category": "Smoothies",
+    "price": 3,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.smoothies",
+    "productName": "Mango and Passion Friut"
+  },
+  {
+    "name": "Lemonade",
+    "category": "Juices",
+    "price": 2.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.juices",
+    "productName": "Lemonade"
+  },
+  {
+    "name": "Minted Lemonade",
+    "category": "Juices",
+    "price": 2.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.juices",
+    "productName": "Minted Lemonade"
+  },
+  {
+    "name": "Mango",
+    "category": "Juices",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.juices",
+    "productName": "Mango (Juices)"
+  },
+  {
+    "name": "500mL Water",
+    "category": "Water",
+    "price": 0.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.water",
+    "productName": "500mL Water"
+  },
+  {
+    "name": "Sparkling Water",
+    "category": "Water",
+    "price": 1,
+    "description": "",
+    "image": "imgs/items/rim-sparkling-water.png",
+    "sourcePath": "coldDrinks.water",
+    "productName": "Sparkling Water (Water)"
+  },
+  {
+    "name": "Pepsi",
+    "category": "Soft Drinks",
+    "price": 1,
+    "description": "",
+    "image": "imgs/items/pepsi.png",
+    "sourcePath": "coldDrinks.softDrinks",
+    "productName": "Pepsi"
+  },
+  {
+    "name": "Miranda",
+    "category": "Soft Drinks",
+    "price": 1,
+    "description": "",
+    "image": "imgs/items/Miranda.png",
+    "sourcePath": "coldDrinks.softDrinks",
+    "productName": "Miranda"
+  },
+  {
+    "name": "7UP",
+    "category": "Soft Drinks",
+    "price": 1,
+    "description": "",
+    "image": "imgs/items/7up.png",
+    "sourcePath": "coldDrinks.softDrinks",
+    "productName": "7UP"
+  },
+  {
+    "name": "Iced Tea",
+    "category": "Soft Drinks",
+    "price": 1,
+    "description": "",
+    "image": "imgs/items/lipton-ice-tea.png",
+    "sourcePath": "coldDrinks.softDrinks",
+    "productName": "Iced Tea"
+  },
+  {
+    "name": "Homemade Ice Tea",
+    "category": "Soft Drinks",
+    "price": 3,
+    "description": "",
+    "image": "",
+    "sourcePath": "coldDrinks.softDrinks",
+    "productName": "Homemade Ice Tea"
+  },
+  {
+    "name": "Sparkling Water",
+    "category": "Soft Drinks",
+    "price": 1,
+    "description": "",
+    "image": "imgs/items/rim-sparkling-water.png",
+    "sourcePath": "coldDrinks.softDrinks",
+    "productName": "Sparkling Water (Soft Drinks)"
+  },
+  {
+    "name": "Boom Boom Energy Drink",
+    "category": "Energy Drinks",
+    "price": 2,
+    "description": "",
+    "image": "imgs/items/boom-boom.png",
+    "sourcePath": "coldDrinks.energyDrinks",
+    "productName": "Boom Boom Energy Drink"
+  },
+  {
+    "name": "Add Grenadine",
+    "category": "Energy Drinks",
+    "price": 0.5,
+    "description": "Add Grenadine to your drink",
+    "image": "",
+    "sourcePath": "coldDrinks.energyDrinks",
+    "productName": "Add Grenadine"
+  },
+  {
+    "name": "Brownie",
+    "category": "Desserts",
+    "price": 1.5,
+    "description": "classic brownie",
+    "image": "",
+    "sourcePath": "desserts",
+    "productName": "Brownie"
+  },
+  {
+    "name": "Brownie Extra",
+    "category": "Desserts",
+    "price": 2.5,
+    "description": "classic brownie filled with Nutella chocolate",
+    "image": "",
+    "sourcePath": "desserts",
+    "productName": "Brownie Extra"
+  },
+  {
+    "name": "Simit",
+    "category": "Desserts",
+    "price": 1.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "desserts",
+    "productName": "Simit (Desserts)"
+  },
+  {
+    "name": "Lazy Cake",
+    "category": "Desserts",
+    "price": 2.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "desserts",
+    "productName": "Lazy Cake"
+  },
+  {
+    "name": "Cookies",
+    "category": "Desserts",
+    "price": 1.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "desserts",
+    "productName": "Cookies"
+  },
+  {
+    "name": "Double Apple",
+    "category": "Shisha",
+    "price": 4,
+    "description": "",
+    "image": "imgs/items/shisha.png",
+    "sourcePath": "shisha",
+    "productName": "Double Apple"
+  },
+  {
+    "name": "Grape & Mint",
+    "category": "Shisha",
+    "price": 4,
+    "description": "",
+    "image": "imgs/items/shisha.png",
+    "sourcePath": "shisha",
+    "productName": "Grape & Mint"
+  },
+  {
+    "name": "Lemon & Mint",
+    "category": "Shisha",
+    "price": 4,
+    "description": "",
+    "image": "imgs/items/shisha.png",
+    "sourcePath": "shisha",
+    "productName": "Lemon & Mint"
+  },
+  {
+    "name": "Love",
+    "category": "Shisha",
+    "price": 4,
+    "description": "",
+    "image": "imgs/items/shisha.png",
+    "sourcePath": "shisha",
+    "productName": "Love"
+  },
+  {
+    "name": "Blueberry",
+    "category": "Shisha",
+    "price": 4,
+    "description": "",
+    "image": "imgs/items/shisha.png",
+    "sourcePath": "shisha",
+    "productName": "Blueberry (Shisha)"
+  },
+  {
+    "name": "Head Change",
+    "category": "Shisha",
+    "price": 2.5,
+    "description": "",
+    "image": "imgs/items/shisha_head.png",
+    "sourcePath": "shisha",
+    "productName": "Head Change"
+  },
+  {
+    "name": "Tablye",
+    "category": "Tablye",
+    "price": 5.5,
+    "description": "Saj Zaatar/cheese + Halloum 3pcs + Labneh + Mortadella 2psc + Habash 2psc + Olives + Tomatoes + Cucumber +Tea",
+    "image": "",
+    "sourcePath": "food.tablye",
+    "productName": "Tablye"
+  },
+  {
+    "name": "Friut Granola Bowl",
+    "category": "Yogurt Bowls",
+    "price": 6,
+    "description": "",
+    "image": "imgs/items/Granola_Bowl.jpeg",
+    "sourcePath": "food.YogurtBowls",
+    "productName": "Friut Granola Bowl"
+  },
+  {
+    "name": "Halloumi Pesto",
+    "category": "Sandwiches",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "food.sandwiches",
+    "productName": "Halloumi Pesto"
+  },
+  {
+    "name": "Cheese",
+    "category": "Sandwiches",
+    "price": 3,
+    "description": "",
+    "image": "",
+    "sourcePath": "food.sandwiches",
+    "productName": "Cheese (Sandwiches)"
+  },
+  {
+    "name": "Labne",
+    "category": "Sandwiches",
+    "price": 2,
+    "description": "",
+    "image": "",
+    "sourcePath": "food.sandwiches",
+    "productName": "Labne"
+  },
+  {
+    "name": "Turkey",
+    "category": "Sandwiches",
+    "price": 3.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "food.sandwiches",
+    "productName": "Turkey"
+  },
+  {
+    "name": "Zaater",
+    "category": "Saj",
+    "price": 1.25,
+    "description": "",
+    "image": "",
+    "sourcePath": "food.saj",
+    "productName": "Zaater"
+  },
+  {
+    "name": "Cheese",
+    "category": "Saj",
+    "price": 2,
+    "description": "",
+    "image": "",
+    "sourcePath": "food.saj",
+    "productName": "Cheese (Saj)"
+  },
+  {
+    "name": "Cocktail",
+    "category": "Saj",
+    "price": 1.75,
+    "description": "",
+    "image": "",
+    "sourcePath": "food.saj",
+    "productName": "Cocktail"
+  },
+  {
+    "name": "Habash",
+    "category": "Saj",
+    "price": 3,
+    "description": "",
+    "image": "",
+    "sourcePath": "food.saj",
+    "productName": "Habash (Saj)"
+  },
+  {
+    "name": "Mortadella",
+    "category": "Saj",
+    "price": 3,
+    "description": "",
+    "image": "",
+    "sourcePath": "food.saj",
+    "productName": "Mortadella (Saj)"
+  },
+  {
+    "name": "Nutella",
+    "category": "Saj",
+    "price": 2.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "food.saj",
+    "productName": "Nutella (Saj)"
+  },
+  {
+    "name": "Cheese",
+    "category": "Croissants",
+    "price": 2.5,
+    "description": "Flaky croissant filled with melted cheese.",
+    "image": "imgs/items/croissant.png",
+    "sourcePath": "food.croissant",
+    "productName": "Cheese (Croissants)"
+  },
+  {
+    "name": "Cheese and Olives",
+    "category": "Croissants",
+    "price": 2.75,
+    "description": "Flaky croissant filled with mild cheese and sliced olives.",
+    "image": "imgs/items/croissant.png",
+    "sourcePath": "food.croissant",
+    "productName": "Cheese and Olives"
+  },
+  {
+    "name": "Mortadella",
+    "category": "Croissants",
+    "price": 3,
+    "description": "Flaky croissant stuffed with mortadella, creamy cheese, crisp iceberg, mayo, and sweet corn",
+    "image": "imgs/items/croissant.png",
+    "sourcePath": "food.croissant",
+    "productName": "Mortadella (Croissants)"
+  },
+  {
+    "name": "Habash",
+    "category": "Croissants",
+    "price": 3.5,
+    "description": "Flaky croissant stuffed with Habash, creamy cheese, crisp iceberg, mayo, and sweet corn",
+    "image": "imgs/items/croissant.png",
+    "sourcePath": "food.croissant",
+    "productName": "Habash (Croissants)"
+  },
+  {
+    "name": "Simit",
+    "category": "Croissants",
+    "price": 1.5,
+    "description": "",
+    "image": "",
+    "sourcePath": "food.croissant",
+    "productName": "Simit (Croissants)"
+  },
+  {
+    "name": "Nutella",
+    "category": "Croissants",
+    "price": 2.5,
+    "description": "Croissant filled with Nutella chocolate spread.",
+    "image": "",
+    "sourcePath": "food.croissant",
+    "productName": "Nutella (Croissants)"
+  },
+  {
+    "name": "lotus",
+    "category": "Croissants",
+    "price": 2.5,
+    "description": "Flaky croissant with smooth Lotus Biscoff filling",
+    "image": "",
+    "sourcePath": "food.croissant",
+    "productName": "lotus"
+  },
+  {
+    "name": "pistachio",
+    "category": "Croissants",
+    "price": 3,
+    "description": "Flaky croissant stuffed with pistachio filling",
+    "image": "",
+    "sourcePath": "food.croissant",
+    "productName": "pistachio"
+  },
+  {
+    "name": "La Casa Croissant",
+    "category": "Croissants",
+    "price": 4,
+    "description": "Flaky croissant filled with smooth pistachio cream, Nutella chocolate spread, and fresh strawberry.",
+    "image": "",
+    "sourcePath": "food.croissant",
+    "productName": "La Casa Croissant"
+  }
+]

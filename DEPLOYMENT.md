@@ -102,3 +102,10 @@ Expenses are entered by administrators in desktop Expenses and are view-only on 
 Run `npm run migrate:expenses -- --supabase` again against the deployed database before deploying this update. The idempotent migration also creates `expense_recurrences`; existing expense records are preserved. Local MySQL uses `npm run migrate:expenses` without `--supabase`.
 
 New checkout records save server-calculated `unit_cost`, `total_cost`, `cost_source` and an order-level cost snapshot in the existing order details JSON, in the same transaction as inventory deduction. Client-supplied costs are overwritten. A missing recipe is explicitly saved as zero cost with `no_recipe` and flagged in Sales. Historical orders without snapshots remain unknown; no current-price backfill is applied. Period cost/profit totals are unavailable if historical costs are missing. Revenue and business expenses remain visible. Expenses affect financial charts and CSV totals on their bill dates; they are not allocated to product profit rankings. Result after expenses excludes payroll and costs not entered in Expenses. Future repeating bills are planned expenses, not payment confirmations.
+
+
+### Product and category POS visibility
+
+Before deploying visibility controls, run `npm run migrate:product-visibility -- --supabase` from `POS-backend` for the deployed Supabase database (uses `SUPABASE_MIGRATION_URL`, falling back to `DATABASE_URL`). For local MySQL, omit `--supabase`. This repeatable migration adds `pos_hidden` flags with visible defaults; nothing is deleted.
+
+Admins can hide/show products and categories in Product Management. POS loads `/products?scope=pos` and `/products/categories?scope=pos`; management and sales retain all records. Category hiding takes precedence over product visibility without changing product flags. Reload an already-open POS to refresh visibility. Existing orders are kept and can still be completed; visibility controls the catalog, not historical records or previously added order items.

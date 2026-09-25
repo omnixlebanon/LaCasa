@@ -81,3 +81,8 @@
 @media (max-width: 700px) {
     .product-card { max-width: none; }
 }
+
+.product-pos-hidden { border-style: dashed; background: var(--sec-bg); }
+.product-visibility-status { font-size: 12px; color: var(--font-color); margin-bottom: 8px; }
+.product-visibility-toggle { display: inline-flex; align-items: center; gap: 6px; min-height: 40px; padding: 8px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); background: white; font-size: 12px; }
+.product-card .action-btns-container { flex-wrap: wrap; }

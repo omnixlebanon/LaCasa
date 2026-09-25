@@ -55,3 +55,11 @@
     .addition-btns { width: 100%; justify-content: flex-start; }
     .addition-btns > button { flex: 1; }
 }
+
+.category-visibility-panel { margin: 20px 0; padding: 16px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: white; }
+.category-visibility-panel > p { color: var(--font-color); margin: 8px 0 12px; }
+.category-visibility-panel > div { display: flex; flex-wrap: wrap; gap: 10px; }
+.category-visibility-panel button { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; padding: 10px 14px; border: 1px solid var(--border-color); border-radius: var(--radius-sm); min-height: 44px; }
+.category-visibility-panel button[aria-pressed="true"] { background: var(--main-soft); border-color: var(--main-border); }
+.category-visibility-panel button span { font-size: 12px; color: var(--font-color); }
+.product-empty { padding: 24px; text-align: center; color: var(--font-color); }
