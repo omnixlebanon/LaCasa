@@ -770,3 +770,8 @@
     outline: 2px solid var(--main-color);
     outline-offset: 3px;
 }
+
+#sales-dashboard .sales-line-chart { min-width: 0; }
+@media (max-width: 767px) {
+    #sales-dashboard .sales-line-chart { padding: 12px; }
+}

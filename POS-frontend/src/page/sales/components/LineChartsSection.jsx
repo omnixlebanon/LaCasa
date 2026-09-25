@@ -1,9 +1,11 @@
 import { useCurrency } from '../../../global.jsx';
 import React, { useState, useRef } from "react";
+import useMobile from '../../../hooks/useMobile.js';
 import { Search, X } from "lucide-react";
 import { formatNumber, PRODUCT_COLORS } from "../utils/analytics";
 import { ResponsiveContainer, AreaChart, Area, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts";
 export const LineChartsSection = ({ data, products, metricView = "all", onMetricViewChange, missingCosts = 0 }) => {
+  const isMobile = useMobile();
   const { formatPrice: formatCurrency, formatCompactPrice } = useCurrency();
 	const [productSearch, setProductSearch] = useState("");
 	const productSliderRef = useRef(null);
@@ -27,7 +29,7 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
 	const showRevenue = metricView === "all" || metricView === "sales";
 	const showCost = !missingCosts && (metricView === "all" || metricView === "cost");
 	const showProfit = !missingCosts && (metricView === "all" || metricView === "profit");
-	return <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
+	return <div className="sales-line-chart bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
       {	/* Chart Header & Controls */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-slate-200 pb-4">
         <div>
@@ -111,7 +113,7 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
               </defs>
               <CartesianGrid strokeDasharray="3 3" stroke="#dfe7e2" vertical={false} />
               <XAxis dataKey="label" stroke="#65776d" fontSize={11} tickLine={false} axisLine={{ stroke: "#dfe7e2" }} />
-              <YAxis stroke="#65776d" fontSize={11} tickLine={false} axisLine={false} tickFormatter={formatCompactPrice} width={95} />
+              <YAxis stroke="#65776d" fontSize={11} tickLine={false} axisLine={false} tickFormatter={formatCompactPrice} width={isMobile ? 'auto' : 95} tickMargin={isMobile ? 4 : 8} />
               <Tooltip contentStyle={{
 		backgroundColor: "#ffffff",
 		borderColor: "#dfe7e2",
@@ -134,7 +136,7 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
 	}}>
               <CartesianGrid strokeDasharray="3 3" stroke="#dfe7e2" vertical={false} />
               <XAxis dataKey="label" stroke="#65776d" fontSize={11} tickLine={false} axisLine={{ stroke: "#dfe7e2" }} />
-              <YAxis stroke="#65776d" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}`} />
+              <YAxis stroke="#65776d" fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `${val}`} width={isMobile ? 'auto' : 60} tickMargin={isMobile ? 4 : 8} />
               <Tooltip contentStyle={{
 		backgroundColor: "#ffffff",
 		borderColor: "#dfe7e2",
@@ -154,7 +156,7 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
 	}}>
               <CartesianGrid strokeDasharray="3 3" stroke="#dfe7e2" vertical={false} />
               <XAxis dataKey="label" stroke="#65776d" fontSize={11} tickLine={false} axisLine={{ stroke: "#dfe7e2" }} />
-              <YAxis stroke="#65776d" fontSize={11} tickLine={false} axisLine={false} tickFormatter={formatCompactPrice} width={95} />
+              <YAxis stroke="#65776d" fontSize={11} tickLine={false} axisLine={false} tickFormatter={formatCompactPrice} width={isMobile ? 'auto' : 95} tickMargin={isMobile ? 4 : 8} />
               <Tooltip contentStyle={{
 		backgroundColor: "#ffffff",
 		borderColor: "#dfe7e2",
