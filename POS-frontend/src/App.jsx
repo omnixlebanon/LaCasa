@@ -1,4 +1,4 @@
-import { createBrowserRouter, RouterProvider, Outlet, Navigate, useLocation } from 'react-router-dom';
+import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom';
 import './App.css'
 import RequestActivity from './components/RequestActivity.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext'
@@ -20,7 +20,6 @@ import MobileNavigation from './layout/sidebar/MobileNavigation.jsx';
 
 const Layout = () => {
   const isMobile = useMobile();
-  const { pathname } = useLocation();
   const { user, loading } = useAuth();
 
   if (loading) {
@@ -29,12 +28,10 @@ const Layout = () => {
   if (loading==true || !user) {
     return <Navigate to="/login" replace />;
   }
-  const mobileHome = user.accessLevel === 'admin' ? '/sales' : '/history';
-  const mobileAllowed = ['/sales', '/history', '/stock', '/shifts', '/expenses'].includes(pathname.replace(/\/$/, ''));
   return (
     <>
       {isMobile ? <MobileNavigation /> : <Sidebar />}
-      {isMobile && !mobileAllowed ? <Navigate to={mobileHome} replace /> : <Outlet />}
+      <Outlet />
     </>
   );
 };

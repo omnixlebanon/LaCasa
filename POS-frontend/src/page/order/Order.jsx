@@ -8,6 +8,7 @@ import { useCurrency } from '../../global.jsx';
 import { useState, useEffect, useMemo, useRef } from 'react';
 
 function Order() {
+    const [mobilePanel, setMobilePanel] = useState('products');
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState('');
     const orderButtonsRef = useRef(null);
@@ -316,8 +317,16 @@ function Order() {
                 handleActiveOption={handleActiveOption}
                 handleSaveChanges={handleSaveChanges}
             />
-            <div className='main-order-area'>
+            <div className={`main-order-area mobile-panel-${mobilePanel}`}>
+                <div className="mobile-order-tabs" aria-label="Order view">
+                    <button aria-pressed={mobilePanel === 'products'} onClick={() => setMobilePanel('products')}>Products</button>
+                    <button aria-pressed={mobilePanel === 'cart'} onClick={() => setMobilePanel('cart')}>Cart / {activeOrder?.items?.reduce((sum, item) => sum + item.qty, 0) || 0} / {formatPrice(totalPrice)}</button>
+                </div>
                 <div className='order-area'>
+                    <div className="mobile-order-context">
+                        <span>{activeOrder ? `Order: ${activeOrder.label}` : 'Create an order to start adding products'}</span>
+                        <button onClick={addOrder}><Plus size={16} /> New order</button>
+                    </div>
                     <div className="head-area">
                         <div className='search-nav'>
                             <div className='searchbar'>

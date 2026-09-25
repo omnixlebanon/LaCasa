@@ -14,11 +14,11 @@ function StockBulk({ data, onItemEdit, onAddBatch }) {
 
     return (
         <tr>
-            <td>{data.item_name}</td>
-            <td>{data.stock}</td>
-            <td>{data.supplier_name || "not defined"}</td>
-            <td>{data.supplier_contact || "not defined"}</td>
-            <td className='add-stock-td'>
+            <td data-label="Ingredient">{data.item_name}</td>
+            <td data-label="Stock">{data.stock}</td>
+            <td data-label="Supplier">{data.supplier_name || "not defined"}</td>
+            <td data-label="Contact">{data.supplier_contact || "not defined"}</td>
+            <td data-label='Add stock' className='add-stock-td'>
                 <div className='add-stock-container'>
                     <input
                         type="number"

@@ -159,7 +159,7 @@ function OrderHistory() {
                     </div>
                 </div>
             )}
-            {!isMobile && refundOpen && (
+            {refundOpen && (
                 <div className="editPopup">
                     <form className="editPopup-container" onSubmit={submitRefund}>
                         <div className="editPopup-head">
@@ -233,7 +233,7 @@ function OrderHistory() {
 
                 <div className='Gap-1rem' />
 
-                {isManager && statusFilter === 'refund_requests' && <><WorkflowRequests readOnly={isMobile} type="refund" title="Refund Requests" emptyMessage="No refund requests have been submitted." onReviewed={fetchData} /><div className='Gap-1rem' /></>}
+                {isManager && statusFilter === 'refund_requests' && <><WorkflowRequests  type="refund" title="Refund Requests" emptyMessage="No refund requests have been submitted." onReviewed={fetchData} /><div className='Gap-1rem' /></>}
 
                 {statusFilter !== 'refund_requests' && <div className='history-display-area'>
                     <table border='1'>
@@ -278,7 +278,7 @@ function OrderHistory() {
                                                             : <span className="history-refunded-status">Refunded</span>)
                                                         :
                                                         statusFilter === 'discounted' ? <span>{formatPrice(Number(getOrderDetails(item).discount) || 0)}</span> :
-                                                        isMobile ? <span>{item.status || 'Completed'}</span> : <button className='refund-btn' onClick={() => { setRefundRequestId(null); setRefundOpen(item); }}>Refund</button>
+                                                        <button className='refund-btn' onClick={() => { setRefundRequestId(null); setRefundOpen(item); }}>Refund</button>
                                                 }
                                             </td>
                                         </tr>

@@ -2,7 +2,6 @@ import { useCallback, useEffect, useState } from 'react';
 import { Receipt, Pencil, Trash2, RefreshCw } from 'lucide-react';
 import api from '../../api.js';
 import { useCurrency } from '../../global.jsx';
-import useMobile from '../../hooks/useMobile.js';
 import MoneyInput from '../../components/MoneyInput.jsx';
 import LoadingState from '../../components/LoadingState.jsx';
 import './Expenses.css';
@@ -11,7 +10,6 @@ const categories = { water: 'Water', electricity: 'Electricity', internet: 'Inte
 const localDate = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
 const emptyForm = () => ({ category: 'electricity', description: '', amount: '', date: localDate(), frequency: 'none', repeat_until: '' });
 export default function Expenses({ onChanged }) {
-  const isMobile = useMobile();
   const { formatPrice, currencyLabel } = useCurrency();
   const [month, setMonth] = useState(() => localDate().slice(0, 7));
   const [rows, setRows] = useState([]);
@@ -34,7 +32,7 @@ export default function Expenses({ onChanged }) {
   const update = event => setForm(current => ({ ...current, [event.target.name]: event.target.value }));
   const save = async event => {
     event.preventDefault();
-    if (busy || isMobile) return;
+    if (busy) return;
     setBusy(true); setError(''); setMessage('');
     try {
       const data = { ...form, amount: form.amount === '' ? '' : Number(form.amount).toFixed(2) };
@@ -49,7 +47,7 @@ export default function Expenses({ onChanged }) {
     finally { setBusy(false); }
   };
   const remove = async row => {
-    if (busy || isMobile || !window.confirm(`Delete "${row.description}" (${formatPrice(row.amount)})?`)) return;
+    if (busy || !window.confirm(`Delete "${row.description}" (${formatPrice(row.amount)})?`)) return;
     setBusy(true); setError(''); setMessage('');
     try {
       await api.delete(`/api/expenses/${row.expense_id}`);
@@ -60,7 +58,7 @@ export default function Expenses({ onChanged }) {
   };
   const stop = async row => {
     const from = window.prompt('Stop repeating from this date (YYYY-MM-DD). Past bills are kept.', localDate());
-    if (!from || busy || isMobile) return;
+    if (!from || busy) return;
     setBusy(true); setError('');
     try { await api.patch(`/api/expenses/${row.expense_id}/stop`, { from }); setMessage('Future repeats stopped.'); await load(); await onChanged?.(); }
     catch (e) { setError(e.response?.data?.error || 'Could not stop repeating.'); }
@@ -73,7 +71,7 @@ export default function Expenses({ onChanged }) {
     <p className="expenses-hint">Manage bills and purchases below. Total Expenses at the top follows the Sales date filter; this list shows the selected expense records month. Sales deducts these bills on their scheduled dates. Repeating bills appear automatically, including in future months; they are scheduled expenses, not payment confirmations.</p>
     {message && <p className="expenses-message" role="status">{message}</p>}
     {error && <p className="error-message" role="alert">{error}</p>}
-    {!isMobile && <form className="expenses-form" onSubmit={save}>
+    <form className="expenses-form" onSubmit={save}>
       <h3>{editing ? 'Edit expense' : 'Record an expense'}</h3>
       <fieldset disabled={busy || loading || !!loadError}>
         <label>Category<select name="category" value={form.category} onChange={update}>{Object.entries(categories).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
@@ -84,12 +82,12 @@ export default function Expenses({ onChanged }) {
         {!editing && form.frequency !== 'none' && <label>Repeat until (optional)<input type="date" name="repeat_until" min={form.date} max="9998-12-31" value={form.repeat_until} onChange={update} /><small>Same day each period; shorter months use their last day. To change an amount later, stop this schedule and create a new one.</small></label>}
         <div className="expenses-form-actions">{editing && <button type="button" onClick={() => { setEditing(null); setForm(emptyForm()); setError(''); }}>Cancel</button>}<button className="add-btn" type="submit">{busy ? 'Saving...' : editing ? 'Save changes' : 'Add expense'}</button></div>
       </fieldset>
-    </form>}
+    </form>
     {loading || loadError ? <LoadingState label="Loading expenses..." error={loadError} onRetry={() => load()} /> : <>
 
       <section className="expenses-list" aria-label="Expenses for selected month">
         {!rows.length && <p className="expenses-empty">No expenses recorded for this month.</p>}
-        {rows.map(row => <article key={row.occurrence_id}><div><span className="expenses-category">{categories[row.category] || row.category}</span><h3>{row.description}</h3><time dateTime={row.expense_date}>{new Date(`${row.expense_date}T00:00:00`).toLocaleDateString()}</time>{row.recurring && <p className="expenses-hint">Repeats {row.frequency}{row.repeat_until ? ` through ${row.repeat_until}` : ''}{row.stopped_before ? `; stopped from ${row.stopped_before}` : ''}</p>}</div><strong>{formatPrice(row.amount)}</strong>{!isMobile && <div className="expenses-actions">{row.recurring ? (!row.stopped_before && <button disabled={busy} onClick={() => stop(row)}>Stop repeating</button>) : <><button disabled={busy} aria-label={`Edit ${row.description}`} onClick={() => { setEditing(row.expense_id); setForm({ category: row.category, description: row.description, amount: Number(row.amount), date: row.expense_date }); setError(''); document.querySelector('.expenses-form')?.scrollIntoView({ behavior: 'smooth' }); }}><Pencil size={18} /></button><button disabled={busy} aria-label={`Delete ${row.description}`} onClick={() => remove(row)}><Trash2 size={18} /></button></>}</div>}</article>)}
+        {rows.map(row => <article key={row.occurrence_id}><div><span className="expenses-category">{categories[row.category] || row.category}</span><h3>{row.description}</h3><time dateTime={row.expense_date}>{new Date(`${row.expense_date}T00:00:00`).toLocaleDateString()}</time>{row.recurring && <p className="expenses-hint">Repeats {row.frequency}{row.repeat_until ? ` through ${row.repeat_until}` : ''}{row.stopped_before ? `; stopped from ${row.stopped_before}` : ''}</p>}</div><strong>{formatPrice(row.amount)}</strong><div className="expenses-actions">{row.recurring ? (!row.stopped_before && <button disabled={busy} onClick={() => stop(row)}>Stop repeating</button>) : <><button disabled={busy} aria-label={`Edit ${row.description}`} onClick={() => { setEditing(row.expense_id); setForm({ category: row.category, description: row.description, amount: Number(row.amount), date: row.expense_date }); setError(''); document.querySelector('.expenses-form')?.scrollIntoView({ behavior: 'smooth' }); }}><Pencil size={18} /></button><button disabled={busy} aria-label={`Delete ${row.description}`} onClick={() => remove(row)}><Trash2 size={18} /></button></>}</div></article>)}
       </section>
     </>}
   </section>;

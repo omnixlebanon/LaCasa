@@ -17,7 +17,7 @@ export default function Shifts() {
     const isMobile = useMobile();
   const { user } = useAuth();
   const isAdmin = user?.accessLevel === 'admin';
-  const canEdit = isAdmin && !isMobile;
+  const canEdit = isAdmin;
   const currentUserId = user?.id ?? user?.user_id;
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));
   const [selectedDate, setSelectedDate] = useState(() => dateKey(new Date()));
@@ -187,6 +187,6 @@ export default function Shifts() {
         return <article key={schedule.recurrence_id}><div><strong>{schedule.user_name}</strong><p>{timeLabel(schedule.start_time)}–{timeLabel(schedule.end_time)} · {repetition}</p><small>From {schedule.starts_on}{schedule.stopped_from ? ` · Stops before ${schedule.stopped_from}` : ' · No end date'}</small></div>{canEdit && <button disabled={busy || loading || !stopDate} onClick={() => stopRecurring(schedule)}>Stop repeating</button>}</article>;
       })}</div>
     </section>}
-    {isAdmin && <WorkflowRequests readOnly={isMobile} type="shift_checkin" title="Shift Check-in Approvals" emptyMessage="No shift check-ins are waiting for review." />}
+    {isAdmin && <WorkflowRequests  type="shift_checkin" title="Shift Check-in Approvals" emptyMessage="No shift check-ins are waiting for review." />}
   </div>;
 }

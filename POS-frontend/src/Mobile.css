@@ -60,3 +60,79 @@
   #sales-dashboard .sales-products-header { padding: 16px; }
   #sales-dashboard .sales-products-scroll { max-width: 100%; }
 }
+
+.mobile-order-tabs, .mobile-order-context { display: none; }
+.mobile-more { flex: 1; min-width: 0; }
+.mobile-more summary { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; min-height: 52px; border-radius: 10px; font-size: 12px; cursor: pointer; list-style: none; }
+.mobile-more summary::-webkit-details-marker { display: none; }
+.mobile-more[open] summary { background: var(--main-soft); color: var(--main-color); }
+.mobile-menu-panel { position: absolute; bottom: calc(100% + 8px); left: 12px; right: 12px; padding: 16px; max-height: calc(100dvh - 180px); overflow-y: auto; background: white; border: 1px solid var(--border-color); border-radius: 16px; box-shadow: 0 8px 40px #18392830; }
+.mobile-menu-links { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; margin: 12px 0; }
+.mobile-menu-links a { padding: 12px 4px; text-align: center; }
+.mobile-rate { border-top: 1px solid var(--border-color); padding-top: 12px; }
+.mobile-rate label { display: block; font-size: 13px; margin-bottom: 8px; }
+.mobile-rate > div { display: flex; gap: 8px; }
+.mobile-rate input { width: 100%; min-width: 0; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; }
+.mobile-rate button { min-height: 44px; padding: 8px 16px; border: 0; border-radius: 8px; background: var(--main-color); color: white; }
+@media (max-width: 767px) {
+  .main-area, #sales-dashboard, .main-order-area { min-width: 0; max-width: 100%; }
+  .main-order-area { margin-left: 0; padding-bottom: calc(88px + env(safe-area-inset-bottom)); min-height: calc(100dvh - 80px); }
+  .mobile-order-tabs { display: grid; grid-template-columns: 1fr 1.5fr; gap: 8px; padding: 12px; position: sticky; top: 0; z-index: 20; background: var(--default-bg); border-bottom: 1px solid var(--border-color); }
+  .mobile-order-tabs button { min-width: 0; min-height: 48px; padding: 10px; border: 1px solid var(--border-color); border-radius: 10px; background: white; font-weight: 600; overflow-wrap: anywhere; }
+  .mobile-order-tabs button[aria-pressed="true"] { color: white; background: var(--main-color); border-color: var(--main-color); }
+  .mobile-panel-products .check-area, .mobile-panel-cart .order-area { display: none; }
+  .order-area .head-area .search-nav { padding: 12px; }
+  .order-area .searchButtons { flex-wrap: nowrap; overflow-x: auto; padding-bottom: 6px; }
+  .order-area .search-button { flex-shrink: 0; min-height: 44px; }
+  .display-products-area { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: 12px; gap: 10px; }
+  .check-area { min-height: calc(100dvh - 240px); }
+  .check-area .orders { padding: 16px 12px; gap: 12px; }
+  .check-area .order-btn { width: 76px; height: 64px; padding-right: 18px; }
+  .check-area .order-btn .close-btn { display: flex; width: 28px; height: 32px; right: 0; top: 0; border-radius: 8px; }
+  .order-label { max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+  .order-items-list { max-height: none; overflow: visible; padding: 12px; }
+  .item-name { white-space: normal; max-width: none; overflow-wrap: anywhere; }
+  .qty-control-area { gap: 6px; }
+  .decrease-qty, .increase-qty { width: 44px; height: 44px; }
+  .order-bottom-area { padding: 16px 12px; }
+  .search-nav, .searchFilters { flex-wrap: wrap; min-width: 0; }
+  .searchFilters { width: 100%; }
+  .searchFilters select { flex: 1 1 130px; min-width: 0; }
+  .main-area input, .main-area select, .main-area textarea, .editPopup input, .editPopup select, .recipePopup input, .layoutPopup input, .layoutPopup select { font-size: 16px; }
+  .editPopup, .recipePopup, .layoutPopup { padding: 12px; }
+  .editPopup .editPopup-container, .recipePopup .recipePopup-container, .layoutPopup-card { max-height: calc(100dvh - 24px); overflow-y: auto; }
+  .editPopup button, .recipePopup button, .layoutPopup button { min-height: 44px; }
+  .floorTablesGrid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px 8px; }
+  .floorTablesGrid .tableWrapper { width: 100%; height: 140px; padding: 16px; margin: 0; }
+  .floorTablesGrid .tableCard { padding: 8px; }
+  .tablesFilter { width: 100%; }
+  .tablesFilter button { flex: 1; padding: 8px; }
+  .layoutPopup-card { padding: 16px; }
+  .stock-page-nav { flex-wrap: wrap; gap: 8px; }
+  .stock-page-nav button { flex: 1 1 140px; }
+  .stock-display-area .add-stock-container { flex-wrap: wrap; justify-content: flex-end; }
+  .stock-display-area .add-stock-td input { width: 80px; }
+  .category-visibility-panel { padding: 12px; }
+  .category-visibility-panel > div { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .category-visibility-panel button { overflow-wrap: anywhere; }
+  .employee-table-wrap { border: 0; overflow: visible; }
+  .employee-list table { display: block; min-width: 0; }
+  .employee-list thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .employee-list tbody { display: grid; gap: 12px; }
+  .employee-list tbody tr { display: block; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 12px; }
+  .employee-list td { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 10px 0; overflow-wrap: anywhere; text-align: right; }
+  .employee-list td::before { content: attr(data-label); flex: 0 0 80px; text-align: left; color: var(--font-color); font-size: 12px; }
+  .employee-list td:last-child { justify-content: flex-end; }
+  .employee-list td:last-child::before { margin-right: auto; }
+  .employee-page .icon-button { width: 44px; height: 44px; padding: 12px; }
+  .payroll-month-controls > label { min-width: 0; width: 100%; }
+  .payroll-table-wrap { max-width: 100%; }
+}
+
+@media (max-width: 767px) {
+  .mobile-order-context { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 12px; font-size: 13px; }
+  .mobile-order-context span { min-width: 0; overflow-wrap: anywhere; }
+  .mobile-order-context button { display: flex; align-items: center; justify-content: center; gap: 4px; flex-shrink: 0; min-height: 44px; padding: 8px 12px; border: 1px solid var(--main-border); border-radius: 8px; background: var(--main-soft); color: var(--main-color); }
+  .stock-nav-action-btns { flex-wrap: wrap; width: 100%; }
+  .stock-nav-action-btns > button { flex: 1 1 130px; }
+}
