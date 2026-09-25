@@ -219,3 +219,32 @@ test('migration copies JSON, IDs and dates; refuses existing tables and rolls ba
     await assert.rejects(migrate('--copy', factories), /Refusing to overwrite/);
   } finally { await target.close(); }
 });
+
+
+test('expenses CRUD, month filtering and admin permissions', async () => {
+  const auth = await request('/auth/login', 'POST', { username: 'admin', password: 'test-password' });
+  cookie = auth.headers.get('set-cookie').split(';')[0];
+  const input = { category: 'furniture', description: 'Dining tables', amount: '120.50', date: '2026-09-25' };
+  const created = await request('/expenses', 'POST', input);
+  assert.equal(created.status, 201); assert.ok(created.data.id);
+  let list = await request('/expenses?month=2026-09');
+  assert.ok(list.data.some(row => row.expense_id === created.data.id && Number(row.amount) === 120.50));
+  assert.equal((await request('/expenses?month=2026-08')).data.some(row => row.expense_id === created.data.id), false);
+  assert.equal((await request('/expenses', 'POST', { ...input, amount: -1 })).status, 400);
+  assert.equal((await request(`/expenses/${created.data.id}`, 'PATCH', { ...input, amount: '90.00' })).status, 200);
+  list = await request('/expenses?month=2026-09');
+  assert.equal(Number(list.data.find(row => row.expense_id === created.data.id).amount), 90);
+  const adminCookie = cookie;
+  cookie = '';
+  assert.equal((await request('/expenses?month=2026-09')).status, 401);
+  const jwt = require('jsonwebtoken');
+  cookie = 'token=' + jwt.sign({ user_id: 1, access_level: 'employee' }, process.env.JWT_TOKEN);
+  assert.equal((await request('/expenses?month=2026-09')).status, 403);
+  assert.equal((await request('/expenses', 'POST', input)).status, 403);
+  assert.equal((await request(`/expenses/${created.data.id}`, 'PATCH', input)).status, 403);
+  assert.equal((await request(`/expenses/${created.data.id}`, 'DELETE')).status, 403);
+  cookie = adminCookie;
+  assert.equal((await request(`/expenses/${created.data.id}`, 'DELETE')).status, 200);
+  assert.equal((await request(`/expenses/${created.data.id}`, 'DELETE')).status, 404);
+  await engine.exec(fs.readFileSync(path.join(__dirname, '../config/expenses-postgres.sql'), 'utf8'));
+});

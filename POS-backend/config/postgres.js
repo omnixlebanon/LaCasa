@@ -10,7 +10,7 @@ const parsers = { getTypeParser(oid, format) {
   return types.getTypeParser(oid, format);
 } };
 
-const ids = { users: 'user_id', floors: 'floor_id', tablez: 't_id', items: 'item_id',
+const ids = { business_expenses: 'expense_id', users: 'user_id', floors: 'floor_id', tablez: 't_id', items: 'item_id',
   item_categories: 'i_category_id', products: 'product_id', product_categories: 'p_category_id',
   suppliers: 'id', batches: 'batch_id', product_items: 'recipe_id', orders_history: 'internal_id',
   shifts: 'shift_id', recurring_shifts: 'recurrence_id', workflow_requests: 'request_id',

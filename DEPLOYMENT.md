@@ -86,3 +86,10 @@ npm run build
 The PostgreSQL tests run a real PostgreSQL engine locally through PGlite with synthetic data; they do not connect to Supabase or read production records. `npm run test:integration` is the legacy MySQL suite and creates/removes a separate temporary MySQL database. Leave `DATABASE_URL` unset for that suite. Legacy MySQL upgrade/repair scripts are not Supabase migrations.
 
 After deployment, check login/logout and session persistence, refresh an inner URL, open stock and payroll, create a test order, and submit/review a bot request. Confirm the migrated table counts and balances before resuming normal sales. Retain the old MySQL database as a backup; once new sales are recorded on Supabase, switching back requires reconciling those new records.
+
+
+## Business expenses upgrade
+
+Before deploying the Expenses page to an existing database, run `npm run migrate:expenses` from `POS-backend` with the intended database environment configured. This additive, repeatable migration creates only `business_expenses` and its index. It does not run during startup or deployment. PostgreSQL uses `DATABASE_URL`; without it, the migration uses the local MySQL settings. For Supabase, you may instead run `POS-backend/config/expenses-postgres.sql` in the SQL editor. New Supabase installations already include this table in `supabase-schema.sql`.
+
+Expenses are entered by administrators in desktop Expenses and are view-only on mobile. Amounts are stored in USD using the existing currency conversion. Monthly totals use the expense date. Each bill or purchase is a separate record; no automatic recurring charges are generated. Furniture/equipment purchases are tracked as spending and do not change product cost or gross-profit calculations.

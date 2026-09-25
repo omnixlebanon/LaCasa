@@ -1,5 +1,6 @@
 import { createBrowserRouter, RouterProvider, Outlet, Navigate, useLocation } from 'react-router-dom';
 import './App.css'
+import Expenses from './page/expenses/Expenses.jsx';
 import RequestActivity from './components/RequestActivity.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './page/login/Login.jsx';
@@ -30,7 +31,7 @@ const Layout = () => {
     return <Navigate to="/login" replace />;
   }
   const mobileHome = user.accessLevel === 'admin' ? '/sales' : '/history';
-  const mobileAllowed = ['/sales', '/history', '/stock', '/shifts'].includes(pathname.replace(/\/$/, ''));
+  const mobileAllowed = ['/sales', '/history', '/stock', '/shifts', '/expenses'].includes(pathname.replace(/\/$/, ''));
   return (
     <>
       {isMobile ? <MobileNavigation /> : <Sidebar />}
@@ -60,6 +61,7 @@ const router = createBrowserRouter([
         element: <ProtectedRoute allowedAccess={['admin']} />,
         children: [
           { path: "sales", element: <Sales /> },
+          { path: "expenses", element: <Expenses /> },
           { path: "product_management", element: <ProductManag /> },
           { path: "menu_management", element: <MenuManag /> },
           { path: "employees", element: <EmployeeManagement /> }

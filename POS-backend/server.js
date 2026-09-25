@@ -36,6 +36,7 @@ app.use('/api',verifyToken, history_routes);
 app.use('/api', verifyToken, employee_routes);
 app.use('/api', verifyToken, workflow_routes.managementRouter);
 app.use('/api', verifyToken, payroll_routes);
+app.use('/api', verifyToken, require('./routes/expenseRout'));
 app.use((err, req, res, next) => {
     if (err.type === 'entity.too.large') return res.status(413).json({ error: 'Upload is too large. Use a smaller image (request limit: 4 MB).' });
     console.error(err.stack);

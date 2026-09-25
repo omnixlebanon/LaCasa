@@ -1,0 +1,91 @@
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Receipt, Pencil, Trash2, RefreshCw } from 'lucide-react';
+import api from '../../api.js';
+import { useCurrency } from '../../global.jsx';
+import useMobile from '../../hooks/useMobile.js';
+import MoneyInput from '../../components/MoneyInput.jsx';
+import LoadingState from '../../components/LoadingState.jsx';
+import './Expenses.css';
+
+const categories = { water: 'Water', electricity: 'Electricity', internet: 'Internet', rent: 'Rent', furniture: 'Furniture / tables', equipment: 'Equipment', maintenance: 'Maintenance', other: 'Other' };
+const localDate = () => { const d = new Date(); return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`; };
+const emptyForm = () => ({ category: 'electricity', description: '', amount: '', date: localDate() });
+export default function Expenses() {
+  const isMobile = useMobile();
+  const { formatPrice, currencyLabel } = useCurrency();
+  const [month, setMonth] = useState(() => localDate().slice(0, 7));
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [loadError, setLoadError] = useState('');
+  const [error, setError] = useState('');
+  const [message, setMessage] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [form, setForm] = useState(emptyForm);
+  const [editing, setEditing] = useState(null);
+  const load = useCallback(async signal => {
+    setLoading(true); setLoadError('');
+    try {
+      const response = await api.get('/api/expenses', { params: { month }, signal });
+      if (!signal?.aborted) setRows(response.data);
+    } catch (e) { if (!signal?.aborted) setLoadError(e.response?.data?.error || 'Could not load expenses. Please try again.'); }
+    finally { if (!signal?.aborted) setLoading(false); }
+  }, [month]);
+  useEffect(() => { const controller = new AbortController(); load(controller.signal); return () => controller.abort(); }, [load]);
+  const totals = useMemo(() => rows.reduce((result, row) => {
+    const cents = Math.round(Number(row.amount) * 100);
+    result.total += cents;
+    result.categories[row.category] = (result.categories[row.category] || 0) + cents;
+    return result;
+  }, { total: 0, categories: {} }), [rows]);
+  const update = event => setForm(current => ({ ...current, [event.target.name]: event.target.value }));
+  const save = async event => {
+    event.preventDefault();
+    if (busy || isMobile) return;
+    setBusy(true); setError(''); setMessage('');
+    try {
+      const data = { ...form, amount: form.amount === '' ? '' : Number(form.amount).toFixed(2) };
+      if (editing) await api.patch(`/api/expenses/${editing}`, data);
+      else await api.post('/api/expenses', data);
+      setMessage(editing ? 'Expense updated.' : 'Expense recorded.');
+      setEditing(null); setForm(emptyForm());
+      const savedMonth = data.date.slice(0, 7);
+      if (savedMonth !== month) setMonth(savedMonth); else await load();
+    } catch (e) { setError(e.response?.data?.error || 'Could not save expense. Please try again.'); }
+    finally { setBusy(false); }
+  };
+  const remove = async row => {
+    if (busy || isMobile || !window.confirm(`Delete "${row.description}" (${formatPrice(row.amount)})?`)) return;
+    setBusy(true); setError(''); setMessage('');
+    try {
+      await api.delete(`/api/expenses/${row.expense_id}`);
+      if (editing === row.expense_id) { setEditing(null); setForm(emptyForm()); }
+      setMessage('Expense deleted.'); await load();
+    } catch (e) { setError(e.response?.data?.error || 'Could not delete expense.'); }
+    finally { setBusy(false); }
+  };
+  return <div className="main-area expenses-page">
+    <div className="head-area"><div className="PageTitle"><Receipt /><h2>Business Expenses</h2></div>
+      <div className="expenses-controls"><label>Month<input aria-label="Expense month" type="month" min="2000-01" max="9998-12" value={month} disabled={busy || loading} onChange={e => { if (e.target.value) setMonth(e.target.value); }} /></label><button type="button" disabled={busy || loading} onClick={() => load()}><RefreshCw size={18} /> Refresh</button></div>
+    </div>
+    <p className="expenses-hint">Track bills and purchases by expense date. These are separate from product costs and sales gross profit. Record each bill or purchase once.</p>
+    {message && <p className="expenses-message" role="status">{message}</p>}
+    {error && <p className="error-message" role="alert">{error}</p>}
+    {!isMobile && <form className="expenses-form" onSubmit={save}>
+      <h3>{editing ? 'Edit expense' : 'Record an expense'}</h3>
+      <fieldset disabled={busy || loading || !!loadError}>
+        <label>Category<select name="category" value={form.category} onChange={update}>{Object.entries(categories).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
+        <label>Date<input type="date" name="date" min="2000-01-01" max="9998-12-31" value={form.date} onChange={update} required /></label>
+        <label>Description<input name="description" maxLength={200} value={form.description} onChange={update} placeholder="e.g. September electricity bill or 4 dining tables" required /></label>
+        <label>Amount ({currencyLabel})<MoneyInput name="amount" value={form.amount} onChange={update} min="0" required /></label>
+        <div className="expenses-form-actions">{editing && <button type="button" onClick={() => { setEditing(null); setForm(emptyForm()); setError(''); }}>Cancel</button>}<button className="add-btn" type="submit">{busy ? 'Saving...' : editing ? 'Save changes' : 'Add expense'}</button></div>
+      </fieldset>
+    </form>}
+    {loading || loadError ? <LoadingState label="Loading expenses..." error={loadError} onRetry={() => load()} /> : <>
+      <div className="expenses-summary"><article><span>Total expenses</span><strong>{formatPrice(totals.total / 100)}</strong><small>{rows.length} records in {month}</small></article>{Object.entries(totals.categories).map(([category, cents]) => <article key={category}><span>{categories[category] || category}</span><strong>{formatPrice(cents / 100)}</strong></article>)}</div>
+      <section className="expenses-list" aria-label="Expenses for selected month">
+        {!rows.length && <p className="expenses-empty">No expenses recorded for this month.</p>}
+        {rows.map(row => <article key={row.expense_id}><div><span className="expenses-category">{categories[row.category] || row.category}</span><h3>{row.description}</h3><time dateTime={row.expense_date}>{new Date(`${row.expense_date}T00:00:00`).toLocaleDateString()}</time></div><strong>{formatPrice(row.amount)}</strong>{!isMobile && <div className="expenses-actions"><button disabled={busy} aria-label={`Edit ${row.description}`} onClick={() => { setEditing(row.expense_id); setForm({ category: row.category, description: row.description, amount: Number(row.amount), date: row.expense_date }); setError(''); document.querySelector('.expenses-form')?.scrollIntoView({ behavior: 'smooth' }); }}><Pencil size={18} /></button><button disabled={busy} aria-label={`Delete ${row.description}`} onClick={() => remove(row)}><Trash2 size={18} /></button></div>}</article>)}
+      </section>
+    </>}
+  </div>;
+}
