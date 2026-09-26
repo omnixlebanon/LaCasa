@@ -1,3 +1,4 @@
+import UnitInput from '../UnitInput.jsx';
 import { useCurrency } from '../../../global.jsx';
 import MoneyInput from '../../MoneyInput.jsx';
 import { useState, useEffect } from 'react';
@@ -102,8 +103,7 @@ function AddIngredientPopup({ isOpen, onClose, categories, onSuccess }) {
                         </div>
                         <div className='label-input'>
                             <label htmlFor="stock_uom">Unit of Measure</label>
-                            <input 
-                                type="text" 
+                            <UnitInput 
                                 id='stock_uom' 
                                 name="stock_uom" 
                                 placeholder="e.g. kg, liters, pcs" required maxLength={30}

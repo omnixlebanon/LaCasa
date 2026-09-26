@@ -1,3 +1,4 @@
+import UnitInput from '../UnitInput.jsx';
 import MoneyInput from '../../MoneyInput.jsx';
 import './StockItem.css'
 import { expirationStatus } from './expiration.js';
@@ -119,7 +120,7 @@ function StockItem({ data, onItemEdit, categories = [], readOnly = false }) {
                                     {formData.stock_category && !categories.some(cat => cat.i_category_name === formData.stock_category) && <option value={formData.stock_category}>{formData.stock_category}</option>}
                                     {categories.map(cat => <option key={cat.i_category_name} value={cat.i_category_name}>{cat.i_category_name}</option>)}
                                 </select></div>
-                                <div className='label-input'><label htmlFor="stock_uom">Unit of Measure</label><input type="text" id="stock_uom" name="stock_uom" required maxLength={30} value={formData.stock_uom} onChange={handleFormInputChange} /></div>
+                                <div className='label-input'><label htmlFor="stock_uom">Unit of Measure</label><UnitInput id="stock_uom" name="stock_uom" required maxLength={30} value={formData.stock_uom} onChange={handleFormInputChange} /></div>
                             </div>
                             <div className='input-area-2nd-line'>
                                 <div className='label-input'><label htmlFor="stock_limit">Safety Level</label><input type="number" id="stock_limit" name="stock_limit" required min="0" max="99999999.99" step="0.01" value={formData.stock_limit} onChange={handleFormInputChange} /></div>

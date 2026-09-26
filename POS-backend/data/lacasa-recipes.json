@@ -1,0 +1,576 @@
+{
+  "sheet": "LA CASA 0.2V",
+  "sourceFile": "la casa & my rcp.xlsx",
+  "assumptions": [
+    "Milk amounts use ml as confirmed by owner, including B30",
+    "1 pump = 5 ml",
+    "Double Espresso is a prepared portion, not an assumed bean quantity",
+    "No stock quantities or purchase costs were supplied",
+    "No quantities inferred for ice or unmeasured sandwich ingredients"
+  ],
+  "recipes": [
+    {
+      "product": "Oreo Milkshake",
+      "source": "B3:B8",
+      "ingredients": [
+        {
+          "name": "Milk",
+          "quantity": 140,
+          "unit": "ml"
+        },
+        {
+          "name": "Cookies powder",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "Chocolate sauce",
+          "quantity": 5,
+          "unit": "ml"
+        }
+      ],
+      "missing": [
+        "Ice quantity not provided",
+        "Oreo pieces: 2 or 3?"
+      ]
+    },
+    {
+      "product": "lotus Milkshake",
+      "source": "B10:B14",
+      "ingredients": [
+        {
+          "name": "Milk",
+          "quantity": 140,
+          "unit": "ml"
+        },
+        {
+          "name": "Speculoos powder",
+          "quantity": 80,
+          "unit": "g"
+        },
+        {
+          "name": "Caramel sauce",
+          "quantity": 10,
+          "unit": "ml"
+        }
+      ],
+      "missing": [
+        "Ice quantity not provided"
+      ]
+    },
+    {
+      "product": "Chocolate Milkshake",
+      "source": "B16:B21",
+      "ingredients": [
+        {
+          "name": "Milk",
+          "quantity": 140,
+          "unit": "ml"
+        },
+        {
+          "name": "Chocolate sauce",
+          "quantity": 10,
+          "unit": "ml"
+        },
+        {
+          "name": "Vanilla powder",
+          "quantity": 40,
+          "unit": "g"
+        },
+        {
+          "name": "Sweet chocolate powder",
+          "quantity": 30,
+          "unit": "g"
+        }
+      ],
+      "missing": [
+        "Ice quantity not provided"
+      ]
+    },
+    {
+      "product": "Vanillia Milkshake",
+      "source": "B23:B27",
+      "ingredients": [
+        {
+          "name": "Milk",
+          "quantity": 140,
+          "unit": "ml"
+        },
+        {
+          "name": "Vanilla syrup",
+          "quantity": 20,
+          "unit": "ml"
+        },
+        {
+          "name": "Vanilla powder",
+          "quantity": 70,
+          "unit": "g"
+        }
+      ],
+      "missing": [
+        "Ice quantity not provided"
+      ]
+    },
+    {
+      "product": "Strawberry Milkshake",
+      "source": "B29:B33",
+      "ingredients": [
+        {
+          "name": "Milk",
+          "quantity": 140,
+          "unit": "ml"
+        },
+        {
+          "name": "Strawberry puree",
+          "quantity": 40,
+          "unit": "ml"
+        },
+        {
+          "name": "Frozen strawberry",
+          "quantity": 5,
+          "unit": "g"
+        },
+        {
+          "name": "Vanilla powder",
+          "quantity": 50,
+          "unit": "g"
+        }
+      ],
+      "missing": []
+    },
+    {
+      "product": "Mocha frappe",
+      "source": "F3:F8",
+      "ingredients": [
+        {
+          "name": "Milk",
+          "quantity": 120,
+          "unit": "ml"
+        },
+        {
+          "name": "Espresso",
+          "quantity": 20,
+          "unit": "ml"
+        },
+        {
+          "name": "Chocolate sauce",
+          "quantity": 10,
+          "unit": "ml"
+        },
+        {
+          "name": "Mocha powder",
+          "quantity": 50,
+          "unit": "g"
+        }
+      ],
+      "missing": [
+        "Ice quantity not provided"
+      ]
+    },
+    {
+      "product": "Caramel frappe",
+      "source": "F10:F15",
+      "ingredients": [
+        {
+          "name": "Milk",
+          "quantity": 120,
+          "unit": "ml"
+        },
+        {
+          "name": "Espresso",
+          "quantity": 20,
+          "unit": "ml"
+        },
+        {
+          "name": "Caramel powder",
+          "quantity": 50,
+          "unit": "g"
+        },
+        {
+          "name": "Caramel syrup",
+          "quantity": 12.5,
+          "unit": "ml"
+        }
+      ],
+      "missing": [
+        "Ice quantity not provided"
+      ]
+    },
+    {
+      "product": "White Mocha frappe",
+      "source": "F16:F21",
+      "ingredients": [
+        {
+          "name": "Milk",
+          "quantity": 120,
+          "unit": "ml"
+        },
+        {
+          "name": "Espresso",
+          "quantity": 20,
+          "unit": "ml"
+        },
+        {
+          "name": "White chocolate sauce",
+          "quantity": 10,
+          "unit": "ml"
+        }
+      ],
+      "missing": [
+        "Ice quantity not provided",
+        "Choose 50g vanilla powder or 25g vanilla + 25g mocha powder"
+      ]
+    },
+    {
+      "product": "Salted Caramel frappe",
+      "source": "F23:F28",
+      "ingredients": [
+        {
+          "name": "Milk",
+          "quantity": 120,
+          "unit": "ml"
+        },
+        {
+          "name": "Espresso",
+          "quantity": 20,
+          "unit": "ml"
+        },
+        {
+          "name": "Caramel syrup",
+          "quantity": 20,
+          "unit": "ml"
+        },
+        {
+          "name": "Caramel powder",
+          "quantity": 50,
+          "unit": "g"
+        }
+      ],
+      "missing": [
+        "Ice quantity not provided",
+        "Salt: clarify what 2 pieces means"
+      ]
+    },
+    {
+      "product": "Mango (Smoothies)",
+      "source": "H3:H7",
+      "ingredients": [
+        {
+          "name": "Mango puree",
+          "quantity": 100,
+          "unit": "ml"
+        },
+        {
+          "name": "Water",
+          "quantity": 120,
+          "unit": "ml"
+        },
+        {
+          "name": "Frozen mango",
+          "quantity": 50,
+          "unit": "g"
+        }
+      ],
+      "missing": [
+        "Ice quantity not provided"
+      ]
+    },
+    {
+      "product": "Strawberry",
+      "source": "H8:H12",
+      "ingredients": [
+        {
+          "name": "Strawberry puree",
+          "quantity": 100,
+          "unit": "ml"
+        },
+        {
+          "name": "Water",
+          "quantity": 120,
+          "unit": "ml"
+        },
+        {
+          "name": "Frozen strawberry",
+          "quantity": 50,
+          "unit": "g"
+        }
+      ],
+      "missing": [
+        "Ice quantity not provided"
+      ]
+    },
+    {
+      "product": "Mix berries",
+      "source": "H13:H17",
+      "ingredients": [
+        {
+          "name": "Strawberry puree",
+          "quantity": 100,
+          "unit": "ml"
+        },
+        {
+          "name": "Water",
+          "quantity": 120,
+          "unit": "ml"
+        },
+        {
+          "name": "Frozen mixed berries",
+          "quantity": 50,
+          "unit": "g"
+        }
+      ],
+      "missing": [
+        "Ice quantity not provided"
+      ]
+    },
+    {
+      "product": "Mango & Strawberry",
+      "source": "H18:H23",
+      "ingredients": [
+        {
+          "name": "Strawberry puree",
+          "quantity": 50,
+          "unit": "ml"
+        },
+        {
+          "name": "Frozen strawberry",
+          "quantity": 50,
+          "unit": "g"
+        },
+        {
+          "name": "Frozen mango",
+          "quantity": 50,
+          "unit": "g"
+        },
+        {
+          "name": "Mango puree",
+          "quantity": 50,
+          "unit": "ml"
+        },
+        {
+          "name": "Water",
+          "quantity": 120,
+          "unit": "ml"
+        }
+      ],
+      "missing": []
+    },
+    {
+      "product": "Iced Americano",
+      "source": "J3:J6",
+      "ingredients": [
+        {
+          "name": "Double Espresso",
+          "quantity": 1,
+          "unit": "portion"
+        },
+        {
+          "name": "Water",
+          "quantity": 160,
+          "unit": "ml"
+        }
+      ],
+      "missing": [
+        "Ice quantity not provided"
+      ]
+    },
+    {
+      "product": "Iced Latte",
+      "source": "J7:J10",
+      "ingredients": [
+        {
+          "name": "Double Espresso",
+          "quantity": 1,
+          "unit": "portion"
+        },
+        {
+          "name": "Milk",
+          "quantity": 200,
+          "unit": "ml"
+        }
+      ],
+      "missing": [
+        "Ice quantity not provided"
+      ]
+    },
+    {
+      "product": "Flavored Iced Latte",
+      "source": "J11:J15",
+      "ingredients": [
+        {
+          "name": "Double Espresso",
+          "quantity": 1,
+          "unit": "portion"
+        },
+        {
+          "name": "Flavour syrup",
+          "quantity": 20,
+          "unit": "ml"
+        }
+      ],
+      "missing": [
+        "Ice quantity not provided",
+        "Milk quantity not provided",
+        "Choose flavour syrup when preparing stock"
+      ]
+    },
+    {
+      "product": "Iced Spanish",
+      "source": "J28:J30",
+      "ingredients": [
+        {
+          "name": "Spanish premix",
+          "quantity": 200,
+          "unit": "ml"
+        },
+        {
+          "name": "Double Espresso",
+          "quantity": 1,
+          "unit": "portion"
+        }
+      ],
+      "missing": []
+    },
+    {
+      "product": "Cappuccino",
+      "source": "L6:L8",
+      "ingredients": [
+        {
+          "name": "Milk",
+          "quantity": 250,
+          "unit": "ml"
+        },
+        {
+          "name": "Double Espresso",
+          "quantity": 1,
+          "unit": "portion"
+        }
+      ],
+      "missing": []
+    },
+    {
+      "product": "Flavored Latte",
+      "source": "L9:L12",
+      "ingredients": [
+        {
+          "name": "Milk",
+          "quantity": 250,
+          "unit": "ml"
+        },
+        {
+          "name": "Double Espresso",
+          "quantity": 1,
+          "unit": "portion"
+        },
+        {
+          "name": "Flavour syrup",
+          "quantity": 20,
+          "unit": "ml"
+        }
+      ],
+      "missing": []
+    },
+    {
+      "product": "Mocha Latte",
+      "source": "L13:L16",
+      "ingredients": [
+        {
+          "name": "Chocolate sauce",
+          "quantity": 10,
+          "unit": "ml"
+        },
+        {
+          "name": "Milk",
+          "quantity": 250,
+          "unit": "ml"
+        },
+        {
+          "name": "Double Espresso",
+          "quantity": 1,
+          "unit": "portion"
+        }
+      ],
+      "missing": []
+    },
+    {
+      "product": "Hot chocolate",
+      "source": "L22:L24",
+      "ingredients": [
+        {
+          "name": "Milk",
+          "quantity": 250,
+          "unit": "ml"
+        },
+        {
+          "name": "Chocolate powder",
+          "quantity": 50,
+          "unit": "g"
+        }
+      ],
+      "missing": []
+    },
+    {
+      "product": "Matcha",
+      "source": "L25:L27",
+      "ingredients": [
+        {
+          "name": "Milk",
+          "quantity": 250,
+          "unit": "ml"
+        },
+        {
+          "name": "Matcha premix",
+          "quantity": 70,
+          "unit": "ml"
+        }
+      ],
+      "missing": []
+    },
+    {
+      "product": "Spanish Latte",
+      "source": "L28:L30",
+      "ingredients": [
+        {
+          "name": "Spanish premix",
+          "quantity": 250,
+          "unit": "ml"
+        },
+        {
+          "name": "Double Espresso",
+          "quantity": 1,
+          "unit": "portion"
+        }
+      ],
+      "missing": []
+    },
+    {
+      "product": "Halloumi Pesto",
+      "source": "B38:B43",
+      "ingredients": [],
+      "missing": [
+        "Quantities missing for pesto, halloumi, tomato, baby rocca and brown baguette"
+      ]
+    },
+    {
+      "product": "Turkey",
+      "source": "B45:B52",
+      "ingredients": [],
+      "missing": [
+        "Quantities missing for turkey, mozzarella, tomato, pickles, corn, iceberg lettuce and mayo"
+      ]
+    }
+  ],
+  "unmatched": [
+    "Americano (L3:L5)",
+    "Iced mocha (J16:J20)",
+    "Iced matcha base (J21:J27): vanilla/strawberry additions have no quantity",
+    "Carnut (L17:L21)",
+    "Mortadella sandwich (B54:B59)"
+  ],
+  "unquantifiedSections": [
+    "Saj (D38:D44)",
+    "Croissants (H38:H43)",
+    "Yogurt bowl (F36)",
+    "Cookies / brownies (J36:J38)"
+  ]
+}
