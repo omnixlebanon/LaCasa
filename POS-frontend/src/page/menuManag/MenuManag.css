@@ -1,0 +1,6 @@
+.menu-open-link { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; padding: 10px 16px; border-radius: 8px; background: var(--main-color); color: white; text-decoration: none; font-weight: 600; }
+.menu-open-link:hover { background: var(--main-color-hover); }
+.menu-public-card { padding: 20px; border: 1px solid var(--border-color); border-radius: 12px; background: white; }
+.menu-public-card p { margin-top: 12px; line-height: 1.6; overflow-wrap: anywhere; }
+.menu-public-card a { color: var(--main-color); }
+.menu-public-note { color: var(--font-color); font-size: 13px; }

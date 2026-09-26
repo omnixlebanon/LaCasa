@@ -13,3 +13,5 @@ telegram-bot/receipts/
 POS-backend/catalog-backups/
 
 POS-backend/firestore-exports/
+
+menu-import-source/

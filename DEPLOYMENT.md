@@ -109,3 +109,9 @@ New checkout records save server-calculated `unit_cost`, `total_cost`, `cost_sou
 Before deploying visibility controls, run `npm run migrate:product-visibility -- --supabase` from `POS-backend` for the deployed Supabase database (uses `SUPABASE_MIGRATION_URL`, falling back to `DATABASE_URL`). For local MySQL, omit `--supabase`. This repeatable migration adds `pos_hidden` flags with visible defaults; nothing is deleted.
 
 Admins can hide/show products and categories in Product Management. POS loads `/products?scope=pos` and `/products/categories?scope=pos`; management and sales retain all records. Category hiding takes precedence over product visibility without changing product flags. Reload an already-open POS to refresh visibility. Existing orders are kept and can still be completed; visibility controls the catalog, not historical records or previously added order items.
+
+## Public customer menu
+
+The menu from https://github.com/mSWebsit/LaCasa_Menu (commit `1a9ca225e131851105e9fb51f51c4cb30eaf11ee`) is bundled in `POS-frontend/public/menu/`. Open `/menu` without logging in, or use **Open Menu** in Menu Management. Vite copies these files into the frontend build; Vercel routes `/menu` to its standalone HTML page. The POS stays under `/POS`.
+
+Menu content currently comes from `public/menu/script.js`; it is not yet synchronized with the POS database. Update that file for customer menu changes. Preserve the `/menu/` base URL when editing the HTML so images and styles work on direct visits.
