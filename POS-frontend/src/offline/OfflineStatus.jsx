@@ -43,7 +43,7 @@ export default function OfflineStatus(){
    {!!notices.length&&<section role="alert"><h3>Changes not synced</h3><ul>{notices.map(record=><li key={record.id}>{record.skipReason}</li>)}</ul><p>Removed from the queue. Original requests remain in your recovery backup. Other requests continue. Requests that depend on a skipped addition also move to recovery with an explanation.</p><button onClick={()=>run(dismissSyncNotices)}>Dismiss notices</button></section>}
    <div className="offline-actions">
     <button onClick={()=>run(async()=>{setPersisted(await navigator.storage?.persist?.()||false);await prepareOffline();})}>Prepare / refresh offline data</button>
-    <button onClick={()=>run(syncPending)}>Sync now</button>
+    <button onClick={()=>run(()=>syncPending({manual:true,resumeAuth:true}))}>Sync now</button>
     {state&&activePending(state)?.blocked&&<button onClick={()=>run(async()=>setShared(await latestSharedData()))}>View latest shared data</button>}
     <button onClick={()=>run(exportBackup)}>Export backup</button>
     <label>Restore backup<input type="file" accept="application/json,.json" onChange={e=>{if(e.target.files[0])void run(()=>restoreBackup(e.target.files[0]));e.target.value='';}} /></label>

@@ -150,12 +150,11 @@ function referencesId(op,id){
  return op.url.split('/').some(part=>decodeURIComponent(part)===String(id))||values(op.data);
 }
 function rejectedRequest(op,status,message,code){
- return duplicateProduct(op,code,message)||[400,404,409,422].includes(status);
+ return duplicateProduct(op,code,message)||[400,404,409,422].includes(Number(status))||(op.blocked&&/Review this remaining change against the latest shared data/i.test(message||''));
 }
 async function skipDuplicateProduct(owner,op,reason=op.problem,code){
- // Refresh first: if the server cannot be reached, the original stays queued.
+ // Removing a rejected request must not depend on unrelated snapshot endpoints.
  connectionState='skipping rejected request';announce();
- const shared=await downloadSnapshot(owner);
  await change(state=>{
   if(activePending(state)?.id!==op.id)throw Error('The pending queue changed. Retry sync.');
   const name=op.data.product_name||op.data.category_name||op.data.description||op.data.customerName||op.url;
@@ -167,29 +166,28 @@ async function skipDuplicateProduct(owner,op,reason=op.problem,code){
   state.recovery.push({...op,skippedAt:new Date().toISOString(),skipReason:notice});
   state.queue=state.queue.filter(pending=>pending.id!==op.id);
   // Keep the prior revision so skipping never silently accepts concurrent edits.
-  state.cache=shared.cache;
-  const drafts=state.drafts;delete state.drafts;
+  const drafts=state.drafts;
+  // The next full refresh restores server values. Keep provisional local data until then.
   for(const pending of state.queue){
    if(op.method==='post'&&referencesId(pending,op.tempId)){
     pending.blocked=true;pending.status=422;pending.problem=`This change depends on "${name}", which was not added.`;
     continue;
    }
-   try{applyLocal(state,{...pending,data:remap(structuredClone(pending.data),state.idMap)});}
-   catch(error){pending.blocked=true;pending.status=422;pending.problem=error.message;}
   }
   state.drafts=drafts;state.error=null;
  },owner);
  announceSnapshot();
 }
 export async function dismissSyncNotices(){await change(state=>{for(const record of state.recovery||[])if(record.skippedAt)record.noticeRead=true;});}
-export async function syncPending({resumeAuth=false}={}) {
+export async function syncPending({resumeAuth=false,manual=false}={}) {
  const owner=accountId();if(!owner||!navigator.onLine||!navigator.locks)return;
  return navigator.locks.request('lacasa-sync-'+owner,{ifAvailable:true},async lock=>{
-  if(!lock)return;
+  if(!lock){if(manual){connectionState='sync already running';announce();}return;}
+  if(manual)await change(state=>{for(const op of state.queue)if(op.deferred&&rejectedRequest(op,op.status,op.problem))op.deferred=false;},owner);
   let completed=false;
   for(;;){
    if(accountId()!==owner)return;
-   const snapshot=await load(owner);const op=activePending(snapshot);if(!op){connectionState=snapshot.queue.length?'requests left unsynced':'online';announce();if(completed)await prepareOffline();return;}
+   const snapshot=await load(owner);const op=activePending(snapshot);if(!op){connectionState=snapshot.queue.length?'requests left unsynced':'online';announce();if(completed)await prepareOffline();if(manual&&snapshot.queue.length)await change(state=>{state.error='Requests are left unsynced. Open a saved request and choose Review and retry later to resume it.';},owner);return;}
    if(op.blocked&&rejectedRequest(op,op.status,op.problem)){try{await skipDuplicateProduct(owner,op);completed=true;continue;}catch(error){await change(state=>{state.error=error.response?.data?.error||error.message;},owner);return;}}
    if(op.blocked){if(resumeAuth&&op.status===401){await change(s=>{activePending(s).blocked=false;},owner);continue;}connectionState=op.status===401?'sign-in required':'sync paused';await change(state=>{state.error=op.problem||'This request could not be confirmed. Sign in or retry when the server is available.';},owner);announce();return;}
    if(!op.sentData){await change(s=>{const first=activePending(s);first.sentData=remap(first.data,s.idMap);first.sentUrl=first.url.split('/').map(segment=>encodeURIComponent(remap(decodeURIComponent(segment),s.idMap,'shift_id'))).join('/');first.expectedRevision??=s.revision;},owner);continue;}

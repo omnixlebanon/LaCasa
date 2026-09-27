@@ -242,11 +242,11 @@ test('dependent orders are removed from the queue but preserved in recovery with
  navigator.onLine=true;await syncPending();const state=await load();assert.equal(mutations,1);assert.equal(state.queue.length,0);assert.equal(state.recovery.length,2);assert.equal(state.recovery[1].url,'/api/checkout');assert.match(state.recovery[1].skipReason,/was not added/);
 });
 
-test('a failed refresh keeps the duplicate request queued for recovery',async()=>{
+test('a failed refresh cannot block removing a rejected request',async()=>{
  await write('/api/products',{product_name:'Remote duplicate',product_category:'Hot',product_price:2});
  const original=(await load()).queue[0];
  network.defaults.adapter=async config=>{if(config.method==='get')throw new AxiosError('Offline','ERR_NETWORK',config);throw new AxiosError('Duplicate','ERR_BAD_REQUEST',config,null,{status:422,data:{code:'PRODUCT_NAME_EXISTS'}});};
- navigator.onLine=true;await syncPending();const state=await load();assert.equal(state.queue[0].id,original.id);assert.equal(state.recovery.length,0);
+ navigator.onLine=true;await syncPending();const state=await load();assert.equal(state.queue.length,0);assert.equal(state.recovery[0].id,original.id);
 });
 
 test('an already paused needs-review request is skipped without a manual retry',async()=>{
@@ -254,4 +254,11 @@ test('an already paused needs-review request is skipped without a manual retry',
  await change(state=>{state.queue[0].blocked=true;state.queue[0].status=409;state.queue[0].problem='Review this remaining change against the latest shared data.';});
  const shared=fixture();network.defaults.adapter=async config=>{assert.equal(config.method,'get');return {data:shared.cache[keyOf(config.url)]?.data||[],status:200,headers:headers(10),config};};
  navigator.onLine=true;await syncPending();const state=await load();assert.equal(state.queue.length,0);assert.equal(state.recovery.length,1);assert.match(state.recovery[0].skipReason,/not updated/);
+});
+
+test('manual sync handles old deferred review requests with string status codes',async()=>{
+ await write('/api/products/1',{product_price:6},'patch');
+ await change(state=>{Object.assign(state.queue[0],{blocked:true,deferred:true,status:'409',problem:'Review this remaining change against the latest shared data.'});});
+ const shared=fixture();network.defaults.adapter=async config=>({data:shared.cache[keyOf(config.url)]?.data||[],status:200,headers:headers(10),config});
+ navigator.onLine=true;await syncPending({manual:true});assert.equal((await load()).queue.length,0);assert.equal((await load()).recovery.length,1);
 });
