@@ -16,7 +16,7 @@ Object.defineProperty(navigator,'locks',{value:{async request(name,options,fn){
  await before;try{return await fn({name});}finally{if(locks.get(name)===done)locks.delete(name);release();}
 }},configurable:true});
 const {change,load,emptyState,accountId,restoreBackup}=await import('./storage.js');
-const {offlineAdapter,syncPending,network,resolvePending,correctPending,saveDraftEdit,prepareOffline}=await import('./transport.js');
+const {offlineAdapter,syncPending,network,resolvePending,correctPending,saveDraftEdit,prepareOffline,leavePendingUnsynced,resumeHeld,activePending}=await import('./transport.js');
 const {readLocal,applyLocal,keyOf,remap}=await import('./model.js');
 const headers=revision=>({'x-sync-revision':String(revision)});
 let account=0;
@@ -157,3 +157,30 @@ test('an email change retains pending work and older email-keyed data is recover
  localStorage.setItem('auth_user',JSON.stringify({...user,email:'new@fixture.invalid'}));
  assert.equal((await load()).queue[0].data.product_name,'Legacy pending');
 });
+
+ test('leaving an errored request unsynced preserves it, holds related work, and syncs unrelated work',async()=>{
+ await write('/api/products',{product_name:'Failed',product_category:'Hot',product_price:2});
+ await write('/api/products',{product_name:'Related',product_category:'Hot',product_price:3});
+ const expense={id:crypto.randomUUID(),tempId:-88,url:'/api/expenses',method:'post',data:{amount:10},createdAt:new Date().toISOString()};
+ await change(state=>state.queue.push(expense));
+ const original=(await load()).queue[0];const sent=[];
+ network.defaults.adapter=async config=>{
+  sent.push(config.url);
+  if(config.url==='/api/products')throw new AxiosError('Invalid','ERR_BAD_REQUEST',config,null,{status:422,data:{error:'Fix the product'}});
+  return {data:{id:88},status:200,headers:headers(11),config};
+ };
+ navigator.onLine=true;await syncPending();await leavePendingUnsynced(original.id);
+ const state=await load();assert.equal(state.queue.length,2);assert.equal(state.queue[0].deferred,true);
+ assert.deepEqual(state.queue[0].data,original.data);assert.equal(state.archive[0].id,expense.id);
+ assert.deepEqual(sent,['/api/products','/api/expenses']);assert.equal(activePending(state),undefined);
+ await syncPending();assert.equal(sent.length,2);
+ await resumeHeld(original.id);assert.equal(activePending(await load()).id,original.id);
+ assert.equal((await load()).queue[0].blocked,true);
+ });
+ test('a network error can be held without losing its operation identity',async()=>{
+ await write('/api/products',{product_name:'Network failure',product_category:'Hot',product_price:2});
+ network.defaults.adapter=async config=>{throw new AxiosError('Connection lost','ERR_NETWORK',config);};
+ navigator.onLine=true;await syncPending();const original=(await load()).queue[0];
+ await leavePendingUnsynced(original.id);const saved=(await load()).queue[0];
+ assert.equal(saved.id,original.id);assert.deepEqual(saved.sentData,original.sentData);assert.equal(saved.deferred,true);
+ });

@@ -6,6 +6,43 @@ export let connectionState = 'online';
 const announce=()=>window.dispatchEvent(new Event('offline-change'));
 const httpError=message=>Object.assign(new Error(message),{response:{data:{error:message}}});
 let warming;
+// Keep held requests in the encrypted queue and backups, without sending them.
+// Related business operations stay together so a skipped prerequisite is never bypassed.
+function syncGroup(op){
+ const resource=op.url.split('/')[2];
+ if(['products','items','stock','checkout','history','seating','open-orders','management'].includes(resource))return 'sales-stock-tables';
+ if(['employees','shifts','recurring-shifts'].includes(resource))return 'employees-shifts';
+ return resource;
+}
+export function activePending(state){
+ const held=new Set(state.queue.filter(op=>op.deferred).map(syncGroup));
+ return state.queue.find(op=>!op.deferred&&!held.has(syncGroup(op)));
+}
+export function isWaitingOnHeld(state,op){return !op.deferred&&state.queue.some(held=>held.deferred&&syncGroup(held)===syncGroup(op));}
+export async function leavePendingUnsynced(id){
+ const owner=accountId();
+ await navigator.locks.request('lacasa-sync-'+owner,async()=>{
+  await change(state=>{
+   const op=activePending(state);
+   if(!op||op.id!==id||!op.problem)throw Error('This request changed. Reopen the sync panel.');
+   op.deferred=true;op.deferredAt=new Date().toISOString();state.error=null;
+  },owner);
+ });
+ await syncPending();
+}
+export async function resumeHeld(id){
+ const owner=accountId();
+ await navigator.locks.request('lacasa-sync-'+owner,async()=>{
+  await change(state=>{
+   const op=state.queue.find(pending=>pending.id===id&&pending.deferred);
+   if(!op)throw Error('This saved request is no longer on hold.');
+   op.deferred=false;op.blocked=true;
+   op.problem='Review this saved request before retrying. '+(op.problem||'');
+  },owner);
+ });
+ announce();
+}
+
 function isAuth(url){return url.startsWith('/api/auth/')||url.startsWith('/api/public/');}
 function response(config,data,status=200){return {data,status,statusText:'Saved on this device',headers:{},config};}
 function draftOperation(order,method='put'){
@@ -82,22 +119,22 @@ export async function latestSharedData() {
 export async function correctPending(data) {
  const owner=accountId();
  await navigator.locks.request('lacasa-sync-'+owner,async()=>{
-  const before=await load(owner),op=before.queue[0];
+  const before=await load(owner),op=activePending(before);
   if(!op?.blocked)throw Error('Only a paused change can be corrected.');
   const receipt=await network.get('/api/offline/operations/'+op.id,{headers:{'X-Offline-Account-Id':owner.split(':')[0]}});
   if(receipt.data.applied)throw Error('This change is already on the server. Retry it unchanged to recover its receipt.');
   const snapshot=await downloadSnapshot(owner);
   await change(state=>{
-   if(state.queue[0]?.id!==op.id)throw Error('The pending queue changed. Reopen the review.');
-   const original=state.queue[0];
+   if(activePending(state)?.id!==op.id)throw Error('The pending queue changed. Reopen the review.');
+   const original=activePending(state);
    state.recovery=state.recovery||[];state.recovery.push({...original,supersededAt:new Date().toISOString()});
-   state.queue[0]={...original,id:crypto.randomUUID(),data,blocked:false,problem:null,sentData:undefined,sentUrl:undefined,expectedRevision:undefined};
+   state.queue[state.queue.findIndex(pending=>pending.id===original.id)]={...original,id:crypto.randomUUID(),data,blocked:false,problem:null,sentData:undefined,sentUrl:undefined,expectedRevision:undefined};
    Object.assign(state,snapshot);const drafts=state.drafts;delete state.drafts;
-   for(const [index,pending]of state.queue.entries()){
+   for(const pending of state.queue){
     pending.data=remap(pending.data,state.idMap);
     const url=pending.url.split('/').map(segment=>encodeURIComponent(remap(decodeURIComponent(segment),state.idMap,'shift_id'))).join('/');
     pending.url=url;applyLocal(state,pending);
-    if(index>0){pending.blocked=true;pending.status=409;pending.problem='Review this remaining change against the latest shared data.';}
+    if(pending.id!==activePending(state)?.id&&!pending.deferred){pending.blocked=true;pending.status=409;pending.problem='Review this remaining change against the latest shared data.';}
    }
    state.drafts=drafts;state.error=null;
   },owner);
@@ -111,15 +148,15 @@ export async function syncPending({resumeAuth=false}={}) {
   let completed=false;
   for(;;){
    if(accountId()!==owner)return;
-   const snapshot=await load(owner);const op=snapshot.queue[0];if(!op){if(completed)await prepareOffline();return;}
-   if(op.blocked){if(resumeAuth&&op.status===401){await change(s=>{s.queue[0].blocked=false;},owner);continue;}return;}
-   if(!op.sentData){await change(s=>{const first=s.queue[0];first.sentData=remap(first.data,s.idMap);first.sentUrl=first.url.split('/').map(segment=>encodeURIComponent(remap(decodeURIComponent(segment),s.idMap,'shift_id'))).join('/');first.expectedRevision??=s.revision;},owner);continue;}
+   const snapshot=await load(owner);const op=activePending(snapshot);if(!op){connectionState=snapshot.queue.length?'requests left unsynced':'online';announce();if(completed)await prepareOffline();return;}
+   if(op.blocked){if(resumeAuth&&op.status===401){await change(s=>{activePending(s).blocked=false;},owner);continue;}return;}
+   if(!op.sentData){await change(s=>{const first=activePending(s);first.sentData=remap(first.data,s.idMap);first.sentUrl=first.url.split('/').map(segment=>encodeURIComponent(remap(decodeURIComponent(segment),s.idMap,'shift_id'))).join('/');first.expectedRevision??=s.revision;},owner);continue;}
    try{
     connectionState='syncing';announce();
     const res=await network.request({url:op.sentUrl,method:op.method,data:op.sentData,headers:{'X-Operation-Id':op.id,'X-Base-Revision':String(op.expectedRevision),'X-Offline-Created-At':op.createdAt,'X-Offline-Account-Id':owner.split(':')[0]}});
     if(res.headers['x-sync-revision']===undefined)throw Error('Server has not confirmed durable sync. Pending data kept.');
     await change(s=>{
-     if(s.queue[0]?.id!==op.id)throw Error('Pending operation changed during sync');
+     if(activePending(s)?.id!==op.id)throw Error('Pending operation changed during sync');
      const data=res.data;const realId=data.insertId??data.id??data.item_id??data.user_id??data.shift_id??data.recurrence_id??data.requestId??data.i_category_id??data.batch_id;
      if(realId!==undefined)s.idMap[op.tempId]=realId;
      if(data.shift_id&&op.method!=='post'&&op.sentUrl.startsWith('/api/shifts/'))s.idMap[decodeURIComponent(op.sentUrl.split('/').at(-1))]=data.shift_id;
@@ -129,19 +166,19 @@ export async function syncPending({resumeAuth=false}={}) {
      s.drafts=remap(s.drafts,s.idMap);
      const sharedKey=op.url.startsWith('/api/open-orders/')?op.url.split('/').at(-1):op.data.order?.checkoutOperationId;
      if(sharedKey)s.drafts.syncedKeys=[...new Set([...(s.drafts.syncedKeys||[]),sharedKey])];
-     s.revision=Number(res.headers['x-sync-revision']);s.archive.push({id:op.id,method:op.method,url:op.url,createdAt:op.createdAt,acknowledgedAt:new Date().toISOString(),serverResponse:data});s.queue.shift();s.error=null;s.lastSync=new Date().toISOString();
+     s.revision=Number(res.headers['x-sync-revision']);s.archive.push({id:op.id,method:op.method,url:op.url,createdAt:op.createdAt,acknowledgedAt:new Date().toISOString(),serverResponse:data});s.queue.splice(s.queue.findIndex(pending=>pending.id===op.id),1);s.error=null;s.lastSync=new Date().toISOString();
     },owner);
     completed=true;connectionState='online';announce();
    }catch(error){
     const status=error.response?.status;connectionState=status===401?'sign-in required':status===409?'conflict':status?'sync paused':'offline';
-    await change(s=>{s.error=error.response?.data?.error||error.message;if(status&&status!==503&&s.queue[0]?.id===op.id){s.queue[0].blocked=true;s.queue[0].problem=s.error;s.queue[0].conflictRevision=error.response?.data?.revision;s.queue[0].status=status;if(status===409)for(const later of s.queue.slice(1)){later.blocked=true;later.status=409;later.problem='Review this remaining change against the latest shared data.';}}},owner);announce();return;
+    await change(s=>{s.error=error.response?.data?.error||error.message;if(activePending(s)?.id===op.id){activePending(s).blocked=!!status&&status!==503;activePending(s).problem=s.error;activePending(s).conflictRevision=error.response?.data?.revision;activePending(s).status=status;if(status===409)for(const later of s.queue.filter(pending=>pending.id!==op.id&&!pending.deferred)){later.blocked=true;later.status=409;later.problem='Review this remaining change against the latest shared data.';}}},owner);announce();return;
    }
   }
  });
 }
 export async function resolvePending() {
  const revision=await network.get('/api/offline/revision');
- await change(s=>{const op=s.queue[0];if(!op)return;op.expectedRevision=Number(revision.headers['x-sync-revision']);op.blocked=false;op.problem=null;s.error=null;});
+ await change(s=>{const op=activePending(s);if(!op)return;op.expectedRevision=Number(revision.headers['x-sync-revision']);op.blocked=false;op.problem=null;s.error=null;});
  return syncPending();
 }
 async function offlineAdapterImpl(config){
