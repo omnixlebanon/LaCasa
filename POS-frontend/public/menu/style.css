@@ -457,3 +457,9 @@ nav ul li a:focus {
 
 
 
+
+#menu-status { text-align: center; padding: 20px; }
+#menu-status:empty { display: none; }
+#menu-retry { display: block; margin: 12px auto; padding: 12px 20px; cursor: pointer; }
+#menu-retry[hidden] { display: none; }
+.section h3 { scroll-margin-top: 150px; }

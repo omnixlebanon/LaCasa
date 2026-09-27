@@ -12,6 +12,7 @@ function ProductManag() {
     const [loadingProducts, setLoadingProducts] = useState(true);
     const [loadingCategories, setLoadingCategories] = useState(true);
     const [productError, setProductError] = useState('');
+    const [saveError, setSaveError] = useState('');
     const [categoryError, setCategoryError] = useState('');
     const { currencyLabel } = useCurrency();
     const [products, setProducts] = useState([]);
@@ -94,6 +95,7 @@ function ProductManag() {
     }, [products, searchQuery, categoryFilter, visibilityFilter]);
 
     const handleAdd = async (e) => {
+        setSaveError('');
         if (e) e.preventDefault();
         const form = e.target;
         const product_name = form.elements.product_name.value;
@@ -103,7 +105,9 @@ function ProductManag() {
         const payload = {
             product_name: product_name,
             product_category: product_category,
-            product_price: Number(product_price)
+            product_price: Number(product_price),
+            product_description: form.elements.product_description.value,
+            product_image: form.elements.product_image.value
         };
         try {
             const res = await api.post('/api/products', payload);
@@ -113,7 +117,7 @@ function ProductManag() {
                 form.reset();
             }
         } catch (error) {
-            console.error('Error while adding product: ', error.response?.data?.error || error.message);
+            setSaveError(error.response?.data?.error || 'Could not save product. Please try again.');
         }
     };
 
@@ -229,6 +233,7 @@ function ProductManag() {
                             </button>
                         </div>
                         <div className='input-area'>
+                            {saveError && <p role="alert" className="error-message">{saveError}</p>}
                             <div className='label-input'>
                                 <label htmlFor="product_name">Product Name</label>
                                 <input type="text" id='product_name' name="product_name" required />
@@ -248,6 +253,8 @@ function ProductManag() {
                                     <MoneyInput id='product_price' name="product_price" min="0" step="0.01" />
                                 </div>
                             </div>
+                            <div className='label-input'><label htmlFor="product_description">Menu description</label><textarea id="product_description" name="product_description" maxLength={2000}  /></div>
+                            <div className='label-input'><label htmlFor="product_image">Menu image URL</label><input id="product_image" name="product_image" maxLength={255} placeholder="https://... or imgs/items/photo.png"  /></div>
                             <div className='edit-submit-container'>
                                 <button type='submit'>Save Changes</button>
                             </div>
@@ -331,7 +338,7 @@ function ProductManag() {
                         <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </div>
                     <div className="searchFilters">
-                        <select aria-label="POS visibility" value={visibilityFilter} onChange={event => setVisibilityFilter(event.target.value)}><option value="">All visibility</option><option value="visible">Visible in POS</option><option value="hidden">Hidden from POS</option></select>
+                        <select aria-label="POS visibility" value={visibilityFilter} onChange={event => setVisibilityFilter(event.target.value)}><option value="">All visibility</option><option value="visible">Visible in POS & menu</option><option value="hidden">Hidden from POS & menu</option></select>
                         <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
                             <option value="">All Categories</option>
                             {categories.map((category, index) => (
@@ -349,8 +356,8 @@ function ProductManag() {
                     </div>
                 </div>
 
-                <section className="category-visibility-panel" aria-label="Category POS visibility">
-                    <h3>Categories in POS</h3><p>Hiding a category hides all its products. Showing it again keeps individually hidden products hidden.</p>
+                <section className="category-visibility-panel" aria-label="Category POS and menu visibility">
+                    <h3>Categories in POS & menu</h3><p>Hiding a category hides all its products. Showing it again keeps individually hidden products hidden.</p>
                     {visibilityError && <p role="alert">{visibilityError}</p>}
                     <div>{categoryRecords.map(category => <button type="button" key={category.p_category_id} disabled={visibilityBusy !== null} onClick={() => toggleCategoryVisibility(category)} aria-pressed={Number(category.pos_hidden) !== 1}>
                         <strong>{category.p_category_name}</strong><span>{visibilityBusy === category.p_category_id ? 'Saving...' : Number(category.pos_hidden) === 1 ? 'Hidden - show in POS' : 'Visible - hide from POS'}</span>

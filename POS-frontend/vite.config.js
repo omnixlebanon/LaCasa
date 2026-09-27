@@ -15,8 +15,10 @@ const serveMenu = (server) => {
 // https://vitejs.dev/config/
 export default defineConfig({
     plugins: [plugin(), { name: 'public-menu', configureServer: serveMenu, configurePreviewServer: serveMenu }],
+    preview: { proxy: { '/api/public': 'http://localhost:8080' } },
     server: {
         port: 49682,
         strictPort:true,
+        proxy: { '/api/public': 'http://localhost:8080' },
     }
 })

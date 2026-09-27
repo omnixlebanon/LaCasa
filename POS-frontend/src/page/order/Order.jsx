@@ -1,3 +1,4 @@
+import useDrafts, { editDrafts } from '../../offline/useDrafts.js';
 import LoadingState from '../../components/LoadingState.jsx';
 import './Order.css';
 import { Search, Plus, Minus, X, Ticket, SlidersHorizontal, CircleCheckBig } from 'lucide-react';
@@ -23,49 +24,7 @@ function Order() {
     const [optionOpen, setOptionOpen] = useState("");
     const { formatPrice, rate } = useCurrency();
 
-    const [orders, setOrders] = useState(() => {
-        const savedOrders = localStorage.getItem('pos_orders');
-        return savedOrders ? JSON.parse(savedOrders) : [];
-    });
-    const [nextOrder, setNextOrder] = useState(() => {
-        const savedNext = localStorage.getItem('pos_nextOrder');
-        return savedNext ? parseInt(savedNext, 10) : 1;
-    });
-    const [activeOrderId, setActiveOrderId] = useState(() => {
-        const savedActiveId = localStorage.getItem('pos_activeOrderId');
-        return savedActiveId ? parseInt(savedActiveId, 10) : null;
-    });
-
-    useEffect(() => {
-        const today = new Date().toISOString().split('T')[0];
-        const lastSavedDate = localStorage.getItem('lastActiveDate');
-
-        if (lastSavedDate !== today) {
-            setOrders([]);
-            localStorage.setItem('pos_orders', JSON.stringify([]));
-            setNextOrder(1);
-            localStorage.setItem('pos_nextOrder', '1');
-            setActiveOrderId(null);
-            localStorage.removeItem('pos_activeOrderId');
-            localStorage.setItem('lastActiveDate', today);
-        }
-    }, []);
-
-    useEffect(() => {
-        localStorage.setItem('pos_orders', JSON.stringify(orders));
-    }, [orders]);
-
-    useEffect(() => {
-        localStorage.setItem('pos_nextOrder', nextOrder.toString());
-    }, [nextOrder]);
-
-    useEffect(() => {
-        if (activeOrderId !== null) {
-            localStorage.setItem('pos_activeOrderId', activeOrderId.toString());
-        } else {
-            localStorage.removeItem('pos_activeOrderId');
-        }
-    }, [activeOrderId]);
+    const { orders, activeOrderId, setOrders, setActiveOrderId, ready: draftsReady } = useDrafts();
 
     const fetchData = async () => {
         setLoading(true);
@@ -107,21 +66,12 @@ function Order() {
         return result;
     }, [products, searchQuery, categoryFilter]);
 
-    const addOrder = () => {
-        const newOrderId = nextOrder;
-        newlyAddedOrderRef.current = newOrderId;
-        setOrders([
-            ...orders,
-            {
-                id: nextOrder,
-                label: `order ${nextOrder}`,
-                orderType: 'takeout',
-                items: []
-            }
-        ]);
-        setNextOrder(nextOrder + 1);
-        setActiveOrderId(newOrderId);
-    };
+    const addOrder = () => editDrafts(drafts => {
+        const id = drafts.nextOrder++;
+        newlyAddedOrderRef.current = id;
+        drafts.orders.push({ id, checkoutOperationId: crypto.randomUUID(), label: `order ${id}`, orderType: 'takeout', items: [] });
+        drafts.activeOrderId = id;
+    }).catch(error => alert('Order was not saved: ' + error.message));
 
     useEffect(() => {
         if (newlyAddedOrderRef.current !== activeOrderId) return;
@@ -273,6 +223,7 @@ function Order() {
             totalAmount: parseFloat(totalPrice),
             customerName: activeOrder.label,
             details: {
+                checkout_operation_id: activeOrder.checkoutOperationId,
                 order_tab_id: activeOrder.id,
                 order_label: activeOrder.label,
                 table_id: activeOrder.tableId || null,
@@ -304,7 +255,7 @@ function Order() {
         }
     };
 
-    if (loading || loadError) return <LoadingState page label="Loading POS products..." error={loadError} onRetry={fetchData} />;
+    if (!draftsReady || loading || loadError) return <LoadingState page label="Loading POS products..." error={loadError} onRetry={fetchData} />;
 
     return (
         <>

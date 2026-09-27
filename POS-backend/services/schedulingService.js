@@ -18,7 +18,10 @@ async function listShifts(from, to, userId = null) {
       ${userId === null ? '' : 'AND user_id = ?'} ORDER BY recurrence_id FOR UPDATE`,
     userId === null ? [to, from] : [to, from, userId]);
     for (const rule of rules) {
+      const [existing] = await connection.execute('SELECT shift_date FROM shifts WHERE recurrence_id = ? AND shift_date BETWEEN ? AND ?', [rule.recurrence_id, from, to]);
+      const dates = new Set(existing.map(row => String(row.shift_date).slice(0, 10)));
       for (const date of recurringOccurrences(rule, from, to)) {
+        if (dates.has(date)) continue;
         // Cancelled occurrences keep this unique key and are never regenerated.
         await connection.execute(`INSERT INTO shifts (user_id, shift_date, start_time, end_time, notes, recurrence_id)
           VALUES (?, ?, ?, ?, ?, ?) ${sql(`ON DUPLICATE KEY UPDATE shift_id = shift_id`, `ON CONFLICT (recurrence_id, shift_date) DO NOTHING`)}`,

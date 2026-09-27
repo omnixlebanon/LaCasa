@@ -8,6 +8,16 @@ const { shiftInput, weekdays, validDate, badRequest } = require('../services/sch
 
 const router = express.Router();
 const accessLevels = new Set(['admin', 'employee']);
+// An occurrence created offline is addressed by its repeating rule and date
+// until the server materializes its permanent shift ID.
+async function resolveShiftId(value) {
+  const match = /^(\d+):(\d{4}-\d{2}-\d{2})$/.exec(value);
+  if (!match) return value;
+  const rows = await listShifts(match[2], match[2]);
+  const shift = rows.find(row => Number(row.recurrence_id) === Number(match[1]));
+  if (!shift) throw Object.assign(new Error('Repeating shift occurrence no longer exists.'), { status: 409 });
+  return shift.shift_id;
+}
 
 router.get('/employees', requireAdmin, async (req, res) => {
   try {
@@ -113,6 +123,7 @@ router.patch('/shifts/:id', requireAdmin, async (req, res) => {
   let connection;
   try {
     const input = shiftInput(req.body);
+    req.params.id = await resolveShiftId(req.params.id);
     connection = await db.getConnection();
     await connection.beginTransaction();
     const [[shift]] = await connection.execute('SELECT shift_id, recurrence_id, shift_date FROM shifts WHERE shift_id = ? AND cancelled_at IS NULL FOR UPDATE', [req.params.id]);
@@ -142,6 +153,7 @@ router.patch('/shifts/:id', requireAdmin, async (req, res) => {
 router.delete('/shifts/:id', requireAdmin, async (req, res) => {
   let connection;
   try {
+    req.params.id = await resolveShiftId(req.params.id);
     connection = await db.getConnection();
     await connection.beginTransaction();
     const [[shift]] = await connection.execute('SELECT shift_id FROM shifts WHERE shift_id = ? AND cancelled_at IS NULL FOR UPDATE', [req.params.id]);

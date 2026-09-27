@@ -69,7 +69,7 @@ function Tables() {
 
   const handleTableClick = async (table) => {
     try {
-      await api.put(`/api/seating/tables/${table.t_id}/status`, { t_status: "occupied" });
+      await api.put(`/api/seating/tables/${table.t_id}/status`, { t_status: "occupied", open_order: true });
 
       const updatedFloors = floors.map(floor => {
         if (floor.floor_id !== table.floor_id) return floor;
@@ -86,36 +86,10 @@ function Tables() {
       });
       setFloors(updatedFloors);
  
-      const savedOrders = localStorage.getItem('pos_orders');
-      let currentOrders = savedOrders ? JSON.parse(savedOrders) : [];
-      const savedNext = localStorage.getItem('pos_nextOrder');
-      let nextOrderValue = savedNext ? parseInt(savedNext, 10) : 1;
-      let existingOrder = currentOrders.find(order => order.label === table.t_name);
-    
-      if (existingOrder) {
-        currentOrders = currentOrders.map(order => order.id === existingOrder.id
-          ? { ...order, tableId: table.t_id, tableName: table.t_name, orderType: order.orderType || 'dine-in' }
-          : order);
-        localStorage.setItem('pos_orders', JSON.stringify(currentOrders));
-        localStorage.setItem('pos_activeOrderId', existingOrder.id.toString());
-      } else {
-        const newOrderId = nextOrderValue;
-        currentOrders.push({
-          id: newOrderId,
-          label: table.t_name,
-          tableId: table.t_id,
-          tableName: table.t_name,
-          orderType: 'dine-in',
-          items: []
-        });
-    
-        localStorage.setItem('pos_orders', JSON.stringify(currentOrders));
-        localStorage.setItem('pos_nextOrder', (nextOrderValue + 1).toString());
-        localStorage.setItem('pos_activeOrderId', newOrderId.toString());
-      }
       navigate('/');
     } catch (err) {
       console.error("Error updating table click status on server:", err);
+      alert(err.response?.data?.error || err.message);
     }
   };
 

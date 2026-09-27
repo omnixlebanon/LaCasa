@@ -9,9 +9,9 @@ const { prepare, wrap, parsers } = require('../config/postgres');
 // Real PostgreSQL engine in memory: no Supabase account or production data needed.
 let engine, db, server, base, cookie, employeeId, today, month;
 const queryParsers = Object.fromEntries([20, 1082, 1083, 1114, 1184, 1700].map(oid => [oid, parsers.getTypeParser(oid)]));
-async function request(route, method = 'GET', body, bot = false) {
+async function request(route, method = 'GET', body, bot = false, syncHeaders = {}) {
   const response = await fetch(base + '/api' + route, { method,
-    headers: { 'Content-Type': 'application/json', ...(bot ? { 'x-bot-secret': 'test-bot-secret' } : { Cookie: cookie || '' }) },
+    headers: { 'Content-Type': 'application/json', ...(bot ? { 'x-bot-secret': 'test-bot-secret' } : { Cookie: cookie || '' }), ...syncHeaders },
     ...(body === undefined ? {} : { body: JSON.stringify(body) }) });
   const data = await response.json();
   assert(response.status < 500, `${method} ${route}: ${JSON.stringify(data)}`);
@@ -32,7 +32,7 @@ before(async () => {
   }, release() {} };
   db = { ...wrap(client), getConnection: async () => wrap(client) };
   const dbPath = require.resolve('../config/database');
-  require.cache[dbPath] = { id: dbPath, filename: dbPath, loaded: true, exports: db };
+  require.cache[dbPath] = { id: dbPath, filename: dbPath, loaded: true, exports: require('../config/transactionContext').contextualDatabase(db) };
   await db.execute('INSERT INTO users (user_name,user_email,user_password_hash,user_position,access_level) VALUES (?,?,?,?,?)',
     ['Admin', 'admin@test.invalid', await bcrypt.hash('test-password', 4), 'Manager', 'admin']);
   const [[date]] = await db.query('SELECT CURRENT_DATE AS today');
@@ -324,4 +324,102 @@ test('POS visibility filters products/categories while keeping management and hi
   assert.equal((await request(`/products/${one.insertId}/visibility`, 'PATCH', { hidden: true })).status, 403);
   assert.equal((await request(`/products/categories/${category.insertId}/visibility`, 'PATCH', { hidden: true })).status, 403);
   cookie = admin;
+});
+
+test('public menu reflects catalog changes and hides private fields and hidden products', async () => {
+  const auth = await request('/auth/login', 'POST', { username: 'admin', password: 'test-password' });
+  cookie = auth.headers.get('set-cookie').split(';')[0];
+  const [category] = await db.execute('INSERT INTO product_categories(p_category_name) VALUES (?)', ['Menu test']);
+  const created = await request('/products', 'POST', { product_name: 'Menu drink', product_category: 'Menu test', product_price: 3, product_description: '<b>Fresh</b>', product_image: 'imgs/items/Espresso.png' });
+  assert.equal(created.status, 201);
+  const id = created.data.insertId;
+  const publicMenu = async () => {
+    const response = await fetch(base + '/api/public/menu');
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('cache-control'), 'no-store');
+    return (await response.json()).products;
+  };
+  let row = (await publicMenu()).find(p => p.product_id === id);
+  assert.equal(row.product_description, '<b>Fresh</b>');
+  assert.deepEqual(Object.keys(row).sort(), ['product_id','product_name','product_category','product_price','product_description','product_image'].sort());
+  assert.equal((await fetch(base + '/api/products')).status, 401);
+  assert.equal((await request(`/products/${id}`, 'PATCH', { product_price: 4, product_name: 'Updated menu drink', product_description: '', product_image: '' })).status, 200);
+  row = (await publicMenu()).find(p => p.product_id === id);
+  assert.equal(Number(row.product_price), 4); assert.equal(row.product_name, 'Updated menu drink'); assert.equal(row.product_description, '');
+  assert.equal((await request(`/products/${id}`, 'PATCH', { product_image: 'javascript:alert(1)' })).status, 400);
+  await request(`/products/${id}/visibility`, 'PATCH', { hidden: true });
+  assert.ok(!(await publicMenu()).some(p => p.product_id === id));
+  await request(`/products/${id}/visibility`, 'PATCH', { hidden: false });
+  await request(`/products/categories/${category.insertId}/visibility`, 'PATCH', { hidden: true });
+  assert.ok(!(await publicMenu()).some(p => p.product_id === id));
+  await request(`/products/categories/${category.insertId}/visibility`, 'PATCH', { hidden: false });
+  assert.ok((await publicMenu()).some(p => p.product_id === id));
+  await request(`/products/${id}`, 'DELETE');
+  assert.ok(!(await publicMenu()).some(p => p.product_id === id));
+});
+const { randomUUID } = require('node:crypto');
+const syncHeaders = (id, revision) => ({'X-Operation-Id':id,'X-Base-Revision':String(revision),'X-Offline-Account-Id':'1','X-Offline-Created-At':'2026-01-12T10:30:00.000Z'});
+const revision = async () => Number((await request('/offline/revision')).headers.get('x-sync-revision'));
+
+test('offline checkout commits receipt, stock and original sale timestamp once; retry keeps original revision', async () => {
+  const [[product]] = await db.query('SELECT product_id FROM products WHERE product_id = 1');
+  const [[ingredient]] = await db.query('SELECT item_id FROM items WHERE item_id = 1');
+  assert(product && ingredient);
+  const id = randomUUID(); const before = await revision();
+  const payload = {totalAmount:10,customerName:'Offline cashier',details:{items:[{product_id:1,qty:2,price:5}],offline_recipe_snapshot:[{product_id:1,ingredients:[{item_id:1,qty:1,item_cost:0.75}]}]}};
+  const first = await request('/checkout','POST',payload,false,syncHeaders(id,before));
+  assert.equal(first.status,201);
+  assert.equal(first.headers.get('x-sync-revision'),String(before+1));
+  const [[saved]] = await db.query('SELECT details, order_date FROM orders_history WHERE order_id = ?',[first.data.orderId]);
+  assert.equal(saved.details.total_cost,1.5); assert.match(saved.order_date,/^2026-01-12/);
+  const [[stock]] = await db.query('SELECT stock FROM items WHERE item_id = 1');
+  await request('/products/1','PATCH',{product_price:12});
+  const retry = await request('/checkout','POST',payload,false,syncHeaders(id,before));
+  assert.deepEqual(retry.data,first.data);
+  assert.equal(retry.headers.get('x-sync-revision'),String(before+1));
+  assert.equal(Number((await db.query('SELECT stock FROM items WHERE item_id = 1'))[0][0].stock),Number(stock.stock));
+  assert.equal((await db.query('SELECT order_id FROM orders_history WHERE customer_name = ?',['Offline cashier']))[0].length,1);
+  const different = await request('/checkout','POST',{...payload,totalAmount:11},false,syncHeaders(id,before));
+  assert.equal(different.status,409);
+});
+
+test('stale device changes fail without writes or receipts and can be explicitly reviewed', async () => {
+  const before=await revision();const id=randomUUID();
+  await request('/products/1','PATCH',{product_price:13});
+  const stale=await request('/products/1','PATCH',{product_price:9},false,syncHeaders(id,before));
+  assert.equal(stale.status,409);assert.equal(stale.data.code,'SYNC_CONFLICT');
+  assert.equal(Number((await db.query('SELECT product_price FROM products WHERE product_id = 1'))[0][0].product_price),13);
+  assert.equal((await db.query('SELECT operation_id FROM offline_sync_operations WHERE operation_id = ?',[id]))[0].length,0);
+  assert.equal((await request('/products/1','PATCH',{product_price:9},false,syncHeaders(id,stale.data.revision))).status,200);
+  assert.equal(Number((await db.query('SELECT product_price FROM products WHERE product_id = 1'))[0][0].product_price),9);
+});
+
+test('failed operation rolls back the entire checkout and leaves no successful receipt', async () => {
+  const before=await revision(); const id=randomUUID();
+  const [[stock]]=await db.query('SELECT stock FROM items WHERE item_id = 1');
+  const response=await fetch(base+'/api/checkout',{method:'POST',headers:{'Content-Type':'application/json',Cookie:cookie,...syncHeaders(id,before)},body:JSON.stringify({totalAmount:10,customerName:'Offline failure',details:{table_id:'invalid',items:[{product_id:1,qty:1}]}})});
+  assert.equal(response.status,500);
+  assert.equal(await revision(),before);
+  assert.equal((await db.query('SELECT operation_id FROM offline_sync_operations WHERE operation_id = ?',[id]))[0].length,0);
+  assert.equal((await db.query('SELECT order_id FROM orders_history WHERE customer_name = ?',['Offline failure']))[0].length,0);
+  assert.equal(Number((await db.query('SELECT stock FROM items WHERE item_id = 1'))[0][0].stock),Number(stock.stock));
+});
+
+test('offline operations reject a different signed-in account and honor revoked administrator access', async () => {
+  const id=randomUUID(),before=await revision();
+  const wrong=await request('/products/1','PATCH',{product_price:5},false,{...syncHeaders(id,before),'X-Offline-Account-Id':'999'});
+  assert.equal(wrong.status,401);
+  await db.query("UPDATE users SET access_level = 'employee' WHERE user_id = 1");
+  try{assert.equal((await request('/products/1','PATCH',{product_price:5},false,syncHeaders(id,before))).status,403);}
+  finally{await db.query("UPDATE users SET access_level = 'admin' WHERE user_id = 1");}
+  assert.equal(await revision(),before);
+});
+
+test('offline layouts return permanent IDs; repeated calendar reads do not advance the revision', async () => {
+  const floors=(await request('/seating/floors')).data;
+  floors.push({floor_id:-400,floor_name:'Offline floor',tables:[{t_id:-401,floor_id:-400,t_name:'Offline table',t_type:'twoSeat',t_seats:2,t_status:'available'}]});
+  const result=await request('/seating/layout','POST',{floors},false,syncHeaders(randomUUID(),await revision()));
+  assert.equal(result.status,200);assert(result.data.offlineIdMap[-400]>0);assert(result.data.offlineIdMap[-401]>0);
+  const days='/shifts?from='+today+'&to='+today;
+  await request(days);const stable=await revision();await request(days);assert.equal(await revision(),stable);
 });

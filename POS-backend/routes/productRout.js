@@ -2,8 +2,18 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { requireAdmin } = require('../middleware/auth');
+function validateMenuDetails(body) {
+    if (body.product_description !== undefined && (typeof body.product_description !== 'string' || body.product_description.length > 2000)) return 'Description must be at most 2000 characters.';
+    if (body.product_image !== undefined) {
+        const image = body.product_image;
+        if (typeof image !== 'string' || image.length > 255) return 'Image URL must be at most 255 characters.';
+        if (image && !/^https:\/\/[^\s]+$/i.test(image) && !/^(?:\/menu\/)?imgs\/[a-zA-Z0-9_./ -]+$/.test(image)) return 'Use an HTTPS image URL or a menu image path.';
+    }
+    return null;
+}
 
-// Visibility only controls the POS catalog; records and sales history stay intact.
+
+// Visibility controls both the POS and public menu; records and sales history stay intact.
 for (const [route, table, key] of [['/products/:id/visibility', 'products', 'product_id'], ['/products/categories/:id/visibility', 'product_categories', 'p_category_id']]) {
   router.patch(route, requireAdmin, async (req, res) => {
     if (typeof req.body?.hidden !== 'boolean' || !/^[1-9]\d*$/.test(req.params.id) || !Number.isSafeInteger(Number(req.params.id))) return res.status(400).json({ error: 'Provide a valid ID and hidden boolean.' });
@@ -24,6 +34,14 @@ router.get('/products/categories', async (req,res) => {
     }catch (err){
         res.status(500).json({error:"Error getting products categories: " + err.message})
     }
+});
+router.post('/products/category', requireAdmin, async (req,res) => {
+    const name=String(req.body?.category_name||'').trim();
+    if(!name||name.length>30)return res.status(400).json({error:'Category name must contain 1–30 characters.'});
+    try {
+        const [result]=await db.query('INSERT INTO product_categories (p_category_name) VALUES (?)',[name]);
+        res.status(201).json({insertId:result.insertId});
+    } catch(error) { res.status(['23505','ER_DUP_ENTRY'].includes(error.code)?409:500).json({error:'Could not create category. The name may already exist.'}); }
 });
 // PUT category
 router.put('/products/category', async (req, res) => {
@@ -88,16 +106,18 @@ router.get('/products', async (req, res) => {
 });
 
 // POST /products
-router.post('/products', async (req, res) => {
-    const { product_name, product_category, product_price } = req.body;
+router.post('/products', requireAdmin, async (req, res) => {
+    const { product_name, product_category, product_price, product_description = '', product_image = '' } = req.body;
+    const issue = validateMenuDetails(req.body);
+    if (issue) return res.status(400).json({ error: issue });
     
     if (!product_name || !product_category || product_price === undefined) {
         return res.status(400).json({ error: "fields are all required" });
     }
 
     try {
-        const query = `INSERT INTO products(product_name, product_category, product_price) VALUES(?, ?, ?)`;
-        const [result] = await db.query(query, [product_name, product_category, product_price]);
+        const query = `INSERT INTO products(product_name, product_category, product_price, product_description, product_image) VALUES(?, ?, ?, ?, ?)`;
+        const [result] = await db.query(query, [product_name, product_category, product_price, product_description, product_image]);
         
         console.log('Successfully added product.');
         res.status(201).json({ 
@@ -111,8 +131,10 @@ router.post('/products', async (req, res) => {
 });
 
 // PATCH /products/:id
-router.patch('/products/:id', async (req, res) => {
+router.patch('/products/:id', requireAdmin, async (req, res) => {
     const { id } = req.params;
+    const issue = validateMenuDetails(req.body);
+    if (issue) return res.status(400).json({ error: issue });
     const product_name = req.body.product_name || null;
     const product_category = req.body.product_category || null;
     const product_price = req.body.product_price ?? null;
@@ -121,12 +143,14 @@ router.patch('/products/:id', async (req, res) => {
         UPDATE products SET
             product_name = COALESCE(?, product_name),
             product_category = COALESCE(?, product_category),
-            product_price = COALESCE(?, product_price)
+            product_price = COALESCE(?, product_price),
+            product_description = COALESCE(?, product_description),
+            product_image = COALESCE(?, product_image)
         WHERE product_id = ?    
     `;
 
     try {
-        const [result] = await db.query(query, [product_name, product_category, product_price, id]);
+        const [result] = await db.query(query, [product_name, product_category, product_price, req.body.product_description ?? null, req.body.product_image ?? null, id]);
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: "Product not found" });
         }

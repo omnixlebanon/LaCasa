@@ -9,6 +9,7 @@ function ProductCard({ data, categories = [], onProductEdit }) {
     const { formatPrice, currencyLabel } = useCurrency()
     const [visibilityBusy, setVisibilityBusy] = useState(false);
     const [visibilityError, setVisibilityError] = useState('');
+    const [editError, setEditError] = useState('');
     const hidden = Number(data.pos_hidden) === 1;
     const categoryHidden = Number(data.category_hidden) === 1;
     const toggleVisibility = async () => {
@@ -23,6 +24,8 @@ function ProductCard({ data, categories = [], onProductEdit }) {
         product_name: data.product_name,
         product_category: data.product_category,
         product_price: data.product_price,
+        product_description: data.product_description || '',
+        product_image: data.product_image || '',
     };
     const [formData, setFormData] = useState(default_form_values);
     const handleFormInputChange = (e) => {
@@ -48,6 +51,7 @@ function ProductCard({ data, categories = [], onProductEdit }) {
         }
     }
     const handleEdit = async (e) => {
+        setEditError('');
         if (e) e.preventDefault();
         try {
             const res = await api.patch(
@@ -59,7 +63,7 @@ function ProductCard({ data, categories = [], onProductEdit }) {
                 if (onProductEdit) await onProductEdit();
             }
         } catch (error) {
-            console.error('Error while editing product:', error.response?.data?.error || error.message);
+            setEditError(error.response?.data?.error || 'Could not save product. Please try again.');
         }
     }
 
@@ -76,6 +80,7 @@ function ProductCard({ data, categories = [], onProductEdit }) {
                             </button>
                         </div>
                         <div className='input-area'>
+                            {editError && <p role="alert" className="error-message">{editError}</p>}
                             <div className='label-input'>
                                 <label htmlFor="product_name">Product Name</label>
                                 <input type="text" id='product_name' name="product_name" required value={formData.product_name} onChange={handleFormInputChange} />
@@ -98,6 +103,8 @@ function ProductCard({ data, categories = [], onProductEdit }) {
                             </div>
                             <div className='input-area-4th-line'>
                             </div>
+                            <div className='label-input'><label htmlFor="product_description">Menu description</label><textarea id="product_description" name="product_description" maxLength={2000} value={formData.product_description} onChange={handleFormInputChange} /></div>
+                            <div className='label-input'><label htmlFor="product_image">Menu image URL</label><input id="product_image" name="product_image" maxLength={255} placeholder="https://... or imgs/items/photo.png" value={formData.product_image} onChange={handleFormInputChange} /></div>
                             <div className='edit-submit-container'><button type='submit'>Save Changes</button></div>
                         </div>
                     </form>
@@ -105,7 +112,7 @@ function ProductCard({ data, categories = [], onProductEdit }) {
             )}
 
             <div className={`product-card${hidden || categoryHidden ? ' product-pos-hidden' : ''}`}>
-                <p className="product-visibility-status">{hidden ? 'Hidden from POS' : categoryHidden ? 'Hidden by category' : 'Visible in POS'}</p>
+                <p className="product-visibility-status">{hidden ? 'Hidden from POS & menu' : categoryHidden ? 'Hidden by category' : 'Visible in POS & menu'}</p>
                 {visibilityError && <p role="alert">{visibilityError}</p>}
                 <div className='product-card-head'>
                     <h3>{data.product_name}</h3>
@@ -115,7 +122,7 @@ function ProductCard({ data, categories = [], onProductEdit }) {
                     <span className='product-price' >{formatPrice(data.product_price)}</span>
                     <div className='action-btns-container'>
                         <button type="button" className="product-visibility-toggle" disabled={visibilityBusy} onClick={toggleVisibility} aria-label={`${hidden ? 'Show' : 'Hide'} ${data.product_name} ${hidden ? 'in' : 'from'} POS`} title={categoryHidden ? 'The category is hidden; showing this product will not override the category.' : undefined}>
-                            {hidden ? <Eye size={18} /> : <EyeOff size={18} />}{visibilityBusy ? 'Saving...' : hidden ? 'Show in POS' : 'Hide from POS'}
+                            {hidden ? <Eye size={18} /> : <EyeOff size={18} />}{visibilityBusy ? 'Saving...' : hidden ? 'Show in POS & menu' : 'Hide from POS & menu'}
                         </button>
                         <button className='edit-btn action-btn' onClick={() => setIsEditPopupOpen(true)}><PenLine /></button>
                         <button className='delete-btn action-btn' onClick={handleDelete}><Trash /></button>

@@ -28,10 +28,14 @@ router.post('/checkout', async (req, res) => {
     if (typeof totalAmount !== 'number' || totalAmount <= 0) {
       return res.status(400).json({ success: false, error: "Invalid order amount." });
     }
+    const recordedAt = req.get('X-Operation-Id') ? req.get('X-Offline-Created-At') : null;
+    if (recordedAt && (!Number.isFinite(Date.parse(recordedAt)) || Date.parse(recordedAt) > Date.now() + 300000)) {
+      return res.status(400).json({ error: 'Invalid device sale time. Check the device clock.' });
+    }
     const result = await processOrderCheckout(
         totalAmount, 
         customerName, 
-        details || {}
+        details || {}, recordedAt
     );
 
     if (result.success) {

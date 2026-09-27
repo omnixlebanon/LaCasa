@@ -6,7 +6,7 @@ const sqids = new Sqids({
   minLength: 5
 });
 
-async function processOrderCheckout(totalAmount, customerName, details = {}) {
+async function processOrderCheckout(totalAmount, customerName, details = {}, recordedAt = null) {
     const connection = await db.getConnection();
     try {
         console.log("\n================ [CHECKOUT DIAGNOSTIC] ================");
@@ -14,7 +14,8 @@ async function processOrderCheckout(totalAmount, customerName, details = {}) {
         console.log("Total Amount:", totalAmount);
         console.log("Details payload received:", JSON.stringify(details, null, 2));
 
-        const now = new Date();
+        const now = recordedAt ? new Date(recordedAt) : new Date();
+        const saleDate = new Intl.DateTimeFormat('sv-SE', { timeZone: process.env.APP_TIMEZONE || 'Asia/Beirut', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(now);
         const year = now.getFullYear();
         const month = String(now.getMonth() + 1).padStart(2, '0');
         const currentMonthString = `${year}${month}`; 
@@ -36,28 +37,38 @@ async function processOrderCheckout(totalAmount, customerName, details = {}) {
             if (!recipes.has(String(item.product_id))) {
                 const [[product]] = await connection.query('SELECT product_id FROM products WHERE product_id = ? FOR UPDATE', [item.product_id]);
                 if (!product) throw new Error('An ordered product no longer exists.');
-                const [recipe] = await connection.query('SELECT pi.item_id, pi.qty, i.item_cost FROM product_items pi JOIN items i ON i.item_id = pi.item_id WHERE pi.product_id = ? FOR UPDATE', [item.product_id]);
+                let [recipe] = await connection.query('SELECT pi.item_id, pi.qty, i.item_cost FROM product_items pi JOIN items i ON i.item_id = pi.item_id WHERE pi.product_id = ? FOR UPDATE', [item.product_id]);
+                if (recordedAt && details.offline_recipe_snapshot) {
+                    const snapshot = details.offline_recipe_snapshot.find(row => Number(row.product_id) === Number(item.product_id))?.ingredients;
+                    if (!Array.isArray(snapshot)) throw new Error('Missing offline recipe snapshot.');
+                    for (const ingredient of snapshot) {
+                        if (!Number.isSafeInteger(Number(ingredient.item_id)) || Number(ingredient.item_id) <= 0 || !Number.isFinite(Number(ingredient.qty)) || Number(ingredient.qty) <= 0 || !Number.isFinite(Number(ingredient.item_cost)) || Number(ingredient.item_cost) < 0) throw new Error('Invalid offline ingredient snapshot.');
+                        const [[exists]] = await connection.query('SELECT item_id FROM items WHERE item_id = ? FOR UPDATE', [ingredient.item_id]);
+                        if (!exists) throw new Error('An ingredient used by this offline sale no longer exists. Restore it before syncing.');
+                    }
+                    recipe = snapshot;
+                }
                 recipes.set(String(item.product_id), recipe);
             }
             const recipe = recipes.get(String(item.product_id));
             const rawCost = recipe.reduce((sum, ingredient) => sum + Number(ingredient.qty) * Number(ingredient.item_cost), 0);
             if (!Number.isFinite(rawCost) || rawCost < 0) throw new Error('Invalid ingredient cost.');
             const unitCost = Math.round(rawCost * 100) / 100;
-            savedItems.push({ ...item, unit_cost: unitCost, total_cost: Math.round(unitCost * Number(item.qty) * 100) / 100, cost_source: recipe.length ? 'checkout_recipe' : 'no_recipe' });
+            savedItems.push({ ...item, unit_cost: unitCost, total_cost: Math.round(unitCost * Number(item.qty) * 100) / 100, cost_source: recipe.length ? (recordedAt ? 'offline_checkout_recipe' : 'checkout_recipe') : 'no_recipe' });
         }
         details = { ...details, items: savedItems, cost_snapshot_version: 1,
             total_cost: savedItems.reduce((cents, item) => cents + Math.round(item.total_cost * 100), 0) / 100 };
 
         // 2. Insert order history record
         const insertQuery = `
-            INSERT INTO orders_history (order_id, customer_name, total_amount, details)
-            VALUES (?, ?, ?, ?);
+            INSERT INTO orders_history (order_id, customer_name, total_amount, details, order_date)
+            VALUES (?, ?, ?, ?, ?);
         `;
         const [insertResult] = await connection.query(insertQuery, [
             publicOrderId,
             customerName,
             totalAmount,
-            JSON.stringify(details) 
+            JSON.stringify(details), saleDate
         ]);
         console.log("Order history record created with internal ID:", insertResult.insertId);
 

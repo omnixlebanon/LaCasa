@@ -2,6 +2,7 @@ import { useState, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { LayoutDashboard, History, Package, CalendarDays, LogOut, ShoppingCart, LayoutGrid, ClipboardList, LayoutList, Users, Menu } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext.jsx';
+import OfflineStatus from '../../offline/OfflineStatus.jsx';
 import { useCurrency } from '../../global.jsx';
 
 export default function MobileNavigation() {
@@ -31,6 +32,7 @@ export default function MobileNavigation() {
     <header className="mobile-header">
       <div><strong>La Casa</strong><small>{links.find(link => link.to === pathname)?.label || 'Management'}</small></div>
       <div className="mobile-header-actions">
+        <OfflineStatus />
         <button onClick={toggleCurrency} aria-label={`Change currency from ${currency}`}>{currency}</button>
         <button onClick={handleLogout} aria-label="Log out"><LogOut size={20} /></button>
       </div>

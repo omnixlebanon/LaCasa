@@ -21,22 +21,31 @@ const app = express();
 
 app.use(cors({
     origin: process.env.CLIENT_URL,
-    credentials: true
+    credentials: true,
+    exposedHeaders: ['X-Sync-Revision']
 }));
 // Stay below Vercel's 4.5 MB request limit, including the JSON envelope.
 app.use(express.json({ limit: '4mb' }));
 app.use(cookieParser())
 
+app.use('/api/public', require('./routes/publicMenuRout'));
 app.use('/api/auth', auth_routes)
-app.use('/api/bot', workflow_routes.botRouter);
-app.use('/api',verifyToken,seating_routes)
-app.use('/api',verifyToken, stock_routes);
-app.use('/api',verifyToken, product_routes);
-app.use('/api',verifyToken, history_routes);
-app.use('/api', verifyToken, employee_routes);
-app.use('/api', verifyToken, workflow_routes.managementRouter);
-app.use('/api', verifyToken, payroll_routes);
-app.use('/api', verifyToken, require('./routes/expenseRout'));
+app.use('/api/bot', require('./middleware/durableSync'), workflow_routes.botRouter);
+app.use('/api', verifyToken, require('./middleware/durableSync'));
+app.get('/api/offline/revision', (req,res) => res.json({ ready: true }));
+app.get('/api/offline/batches', async (req,res,next) => {
+    try { const [rows] = await require('./config/database').query('SELECT batch_id, item_id, batch_stock, batch_exDate FROM batches WHERE batch_stock > 0'); res.json(rows); }
+    catch (error) { next(error); }
+});
+app.use('/api', seating_routes)
+app.use('/api', stock_routes);
+app.use('/api', product_routes);
+app.use('/api', history_routes);
+app.use('/api', employee_routes);
+app.use('/api', workflow_routes.managementRouter);
+app.use('/api', payroll_routes);
+app.use('/api', require('./routes/expenseRout'));
+app.use('/api', (req,res) => res.status(404).json({ error: 'API route not found.' }));
 app.use((err, req, res, next) => {
     if (err.type === 'entity.too.large') return res.status(413).json({ error: 'Upload is too large. Use a smaller image (request limit: 4 MB).' });
     console.error(err.stack);

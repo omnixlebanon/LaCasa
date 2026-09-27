@@ -1,0 +1,16 @@
+.offline-indicator { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; flex-shrink: 0; min-width: 44px; min-height: 44px; padding: 5px 8px; border: 1px solid var(--main-border); border-radius: 10px; background: white; color: var(--main-color); font-size: 12px; }
+.offline-indicator small { font-size: 10px; line-height: 1; }
+.offline-indicator.has-pending { background: #fff5dc; border-color: #d6ad59; color: #745210; }
+.sidebar-bottomSection > .offline-indicator { margin: 4px auto; }
+.offline-dialog { margin: auto; width: min(640px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); padding: 20px; border: 1px solid var(--border-color); border-radius: 14px; color: var(--text-color); }
+.offline-dialog::backdrop { background: #10271bb0; }
+.offline-dialog header { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.offline-dialog p { margin: 12px 0; }
+.offline-dialog button, .offline-actions label { min-height: 44px; padding: 10px; border: 1px solid var(--border-color); border-radius: 8px; background: var(--main-soft); color: var(--main-color); cursor: pointer; }
+.offline-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.offline-actions input { display: block; max-width: 100%; }
+.offline-dialog details { padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+.offline-dialog pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+.offline-error { color: var(--danger-color); }
+.offline-dialog textarea { width: 100%; min-height: 180px; padding: 10px; }
+.offline-dialog { text-align: left; font-size: 14px; }

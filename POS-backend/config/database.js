@@ -17,3 +17,5 @@ const db_config = mysql.createPool({
 
 module.exports = db_config;
 }
+
+module.exports = require('./transactionContext').contextualDatabase(module.exports);

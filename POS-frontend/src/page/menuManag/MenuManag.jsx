@@ -11,7 +11,7 @@ function MenuManag() {
             <h3>Customer menu</h3>
             <p>Open the public La Casa menu to preview what customers see. No login is required.</p>
             <p>Share this address with customers: <a href="/menu" target="_blank" rel="noopener noreferrer">{window.location.origin}/menu</a></p>
-            <p className="menu-public-note">This menu uses the content from your menu repository. Product changes in the POS are not synced to it yet.</p>
+            <p className="menu-public-note">Manage names, prices, descriptions and images in Product Management. Products and categories hidden from the POS are also hidden from the menu. Open menus refresh automatically.</p>
         </section>
     </div>;
 }

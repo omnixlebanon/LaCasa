@@ -95,6 +95,7 @@ router.post('/seating/layout', async (req, res) => {
         await connection.query("UPDATE floors SET display_order = -display_order - 1000 WHERE floor_id > 0");
 
         const floorIdMapping = {};
+        const offlineIdMap = {};
         let orderCounter = 1;
 
         // 4. Process Floor and Table insertions and updates
@@ -108,6 +109,7 @@ router.post('/seating/layout', async (req, res) => {
                     [floor.floor_name, orderCounter++]
                 );
                 actualFloorId = result.insertId;
+                offlineIdMap[floor.floor_id] = actualFloorId;
                 floorIdMapping[floor.floor_id] = actualFloorId;
             } else {
                 // Update existing floor (now with correct unique display_order counter)
@@ -124,10 +126,11 @@ router.post('/seating/layout', async (req, res) => {
 
                     if (typeof table.t_id === 'number' && table.t_id < 0) {
                         // Insert brand new table
-                        await connection.query(
+                        const [inserted] = await connection.query(
                             'INSERT INTO tablez (floor_id, t_name, t_type, t_status, t_seats) VALUES (?, ?, ?, ?, ?)',
                             [mappedFloorId, table.t_name, table.t_type, table.t_status || 'available', table.t_seats]
                         );
+                        offlineIdMap[table.t_id] = inserted.insertId;
                     } else {
                         // Update existing table details (overwrites temporary '_temp' name)
                         await connection.query(
@@ -140,7 +143,7 @@ router.post('/seating/layout', async (req, res) => {
         }
 
         await connection.commit();
-        res.status(200).json({ message: "Layout synchronized successfully" });
+        res.status(200).json({ message: "Layout synchronized successfully", offlineIdMap });
     } catch (error) {
         await connection.rollback();
         console.error("Transaction rolled back. Sync Error:", error);

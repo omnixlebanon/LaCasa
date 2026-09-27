@@ -201,7 +201,7 @@ router.post('/stock/:id/batch', async (req, res) => {
             INSERT INTO batches (item_id, batch_stock, batch_exDate)
             VALUES (?, ?, ${sql(`DATE_ADD(CURRENT_DATE, INTERVAL COALESCE((SELECT shelf_life FROM items WHERE item_id = ?), 0) DAY)`, `(CURRENT_DATE + COALESCE((SELECT shelf_life FROM items WHERE item_id = ?), 0))`)})
         `;
-        await connection.execute(insertBatchQuery, [id, batch_stock, id]);
+        const [inserted] = await connection.execute(insertBatchQuery, [id, batch_stock, id]);
 
         const updateItemQuery = `
             UPDATE items
@@ -216,7 +216,7 @@ router.post('/stock/:id/batch', async (req, res) => {
         await connection.execute(updateItemQuery, [batch_stock, batch_stock, batch_stock, id]);
         await refreshStaticExDate(connection, id);
         await connection.commit();
-        return res.status(201).json({ message: "Batch logged and item quantities updated successfully." });
+        return res.status(201).json({ message: "Batch logged and item quantities updated successfully.", batch_id: inserted.insertId });
 
     } catch (err) {
         await connection.rollback();
