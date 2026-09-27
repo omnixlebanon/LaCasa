@@ -141,6 +141,40 @@ export async function correctPending(data) {
  });
  await syncPending();
 }
+function duplicateProduct(op,code,message){
+ return ['post','patch'].includes(op.method)&&/^\/api\/products(?:\/-?\d+)?$/.test(op.url)&&
+  (code==='PRODUCT_NAME_EXISTS'||/products_product_name_key|A product with this name already exists/i.test(message||''));
+}
+function referencesId(op,id){
+ const values=value=>value&&typeof value==='object'?Object.values(value).some(values):String(value)===String(id);
+ return op.url.split('/').some(part=>decodeURIComponent(part)===String(id))||values(op.data);
+}
+async function skipDuplicateProduct(owner,op){
+ // Refresh first: if the server cannot be reached, the original stays queued.
+ const shared=await downloadSnapshot(owner);
+ await change(state=>{
+  if(activePending(state)?.id!==op.id)throw Error('The pending queue changed. Retry sync.');
+  const name=op.data.product_name||'Unnamed product';
+  const notice=op.method==='post'?`?${name}? was not added because a product with this name already exists.`:`Product ${op.url.split('/').at(-1)} was not updated to ?${name}? because that name already exists. None of the changes in this request were applied.`;
+  state.recovery=state.recovery||[];
+  state.recovery.push({...op,skippedAt:new Date().toISOString(),skipReason:notice});
+  state.queue=state.queue.filter(pending=>pending.id!==op.id);
+  // Keep the prior revision so skipping never silently accepts concurrent edits.
+  state.cache=shared.cache;
+  const drafts=state.drafts;delete state.drafts;
+  for(const pending of state.queue){
+   if(op.method==='post'&&referencesId(pending,op.tempId)){
+    pending.blocked=true;pending.status=422;pending.problem=`This change uses ?${name}?, which was not added. Correct its product reference before retrying.`;
+    continue;
+   }
+   try{applyLocal(state,{...pending,data:remap(structuredClone(pending.data),state.idMap)});}
+   catch(error){pending.blocked=true;pending.status=422;pending.problem=error.message;}
+  }
+  state.drafts=drafts;state.error=null;
+ },owner);
+ announceSnapshot();
+}
+export async function dismissSyncNotices(){await change(state=>{for(const record of state.recovery||[])if(record.skippedAt)record.noticeRead=true;});}
 export async function syncPending({resumeAuth=false}={}) {
  const owner=accountId();if(!owner||!navigator.onLine||!navigator.locks)return;
  return navigator.locks.request('lacasa-sync-'+owner,{ifAvailable:true},async lock=>{
@@ -149,6 +183,7 @@ export async function syncPending({resumeAuth=false}={}) {
   for(;;){
    if(accountId()!==owner)return;
    const snapshot=await load(owner);const op=activePending(snapshot);if(!op){connectionState=snapshot.queue.length?'requests left unsynced':'online';announce();if(completed)await prepareOffline();return;}
+   if(op.blocked&&duplicateProduct(op,null,op.problem)){try{await skipDuplicateProduct(owner,op);completed=true;continue;}catch(error){await change(state=>{state.error=error.response?.data?.error||error.message;},owner);return;}}
    if(op.blocked){if(resumeAuth&&op.status===401){await change(s=>{activePending(s).blocked=false;},owner);continue;}return;}
    if(!op.sentData){await change(s=>{const first=activePending(s);first.sentData=remap(first.data,s.idMap);first.sentUrl=first.url.split('/').map(segment=>encodeURIComponent(remap(decodeURIComponent(segment),s.idMap,'shift_id'))).join('/');first.expectedRevision??=s.revision;},owner);continue;}
    try{
@@ -170,6 +205,9 @@ export async function syncPending({resumeAuth=false}={}) {
     },owner);
     completed=true;connectionState='online';announce();
    }catch(error){
+    if(duplicateProduct(op,error.response?.data?.code,error.response?.data?.error)){
+     try{await skipDuplicateProduct(owner,op);completed=true;continue;}catch(refreshError){await change(state=>{state.error='Could not refresh the catalog. The duplicate request is still saved. '+refreshError.message;},owner);return;}
+    }
     const status=error.response?.status;connectionState=status===401?'sign-in required':status===409?'conflict':status?'sync paused':'offline';
     await change(s=>{s.error=error.response?.data?.error||error.message;if(activePending(s)?.id===op.id){activePending(s).blocked=!!status&&status!==503;activePending(s).problem=s.error;activePending(s).conflictRevision=error.response?.data?.revision;activePending(s).status=status;if(status===409)for(const later of s.queue.filter(pending=>pending.id!==op.id&&!pending.deferred)){later.blocked=true;later.status=409;later.problem='Review this remaining change against the latest shared data.';}}},owner);announce();return;
    }

@@ -204,3 +204,46 @@ test('duplicate product names are rejected before saving locally, including rena
  await write('/api/products/1',{product_name:'Coffee',product_price:6},'patch');
  assert.equal((await load()).cache['/api/products'].data.find(p=>p.product_id===1).product_price,6);
 });
+
+test('duplicate creates leave the queue with a notice and other requests continue',async()=>{
+ await write('/api/products',{product_name:'Existing elsewhere',product_category:'Hot',product_price:4});
+ const original=(await load()).queue[0];
+ await change(state=>state.queue.push({id:crypto.randomUUID(),tempId:-55,url:'/api/expenses',method:'post',data:{amount:5,date:'2026-09-01',category:'Internet',frequency:'none'},createdAt:new Date().toISOString()}));
+ const shared=fixture();shared.cache['/api/products'].data.push({product_id:88,product_name:'Existing elsewhere',product_category:'Hot',product_price:8});
+ const sent=[];
+ network.defaults.adapter=async config=>{
+  if(config.method==='get')return {data:shared.cache[keyOf(config.url)]?.data||[],status:200,headers:headers(10),config};
+  sent.push(config.url);
+  if(config.url==='/api/products')throw new AxiosError('Duplicate','ERR_BAD_REQUEST',config,null,{status:422,data:{code:'PRODUCT_NAME_EXISTS',error:'A product with this name already exists.'}});
+  return {data:{id:55},status:200,headers:headers(11),config};
+ };
+ navigator.onLine=true;await syncPending();const state=await load();
+ assert.equal(state.queue.length,0);assert.deepEqual(sent,['/api/products','/api/expenses']);
+ assert.equal(state.recovery[0].id,original.id);assert.match(state.recovery[0].skipReason,/Existing elsewhere.*not added/);
+ assert.equal(state.cache['/api/products'].data.filter(p=>p.product_name==='Existing elsewhere').length,1);
+ assert.equal(state.cache['/api/products'].data.find(p=>p.product_id===88).product_price,8);
+});
+test('older blocked duplicate renames are skipped, restoring the actual product',async()=>{
+ await write('/api/products/1',{product_name:'Taken name',product_price:99},'patch');
+ await change(state=>{state.queue[0].blocked=true;state.queue[0].problem='duplicate key value violates unique constraint "products_product_name_key"';});
+ const shared=fixture();network.defaults.adapter=async config=>{assert.equal(config.method,'get');return {data:shared.cache[keyOf(config.url)]?.data||[],status:200,headers:headers(10),config};};
+ navigator.onLine=true;await syncPending();const state=await load();assert.equal(state.queue.length,0);
+ assert.match(state.recovery[0].skipReason,/not updated to.*Taken name/);assert.equal(state.cache['/api/products'].data[0].product_name,'Coffee');assert.equal(state.cache['/api/products'].data[0].product_price,5);
+});
+test('orders depending on a skipped duplicate product remain saved and paused',async()=>{
+ const created=await write('/api/products',{product_name:'Duplicate remote',product_category:'Hot',product_price:2});
+ await write('/api/checkout',{totalAmount:2,details:{items:[{product_id:created.data.insertId,qty:1,price:2}]}});
+ const shared=fixture();let mutations=0;
+ network.defaults.adapter=async config=>{
+  if(config.method==='get')return {data:shared.cache[keyOf(config.url)]?.data||[],status:200,headers:headers(10),config};
+  mutations++;throw new AxiosError('Duplicate','ERR_BAD_REQUEST',config,null,{status:422,data:{code:'PRODUCT_NAME_EXISTS'}});
+ };
+ navigator.onLine=true;await syncPending();const state=await load();assert.equal(mutations,1);assert.equal(state.queue.length,1);assert.equal(state.queue[0].url,'/api/checkout');assert.equal(state.queue[0].blocked,true);assert.match(state.queue[0].problem,/was not added/);
+});
+
+test('a failed refresh keeps the duplicate request queued for recovery',async()=>{
+ await write('/api/products',{product_name:'Remote duplicate',product_category:'Hot',product_price:2});
+ const original=(await load()).queue[0];
+ network.defaults.adapter=async config=>{if(config.method==='get')throw new AxiosError('Offline','ERR_NETWORK',config);throw new AxiosError('Duplicate','ERR_BAD_REQUEST',config,null,{status:422,data:{code:'PRODUCT_NAME_EXISTS'}});};
+ navigator.onLine=true;await syncPending();const state=await load();assert.equal(state.queue[0].id,original.id);assert.equal(state.recovery.length,0);
+});

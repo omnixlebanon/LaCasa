@@ -151,7 +151,7 @@ router.post('/products', requireAdmin, async (req, res) => {
             insertId: result.insertId
         });
     } catch (err) {
-        if (['23505','ER_DUP_ENTRY'].includes(err.code)) return res.status(422).json({error:'A product with this name already exists. Edit the existing product or choose a different name.'});
+        if (['23505','ER_DUP_ENTRY'].includes(err.code)) return res.status(422).json({code:'PRODUCT_NAME_EXISTS',error:'A product with this name already exists. Edit the existing product or choose a different name.'});
         console.error('Error adding product: ', err.message);
         res.status(500).json({ error: err.message });
     }
@@ -183,7 +183,7 @@ router.patch('/products/:id', requireAdmin, async (req, res) => {
         }
         return res.status(200).json({ message: "Product updated successfully." });
     } catch (err) {
-        if (['23505','ER_DUP_ENTRY'].includes(err.code)) return res.status(422).json({error:'A product with this name already exists. Choose a different name.'});
+        if (['23505','ER_DUP_ENTRY'].includes(err.code)) return res.status(422).json({code:'PRODUCT_NAME_EXISTS',error:'A product with this name already exists. Choose a different name.'});
         res.status(500).json({ error: err.message });
     }
 });

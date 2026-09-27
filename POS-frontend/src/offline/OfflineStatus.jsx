@@ -1,7 +1,7 @@
 ﻿import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { load, exportBackup, restoreBackup } from './storage.js';
-import { prepareOffline, syncPending, resolvePending, correctPending, latestSharedData, activePending, isWaitingOnHeld, leavePendingUnsynced, resumeHeld, connectionState } from './transport.js';
+import { prepareOffline, syncPending, resolvePending, correctPending, latestSharedData, activePending, isWaitingOnHeld, leavePendingUnsynced, resumeHeld, dismissSyncNotices, connectionState } from './transport.js';
 import './offline.css';
 function redact(value){if(Array.isArray(value))return value.map(redact);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,v])=>[key,/password|token|evidence/i.test(key)?'[private]':redact(v)]));return value;}
 function syncMessage(message){return /products_product_name_key/i.test(message||'')?'A product with this name already exists on the server. Change the saved name or leave this request unsynced.':message;}
@@ -26,19 +26,21 @@ export default function OfflineStatus(){
  useEffect(()=>{let active=true;navigator.serviceWorker?.ready.then(()=>{if(active)setShellReady(true);}).catch(()=>{});return()=>{active=false;};},[]);
  useEffect(()=>{if(!user)return;let active=true;const update=()=>{load().then(s=>{if(active){setState(s);setStatus(connectionState);}}).catch(e=>{if(active)setError(e.message);});};update();window.addEventListener('offline-change',update);const timer=setInterval(update,5000);navigator.storage?.persisted?.().then(setPersisted);void syncPending({resumeAuth:true}).then(prepareOffline);return()=>{active=false;clearInterval(timer);window.removeEventListener('offline-change',update);};},[user]);
  if(!user)return null;
+ const notices=(state?.recovery||[]).filter(record=>record.skippedAt&&!record.noticeRead);
  const run=async fn=>{try{setError('');await fn();}catch(e){setError(e.message);}};
  return <>
-  <button className={`offline-indicator ${state?.queue.length?'has-pending':''}`} title={`${state?.queue.length||0} pending changes · ${status} · ${state?.prepared?'Offline data ready':'Prepare offline data'}`} aria-label={`Open sync: ${state?.queue.length||0} pending changes, ${status}`} onClick={()=>dialog.current.showModal()}>Sync<small>{state?.queue.length||(!state?.prepared?'Setup':status==='online'?'✓':'!')}</small></button>
+  <button className={`offline-indicator ${state?.queue.length?'has-pending':''}`} title={`${state?.queue.length||0} pending changes · ${status} · ${state?.prepared?'Offline data ready':'Prepare offline data'}`} aria-label={`Open sync: ${state?.queue.length||0} pending changes, ${status}`} onClick={()=>dialog.current.showModal()}>Sync<small>{state?.queue.length||(notices.length?'!':!state?.prepared?'Setup':status==='online'?'✓':'!')}</small></button>
   <dialog ref={dialog} className="offline-dialog">
    <header><h2>Offline data & sync</h2><button onClick={()=>dialog.current.close()} aria-label="Close sync panel">✕</button></header>
    <p><strong>{status} · {state?.queue.length||0} pending changes</strong></p>
    <p>{state?.prepared?'This account’s downloaded data is saved on this device.':'Connect and prepare this device before using it offline.'}</p>
    <p>{shellReady?'App files are saved for reopening offline.':'App files are not ready for offline reopening yet. Keep this page open and connected.'}</p>
-   <p>Pending changes are stored before an action succeeds. They stay here until the server confirms them. Other devices cannot see them until synced.</p>
+   <p>Pending changes are stored before an action succeeds. They stay here until confirmed, except rejected duplicate products, which move to recovery with a notice. Other devices cannot see them until synced.</p>
    <p>Last synchronization: {state?.lastSync?new Date(state.lastSync).toLocaleString():'Not prepared'}</p>
    <p>{persisted?'Persistent browser storage granted.':'Persistent storage is not granted. Keep an exported backup.'} Clearing browser/site data or losing this device can erase unsynced work.</p>
    <p>Offline figures are provisional. Approvals, payroll calculations and stock validation are finalized on sync. Keep the app open when reconnecting.</p>
    {(error||state?.error)&&<p role="alert" className="offline-error">{syncMessage(error||state.error)}</p>}
+   {!!notices.length&&<section role="alert"><h3>Changes not synced</h3><ul>{notices.map(record=><li key={record.id}>{record.skipReason}</li>)}</ul><p>Removed from the queue. Original requests remain in your recovery backup. Other requests continue unless they need a skipped product.</p><button onClick={()=>run(dismissSyncNotices)}>Dismiss notices</button></section>}
    <div className="offline-actions">
     <button onClick={()=>run(async()=>{setPersisted(await navigator.storage?.persist?.()||false);await prepareOffline();})}>Prepare / refresh offline data</button>
     <button onClick={()=>run(syncPending)}>Sync now</button>
@@ -53,7 +55,7 @@ export default function OfflineStatus(){
    {shared&&<details open><summary>Latest shared data (pending changes are still saved separately)</summary><pre>{JSON.stringify(redact(shared),null,2)}</pre></details>}
    {(state?.queue||[]).map((op)=><PendingChange key={op.id} op={op} active={activePending(state)?.id===op.id} waiting={isWaitingOnHeld(state,op)} run={run}/>)}
    <p>Confirmed operations retained in local backup: {state?.archive.length||0}.</p>
-   {!!state?.recovery?.length&&<details><summary>Original versions of corrected changes ({state.recovery.length})</summary><pre>{JSON.stringify(redact(state.recovery),null,2)}</pre></details>}
+   {!!state?.recovery?.length&&<details><summary>Recovery records: corrected or skipped changes ({state.recovery.length})</summary><pre>{JSON.stringify(redact(state.recovery),null,2)}</pre></details>}
   </dialog>
  </>;
 }
