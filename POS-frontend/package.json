@@ -11,7 +11,9 @@
     "styles:sales": "node scripts/build-sales-css.mjs",
     "predev": "npm run styles:sales",
     "prebuild": "npm run styles:sales",
-    "postbuild": "node scripts/build-offline.mjs"
+    "postbuild": "node scripts/build-offline.mjs",
+    "test:offline": "node --test src/offline/offline.test.js",
+    "test:offline:browser": "node scripts/smoke-offline.mjs"
   },
   "dependencies": {
     "axios": "^1.18.1",

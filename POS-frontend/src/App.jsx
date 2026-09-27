@@ -31,7 +31,7 @@ const Layout = () => {
   return (
     <>
       {isMobile ? <MobileNavigation /> : <Sidebar />}
-      <Outlet />
+      <Outlet key={`${user.id}:${user.email}`} />
     </>
   );
 };

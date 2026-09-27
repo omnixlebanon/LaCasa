@@ -26,8 +26,8 @@ function Order() {
 
     const { orders, activeOrderId, setOrders, setActiveOrderId, ready: draftsReady } = useDrafts();
 
-    const fetchData = async () => {
-        setLoading(true);
+    const fetchData = async (quiet = false) => {
+        if (quiet !== true) setLoading(true);
         setLoadError('');
         try {
             const [categories_res, product_res] = await Promise.all([
@@ -38,7 +38,7 @@ function Order() {
             setProducts(product_res.data);
         } catch (error) {
             console.error("Error fetching data from server: ", error);
-            setLoadError('Could not load POS products. Please try again.');
+            setLoadError(error.response?.data?.error || error.message || 'Could not load POS products. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -46,6 +46,9 @@ function Order() {
 
     useEffect(() => {
         fetchData();
+        const refresh = () => fetchData(true);
+        window.addEventListener('offline-snapshot', refresh);
+        return () => window.removeEventListener('offline-snapshot', refresh);
     }, []);
 
     const sortedProducts = useMemo(() => {
@@ -67,9 +70,10 @@ function Order() {
     }, [products, searchQuery, categoryFilter]);
 
     const addOrder = () => editDrafts(drafts => {
-        const id = drafts.nextOrder++;
+        const label = `order ${drafts.nextOrder++}`;
+        const id = crypto.randomUUID();
         newlyAddedOrderRef.current = id;
-        drafts.orders.push({ id, checkoutOperationId: crypto.randomUUID(), label: `order ${id}`, orderType: 'takeout', items: [] });
+        drafts.orders.push({ id, checkoutOperationId: id, label, orderType: 'takeout', items: [] });
         drafts.activeOrderId = id;
     }).catch(error => alert('Order was not saved: ' + error.message));
 
@@ -138,17 +142,10 @@ function Order() {
         );
     };
 
-    const removeOrder = (idToRemove) => {
-        const remainingOrders = orders.filter(order => order.id !== idToRemove);
-        setOrders(remainingOrders);
-        if (activeOrderId === idToRemove) {
-            if (remainingOrders.length > 0) {
-                setActiveOrderId(remainingOrders[remainingOrders.length - 1].id);
-            } else {
-                setActiveOrderId(null);
-            }
-        }
-    };
+    const removeOrder = (idToRemove) => editDrafts(drafts => {
+        drafts.orders = drafts.orders.filter(order => order.id !== idToRemove);
+        if (drafts.activeOrderId === idToRemove) drafts.activeOrderId = drafts.orders.at(-1)?.id || null;
+    });
 
     const activeOrder = useMemo(() => {
         return orders.find(order => order.id === activeOrderId) || null;
@@ -205,7 +202,7 @@ function Order() {
         if (!order) return;
         try {
             await releaseOrderTable(order);
-            removeOrder(idToRemove);
+            await removeOrder(idToRemove);
         } catch (error) {
             alert(error.response?.data?.error || 'Could not release this table.');
         }
@@ -244,7 +241,7 @@ function Order() {
 
         try {
             await api.post('/api/checkout', payload);
-            removeOrder(activeOrder.id);
+            await removeOrder(activeOrder.id);
 
         } catch (error) {
             console.error("Checkout system error:", error);

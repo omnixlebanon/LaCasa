@@ -158,7 +158,8 @@ managementRouter.patch('/management/requests/:id', requireManager, async (req, r
       const orderDetails = typeof orders[0].details === 'string' ? JSON.parse(orders[0].details) : orders[0].details;
       for (const orderItem of orderDetails?.items || []) {
         const quantitySold = Math.max(0, Number(orderItem.qty) || 0);
-        const [ingredients] = await connection.execute('SELECT item_id, qty FROM product_items WHERE product_id = ?', [orderItem.product_id]);
+        const savedRecipe = orderDetails.offline_recipe_snapshot?.find(row => Number(row.product_id) === Number(orderItem.product_id))?.ingredients;
+        const ingredients = savedRecipe || (await connection.execute('SELECT item_id, qty FROM product_items WHERE product_id = ?', [orderItem.product_id]))[0];
         for (const ingredient of ingredients) {
           const restoredQuantity = quantitySold * (Number(ingredient.qty) || 0);
           if (restoredQuantity <= 0) continue;

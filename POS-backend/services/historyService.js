@@ -7,6 +7,7 @@ const sqids = new Sqids({
 });
 
 async function processOrderCheckout(totalAmount, customerName, details = {}, recordedAt = null) {
+    const checkoutFingerprint = crypto.createHash('sha256').update(JSON.stringify([totalAmount, customerName, details])).digest('hex');
     const connection = await db.getConnection();
     try {
         console.log("\n================ [CHECKOUT DIAGNOSTIC] ================");
@@ -16,11 +17,18 @@ async function processOrderCheckout(totalAmount, customerName, details = {}, rec
 
         const now = recordedAt ? new Date(recordedAt) : new Date();
         const saleDate = new Intl.DateTimeFormat('sv-SE', { timeZone: process.env.APP_TIMEZONE || 'Asia/Beirut', year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', second: '2-digit', hourCycle: 'h23' }).format(now);
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const currentMonthString = `${year}${month}`; 
+        const currentMonthString = saleDate.slice(0, 7).replace('-', '');
 
         await connection.beginTransaction();
+        if (details.checkout_operation_id) {
+            if (!/^[a-f0-9-]{36}$/i.test(details.checkout_operation_id)) throw new Error('Invalid checkout identity.');
+            const [[completed]] = await connection.query('SELECT receipt FROM offline_completed_orders WHERE order_key = ? FOR UPDATE', [details.checkout_operation_id]);
+            if (completed) {
+                const saved = JSON.parse(completed.receipt);
+                if (saved.fingerprint && saved.fingerprint !== checkoutFingerprint) throw Object.assign(new Error('This cart was already completed with different details. Review the existing sale; your pending version has been kept.'), { status: 409 });
+                await connection.commit(); return saved.receipt || saved;
+            }
+        }
 
         // 1. Generate safe unique ID
         const randomBytes = crypto.randomBytes(6);
@@ -139,6 +147,7 @@ async function processOrderCheckout(totalAmount, customerName, details = {}, rec
             }
         }
         // Release a linked table in the same transaction as checkout.
+        if (details.checkout_operation_id) await connection.query('DELETE FROM offline_open_orders WHERE order_key = ?', [details.checkout_operation_id]);
         if (details.table_id) {
             await connection.query("UPDATE tablez SET t_status = 'available' WHERE t_id = ?", [details.table_id]);
         } else if (details.table_name) {
@@ -157,20 +166,17 @@ async function processOrderCheckout(totalAmount, customerName, details = {}, rec
         }
 
         const { order_date } = rows[0];
+        const receipt = { success: true, orderId: publicOrderId, internalId: insertResult.insertId, timestamp: order_date };
+        if (details.checkout_operation_id) await connection.query('INSERT INTO offline_completed_orders (order_key, receipt) VALUES (?, ?)', [details.checkout_operation_id, JSON.stringify({ fingerprint: checkoutFingerprint, receipt })]);
         
         await connection.commit();
 
-        return {
-            success: true,
-            orderId: publicOrderId,
-            internalId: insertResult.insertId,
-            timestamp: order_date
-        };
+        return receipt;
 
     } catch (error) {
         await connection.rollback();
         console.error("Checkout Transaction Failed:", error);
-        return { success: false, error: error.message };
+        return { success: false, error: error.message, status: error.status || 500 };
     } finally {
         connection.release();
     }

@@ -13,6 +13,15 @@ export const AuthProvider = ({ children }) => {
     }
   });
   const [loading, setLoading] = useState(true);
+  useEffect(() => {
+    const update = event => {
+      if (event.key !== 'auth_user') return;
+      try { setUser(event.newValue ? JSON.parse(event.newValue) : null); }
+      catch { setUser(null); }
+    };
+    window.addEventListener('storage', update);
+    return () => window.removeEventListener('storage', update);
+  }, []);
 
   useEffect(() => {
     if (user) {

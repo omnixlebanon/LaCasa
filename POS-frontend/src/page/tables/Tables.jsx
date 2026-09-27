@@ -49,8 +49,8 @@ function Tables() {
   const [floors, setFloors] = useState([]);
   const [tempFloors, setTempFloors] = useState([]);
 
-  const fetchLayout = async () => {
-    setLoading(true);
+  const fetchLayout = async (quiet = false) => {
+    if (quiet !== true) setLoading(true);
     setLoadError('');
     try {
       const response = await api.get('/api/seating/floors');
@@ -65,6 +65,9 @@ function Tables() {
 
   useEffect(() => {
     fetchLayout();
+    const refresh = () => fetchLayout(true);
+    window.addEventListener('offline-snapshot', refresh);
+    return () => window.removeEventListener('offline-snapshot', refresh);
   }, []);
 
   const handleTableClick = async (table) => {

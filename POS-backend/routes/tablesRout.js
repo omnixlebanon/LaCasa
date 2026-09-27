@@ -168,11 +168,12 @@ router.put('/seating/tables/:id/status', async (req, res) => {
         if (result.affectedRows === 0) {
             return res.status(404).json({ error: "Table not found" });
         }
+        if (req.body.open_order && req.body.order) await require('./openOrdersRout').saveOpenOrder(req.body.order, req.user.user_id);
 
         res.status(200).json({ message: "Table status updated successfully" });
     } catch (error) {
         console.error("Error updating table status by ID:", error);
-        res.status(500).json({ error: "Internal server error" });
+        res.status(error.status || 500).json({ error: error.status ? error.message : "Internal server error" });
     }
 });
 

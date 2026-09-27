@@ -10,7 +10,7 @@
 .offline-actions { display: flex; flex-wrap: wrap; gap: 8px; }
 .offline-actions input { display: block; max-width: 100%; }
 .offline-dialog details { padding: 12px 0; border-bottom: 1px solid var(--border-color); }
-.offline-dialog pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; }
+.offline-dialog pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 12px; max-height: 320px; overflow: auto; }
 .offline-error { color: var(--danger-color); }
 .offline-dialog textarea { width: 100%; min-height: 180px; padding: 10px; }
 .offline-dialog { text-align: left; font-size: 14px; }

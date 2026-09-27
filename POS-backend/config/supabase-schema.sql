@@ -208,3 +208,7 @@ INSERT INTO offline_sync_state(id,revision) VALUES(1,0) ON CONFLICT(id) DO NOTHI
 CREATE TABLE IF NOT EXISTS offline_sync_operations (operation_id VARCHAR(36) PRIMARY KEY, owner_id VARCHAR(40) NOT NULL, fingerprint VARCHAR(64) NOT NULL, response_status INTEGER NOT NULL, response_body TEXT NOT NULL);
 ALTER TABLE offline_sync_state ENABLE ROW LEVEL SECURITY;
 ALTER TABLE offline_sync_operations ENABLE ROW LEVEL SECURITY;
+CREATE TABLE IF NOT EXISTS offline_open_orders (order_key VARCHAR(36) PRIMARY KEY, order_data TEXT NOT NULL, user_id INTEGER NOT NULL);
+ALTER TABLE offline_open_orders ENABLE ROW LEVEL SECURITY;
+CREATE TABLE IF NOT EXISTS offline_completed_orders (order_key VARCHAR(36) PRIMARY KEY, receipt TEXT NOT NULL);
+ALTER TABLE offline_completed_orders ENABLE ROW LEVEL SECURITY;

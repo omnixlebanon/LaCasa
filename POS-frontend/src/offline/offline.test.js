@@ -16,7 +16,7 @@ Object.defineProperty(navigator,'locks',{value:{async request(name,options,fn){
  await before;try{return await fn({name});}finally{if(locks.get(name)===done)locks.delete(name);release();}
 }},configurable:true});
 const {change,load,emptyState,accountId,restoreBackup}=await import('./storage.js');
-const {offlineAdapter,syncPending,network,resolvePending}=await import('./transport.js');
+const {offlineAdapter,syncPending,network,resolvePending,correctPending,saveDraftEdit,prepareOffline}=await import('./transport.js');
 const {readLocal,applyLocal,keyOf,remap}=await import('./model.js');
 const headers=revision=>({'x-sync-revision':String(revision)});
 let account=0;
@@ -28,7 +28,7 @@ function fixture(){
   '/api/items':[{item_id:2,item_name:'Milk',stock:100,item_cost:0.1,safety_limit:10,shelf_life:3}],
   '/api/stock/recipe':[{product_id:1,item_id:2,qty:5}],
   '/api/offline/batches':[{batch_id:3,item_id:2,batch_stock:100,batch_exDate:'2099-01-01'}],
-  '/api/stock/expired-batches':[], '/api/history':[], '/api/recurring-shifts':[],
+  '/api/stock/expired-batches':[], '/api/history':[], '/api/recurring-shifts':[], '/api/open-orders':[],
   '/api/seating/floors':[{floor_id:1,tables:[{t_id:1,t_name:'T1',t_status:'available'}]}],
   '/api/expenses?through=2027-12-31':[], '/api/employees':[],
  }))cache[path]={data};return {...emptyState(),cache,prepared:true,revision:10,drafts:{orders:[],nextOrder:1,activeOrderId:null}};
@@ -81,6 +81,9 @@ test('a conflict blocks later operations and cannot be silently retried',async()
  network.defaults.adapter=async config=>{count++;throw new AxiosError('Conflict','ERR_BAD_REQUEST',config,null,{status:409,data:{revision:25,error:'Another device changed this'},headers:headers(25)});};
  navigator.onLine=true;await syncPending();await syncPending();
  assert.equal(count,1);assert.equal((await load()).queue.length,2);assert.equal((await load()).queue[0].blocked,true);
+ assert.equal((await load()).queue[1].blocked,true);
+ network.defaults.adapter=async config=>({data:config.method==='get'?[]:{insertId:101},status:200,headers:headers(config.method==='get'?25:26),config});
+ await resolvePending();assert.equal((await load()).queue.length,1);assert.equal((await load()).queue[0].blocked,true);
 });
 test('temporary product IDs are mapped before syncing dependent orders',async()=>{
  const created=await write('/api/products',{product_name:'New coffee',product_category:'Hot',product_price:2});
@@ -104,4 +107,53 @@ test('calendar merges downloaded months and Sunday uses ISO weekday 7',()=>{
  assert.deepEqual(shifts.map(s=>s.shift_date),['2026-02-01','2026-02-08']);
  assert.equal(remap('-12:2026-02-01',{'-12':44},'shift_id'),'44:2026-02-01');
  assert.throws(()=>readLocal(state,keyOf('/api/shifts?from=2025-12-20&to=2026-01-10')),/not downloaded/);
+});
+test('correcting a rejected change keeps the original and pauses remaining changes for review',async()=>{
+ await write('/api/products',{product_name:'Wrong name',product_category:'Hot',product_price:1});
+ await change(state=>{state.queue[0].blocked=true;state.queue[0].status=409;});
+ const original=(await load()).queue[0].id;
+ const server=fixture();let applied;
+ network.defaults.adapter=async config=>{
+  if(config.url.startsWith('/api/offline/operations/'))return {data:{applied:false},status:200,headers:headers(20),config};
+  if(config.method==='get')return {data:server.cache[keyOf(config.url)]?.data||[],status:200,headers:headers(20),config};
+  applied=JSON.parse(config.data);return {data:{insertId:100},status:201,headers:headers(21),config};
+ };
+ navigator.onLine=true;await correctPending({product_name:'Correct name',product_category:'Hot',product_price:1});
+ assert.equal(applied.product_name,'Correct name');assert.equal((await load()).recovery[0].id,original);assert.notEqual((await load()).archive[0].id,original);
+});
+test('open cart edits are durable operations and another device downloads them',async()=>{
+ const key=crypto.randomUUID();await saveDraftEdit(drafts=>{drafts.orders.push({id:key,checkoutOperationId:key,label:'Shared cart',items:[]});drafts.activeOrderId=key;});
+ await saveDraftEdit(drafts=>{drafts.orders[0].items.push({product_id:1,qty:2,product_price:5});});
+ assert.equal((await load()).queue.length,2);assert.equal((await load()).queue[0].data.order.items.length,0);
+ let shared=[],revision=10;
+ network.defaults.adapter=async config=>{
+  if(config.method==='get')return {data:config.url==='/api/open-orders'?shared:fixture().cache[keyOf(config.url)]?.data||[],status:200,headers:headers(revision),config};
+  shared=[JSON.parse(config.data).order];return {data:{success:true},status:200,headers:headers(++revision),config};
+ };
+ navigator.onLine=true;await syncPending();assert.equal((await load()).queue.length,0);
+ localStorage.setItem('auth_user',JSON.stringify({id:1001,email:'other-device@test.invalid',accessLevel:'admin'}));
+ await change(()=>{});await prepareOffline();
+ assert.equal((await load()).drafts.orders[0].items[0].qty,2);
+ shared=[];revision++;await prepareOffline();assert.equal((await load()).drafts.orders.length,0);
+});
+test('server failures remain visible when no offline copy exists',async()=>{
+ await change(state=>{state.cache={};state.prepared=false;});navigator.onLine=true;
+ network.defaults.adapter=async config=>{throw new AxiosError('503','ERR_BAD_RESPONSE',config,null,{status:503,data:{error:'Database setup is incomplete.'}});};
+ await assert.rejects(offlineAdapter({url:'/api/products',method:'get'}),error=>error.response.status===503&&error.response.data.error==='Database setup is incomplete.'&&!!error.config);
+});
+test('a late online read cannot replace newer unsynced data',async()=>{
+ let release,started;const ready=new Promise(resolve=>{started=resolve;});
+ network.defaults.adapter=async config=>{started();await new Promise(resolve=>{release=resolve;});return {data:fixture().cache['/api/products'].data,status:200,headers:headers(10),config};};
+ navigator.onLine=true;const pending=offlineAdapter({url:'/api/products',method:'get'});await ready;
+ navigator.onLine=false;await write('/api/products',{product_name:'Saved during request',product_category:'Hot',product_price:2});release();
+ const result=await pending;assert.equal(result.data.length,2);assert.equal((await load()).queue.length,1);
+});
+test('an email change retains pending work and older email-keyed data is recovered',async()=>{
+ const user={id:2001,email:'old@fixture.invalid',accessLevel:'admin'};
+ localStorage.setItem('auth_user',JSON.stringify(user));
+ await change(state=>{Object.assign(state,fixture());state.queue.push({id:crypto.randomUUID(),url:'/api/products',method:'post',data:{product_name:'Legacy pending'},tempId:-1});},'2001:old@fixture.invalid');
+ assert.equal((await load()).queue.length,1);
+ await change(()=>{});
+ localStorage.setItem('auth_user',JSON.stringify({...user,email:'new@fixture.invalid'}));
+ assert.equal((await load()).queue[0].data.product_name,'Legacy pending');
 });

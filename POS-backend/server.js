@@ -33,11 +33,16 @@ app.use('/api/auth', auth_routes)
 app.use('/api/bot', require('./middleware/durableSync'), workflow_routes.botRouter);
 app.use('/api', verifyToken, require('./middleware/durableSync'));
 app.get('/api/offline/revision', (req,res) => res.json({ ready: true }));
+app.get('/api/offline/operations/:id', async (req,res,next) => {
+    try { const [[row]] = await require('./config/database').query('SELECT owner_id FROM offline_sync_operations WHERE operation_id = ?', [req.params.id]); res.json({ applied: !!row && row.owner_id === String(req.user.user_id) }); }
+    catch(error) { next(error); }
+});
 app.get('/api/offline/batches', async (req,res,next) => {
     try { const [rows] = await require('./config/database').query('SELECT batch_id, item_id, batch_stock, batch_exDate FROM batches WHERE batch_stock > 0'); res.json(rows); }
     catch (error) { next(error); }
 });
 app.use('/api', seating_routes)
+app.use('/api', require('./routes/openOrdersRout').router);
 app.use('/api', stock_routes);
 app.use('/api', product_routes);
 app.use('/api', history_routes);

@@ -27,8 +27,9 @@ function summaries(state){
 export function applyLocal(state,op) {
  const path=pathOf(op.url), parts=path.split('/'), data=op.data||{}, method=op.method, id=op.tempId;
  const response={success:true,offline:true,insertId:id,id,item_id:id,user_id:id,shift_id:id,recurrence_id:id,requestId:id,i_category_id:id};
- const products=cached(state,'/api/products')||[];
- if(path==='/api/checkout'){
+ if(path.startsWith('/api/open-orders/')){
+  each(state,'/api/open-orders',rows=>method==='delete'?rows.filter(order=>order.checkoutOperationId!==parts[3]):upsert(rows,'checkoutOperationId',parts[3],copy(data.order)));
+ } else if(path==='/api/checkout'){
   if(!Array.isArray(data.details?.items)||!data.details.items.length||!Number.isFinite(Number(data.totalAmount))||Number(data.totalAmount)<=0)throw Error('A sale needs items and a positive total.');
   const ingredients=cached(state,'/api/items')||[],recipes=cached(state,'/api/stock/recipe')||[];
   data.details.offline_recipe_snapshot=data.details.offline_recipe_snapshot||data.details.items.map(sold=>({product_id:sold.product_id,ingredients:recipes.filter(r=>same(r.product_id,sold.product_id)).map(r=>({item_id:r.item_id,qty:Number(r.qty),item_cost:Number(ingredients.find(i=>same(i.item_id,r.item_id))?.item_cost||0)}))}));
@@ -39,10 +40,11 @@ export function applyLocal(state,op) {
   each(state,'/api/seating/floors',floors=>{for(const f of floors)for(const t of f.tables)if(same(t.t_id,details.table_id)||t.t_name===details.table_name)t.t_status='available';return floors;});
   for(const sold of details.items||[])for(const recipe of details.offline_recipe_snapshot.find(r=>same(r.product_id,sold.product_id)).ingredients)deductStock(state,recipe.item_id,Number(sold.qty)*Number(recipe.qty));
   if(state.drafts){state.drafts.orders=state.drafts.orders.filter(order=>order.checkoutOperationId!==op.id);if(!state.drafts.orders.some(order=>order.id===state.drafts.activeOrderId))state.drafts.activeOrderId=state.drafts.orders.at(-1)?.id||null;}
+  each(state,'/api/open-orders',rows=>rows.filter(order=>order.checkoutOperationId!==data.details.checkout_operation_id));
  } else if(path==='/api/seating/layout'){
   each(state,'/api/seating/floors',()=>copy(data.floors));
  } else if(path.startsWith('/api/seating/tables/')){
-  each(state,'/api/seating/floors',floors=>{for(const f of floors)for(const t of f.tables)if(same(t.t_id,parts[4])||t.t_name===data.t_name){t.t_status=data.t_status;if(data.open_order&&state.drafts){const drafts=state.drafts;let order=drafts.orders.find(o=>same(o.tableId,t.t_id));if(!order){order={id:drafts.nextOrder++,checkoutOperationId:crypto.randomUUID(),label:t.t_name,tableId:t.t_id,tableName:t.t_name,orderType:'dine-in',items:[]};drafts.orders.push(order);}drafts.activeOrderId=order.id;}}return floors;});
+  each(state,'/api/seating/floors',floors=>{for(const f of floors)for(const t of f.tables)if(same(t.t_id,parts[4])||t.t_name===data.t_name){t.t_status=data.t_status;if(data.open_order&&state.drafts){const drafts=state.drafts;let order=drafts.orders.find(o=>same(o.tableId,t.t_id));if(!order){const key=crypto.randomUUID();drafts.nextOrder++;order={id:key,checkoutOperationId:key,label:t.t_name,tableId:t.t_id,tableName:t.t_name,orderType:'dine-in',items:[]};drafts.orders.push(order);}drafts.activeOrderId=order.id;data.order=copy(order);each(state,'/api/open-orders',rows=>upsert(rows,'checkoutOperationId',order.checkoutOperationId,copy(order)));}}return floors;});
  } else if(path==='/api/products/category'||path.startsWith('/api/products/category/')){
   each(state,'/api/products/categories',rows=>{if(method==='post')rows.push({p_category_id:id,p_category_name:data.category_name,pos_hidden:0});if(method==='put')for(const c of rows)if(c.p_category_name===data.old_name)c.p_category_name=data.new_name;return method==='delete'?rows.filter(c=>c.p_category_name!==decodeURIComponent(parts[4])):rows;});
   each(state,'/api/products',rows=>rows.map(p=>({...p,product_category:method==='put'&&p.product_category===data.old_name?data.new_name:method==='delete'&&p.product_category===decodeURIComponent(parts[4])?null:p.product_category})));

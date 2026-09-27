@@ -1,7 +1,8 @@
 import { useEffect, useState } from 'react';
 import { accountId, change, load } from './storage.js';
+import { saveDraftEdit } from './transport.js';
 
-export const editDrafts = fn => change(state => fn(state.drafts));
+export const editDrafts = saveDraftEdit;
 
 // Render a cart edit only after it has been committed to device storage.
 export default function useDrafts() {

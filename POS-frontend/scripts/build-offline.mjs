@@ -2,7 +2,7 @@ import { readdir, readFile, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 const assets=(await readdir(new URL('../dist/assets/',import.meta.url))).map(file=>'/assets/'+file);
 const files=['/index.html',...assets];
-const version=createHash('sha256').update(JSON.stringify(files)).digest('hex').slice(0,16);
+const version=createHash('sha256').update(JSON.stringify(files)).update(await readFile(new URL('../dist/index.html',import.meta.url))).digest('hex').slice(0,16);
 await writeFile(new URL('../dist/sw.js',import.meta.url),`
 const CACHE='lacasa-shell-${version}';
 const FILES=${JSON.stringify(files)};

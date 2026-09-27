@@ -423,3 +423,16 @@ test('offline layouts return permanent IDs; repeated calendar reads do not advan
   const days='/shifts?from='+today+'&to='+today;
   await request(days);const stable=await revision();await request(days);assert.equal(await revision(),stable);
 });
+test('shared carts synchronize and completing the same cart under another operation cannot create a second sale', async () => {
+  const key=randomUUID();const order={id:key,checkoutOperationId:key,label:'Shared cart',items:[{product_id:1,qty:1,product_price:5}]};
+  assert.equal((await request('/open-orders/'+key,'PUT',{order},false,syncHeaders(randomUUID(),await revision()))).status,200);
+  assert((await request('/open-orders')).data.some(row=>row.checkoutOperationId===key));
+  const payload={totalAmount:5,customerName:'Shared cart',details:{checkout_operation_id:key,items:[{product_id:1,qty:1,price:5}]}};
+  const sale=await request('/checkout','POST',payload,false,syncHeaders(randomUUID(),await revision()));
+  assert.equal(sale.status,201);assert(!(await request('/open-orders')).data.some(row=>row.checkoutOperationId===key));
+  const retry=await request('/checkout','POST',payload,false,syncHeaders(randomUUID(),await revision()));
+  assert.deepEqual(retry.data,sale.data);
+  assert.equal((await request('/checkout','POST',{...payload,totalAmount:8},false,syncHeaders(randomUUID(),await revision()))).status,409);
+  assert.equal((await db.query('SELECT order_id FROM orders_history WHERE customer_name = ?',['Shared cart']))[0].length,1);
+  assert.equal((await request('/open-orders/'+key,'PUT',{order},false,syncHeaders(randomUUID(),await revision()))).status,409);
+});

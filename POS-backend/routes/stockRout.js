@@ -199,9 +199,9 @@ router.post('/stock/:id/batch', async (req, res) => {
         await connection.beginTransaction();
         const insertBatchQuery = `
             INSERT INTO batches (item_id, batch_stock, batch_exDate)
-            VALUES (?, ?, ${sql(`DATE_ADD(CURRENT_DATE, INTERVAL COALESCE((SELECT shelf_life FROM items WHERE item_id = ?), 0) DAY)`, `(CURRENT_DATE + COALESCE((SELECT shelf_life FROM items WHERE item_id = ?), 0))`)})
+            VALUES (?, ?, ${sql(`DATE_ADD(COALESCE(?, CURRENT_DATE), INTERVAL COALESCE((SELECT shelf_life FROM items WHERE item_id = ?), 0) DAY)`, `(COALESCE(?::date, CURRENT_DATE) + COALESCE((SELECT shelf_life FROM items WHERE item_id = ?), 0))`)})
         `;
-        const [inserted] = await connection.execute(insertBatchQuery, [id, batch_stock, id]);
+        const [inserted] = await connection.execute(insertBatchQuery, [id, batch_stock, req.offlineDate || null, id]);
 
         const updateItemQuery = `
             UPDATE items

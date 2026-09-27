@@ -41,7 +41,7 @@ router.post('/checkout', async (req, res) => {
     if (result.success) {
       return res.status(201).json(result);
     } else {
-      return res.status(500).json({ success: false, error: result.error || "An error occurred during checkout." });
+      return res.status(result.status || 500).json({ success: false, error: result.error || "An error occurred during checkout." });
     }
 
   } catch (error) {
