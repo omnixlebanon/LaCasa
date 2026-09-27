@@ -74,17 +74,18 @@ test('network loss preserves an immutable operation and retry uses the same iden
  navigator.onLine=true;await syncPending();assert.equal((await load()).queue.length,1);
  await syncPending();assert.equal((await load()).queue.length,0);assert.equal((await load()).archive.length,1);assert.deepEqual(sent[0],sent[1]);
 });
-test('a conflict blocks later operations and cannot be silently retried',async()=>{
+test('rejected conflicts are removed with a reason instead of waiting for review',async()=>{
  await write('/api/products',{product_name:'First',product_category:'Hot',product_price:2});
  await write('/api/products',{product_name:'Second',product_category:'Hot',product_price:2});
- let count=0;
- network.defaults.adapter=async config=>{count++;throw new AxiosError('Conflict','ERR_BAD_REQUEST',config,null,{status:409,data:{revision:25,error:'Another device changed this'},headers:headers(25)});};
- navigator.onLine=true;await syncPending();await syncPending();
- assert.equal(count,1);assert.equal((await load()).queue.length,2);assert.equal((await load()).queue[0].blocked,true);
- assert.equal((await load()).queue[1].blocked,true);
- network.defaults.adapter=async config=>({data:config.method==='get'?[]:{insertId:101},status:200,headers:headers(config.method==='get'?25:26),config});
- await resolvePending();assert.equal((await load()).queue.length,1);assert.equal((await load()).queue[0].blocked,true);
+ const shared=fixture();let count=0;
+ network.defaults.adapter=async config=>{
+  if(config.method==='get')return {data:shared.cache[keyOf(config.url)]?.data||[],status:200,headers:headers(25),config};
+  count++;throw new AxiosError('Conflict','ERR_BAD_REQUEST',config,null,{status:409,data:{revision:25,error:'Another device changed this'},headers:headers(25)});
+ };
+ navigator.onLine=true;await syncPending();const state=await load();
+ assert.equal(count,2);assert.equal(state.queue.length,0);assert.equal(state.recovery.length,2);assert.match(state.recovery[0].skipReason,/First.*Another device changed this/);
 });
+
 test('temporary product IDs are mapped before syncing dependent orders',async()=>{
  const created=await write('/api/products',{product_name:'New coffee',product_category:'Hot',product_price:2});
  await write('/api/checkout',{totalAmount:2,customerName:'Test',details:{items:[{product_id:created.data.insertId,qty:1,price:2}]}});
@@ -166,7 +167,7 @@ test('an email change retains pending work and older email-keyed data is recover
  const original=(await load()).queue[0];const sent=[];
  network.defaults.adapter=async config=>{
   sent.push(config.url);
-  if(config.url==='/api/products')throw new AxiosError('Invalid','ERR_BAD_REQUEST',config,null,{status:422,data:{error:'Fix the product'}});
+  if(config.url==='/api/products')throw new AxiosError('Invalid','ERR_BAD_REQUEST',config,null,{status:500,data:{error:'Server could not confirm the product'}});
   return {data:{id:88},status:200,headers:headers(11),config};
  };
  navigator.onLine=true;await syncPending();await leavePendingUnsynced(original.id);
@@ -228,9 +229,9 @@ test('older blocked duplicate renames are skipped, restoring the actual product'
  await change(state=>{state.queue[0].blocked=true;state.queue[0].problem='duplicate key value violates unique constraint "products_product_name_key"';});
  const shared=fixture();network.defaults.adapter=async config=>{assert.equal(config.method,'get');return {data:shared.cache[keyOf(config.url)]?.data||[],status:200,headers:headers(10),config};};
  navigator.onLine=true;await syncPending();const state=await load();assert.equal(state.queue.length,0);
- assert.match(state.recovery[0].skipReason,/not updated to.*Taken name/);assert.equal(state.cache['/api/products'].data[0].product_name,'Coffee');assert.equal(state.cache['/api/products'].data[0].product_price,5);
+ assert.match(state.recovery[0].skipReason,/Taken name.*not updated/);assert.equal(state.cache['/api/products'].data[0].product_name,'Coffee');assert.equal(state.cache['/api/products'].data[0].product_price,5);
 });
-test('orders depending on a skipped duplicate product remain saved and paused',async()=>{
+test('dependent orders are removed from the queue but preserved in recovery with a reason',async()=>{
  const created=await write('/api/products',{product_name:'Duplicate remote',product_category:'Hot',product_price:2});
  await write('/api/checkout',{totalAmount:2,details:{items:[{product_id:created.data.insertId,qty:1,price:2}]}});
  const shared=fixture();let mutations=0;
@@ -238,7 +239,7 @@ test('orders depending on a skipped duplicate product remain saved and paused',a
   if(config.method==='get')return {data:shared.cache[keyOf(config.url)]?.data||[],status:200,headers:headers(10),config};
   mutations++;throw new AxiosError('Duplicate','ERR_BAD_REQUEST',config,null,{status:422,data:{code:'PRODUCT_NAME_EXISTS'}});
  };
- navigator.onLine=true;await syncPending();const state=await load();assert.equal(mutations,1);assert.equal(state.queue.length,1);assert.equal(state.queue[0].url,'/api/checkout');assert.equal(state.queue[0].blocked,true);assert.match(state.queue[0].problem,/was not added/);
+ navigator.onLine=true;await syncPending();const state=await load();assert.equal(mutations,1);assert.equal(state.queue.length,0);assert.equal(state.recovery.length,2);assert.equal(state.recovery[1].url,'/api/checkout');assert.match(state.recovery[1].skipReason,/was not added/);
 });
 
 test('a failed refresh keeps the duplicate request queued for recovery',async()=>{
@@ -246,4 +247,11 @@ test('a failed refresh keeps the duplicate request queued for recovery',async()=
  const original=(await load()).queue[0];
  network.defaults.adapter=async config=>{if(config.method==='get')throw new AxiosError('Offline','ERR_NETWORK',config);throw new AxiosError('Duplicate','ERR_BAD_REQUEST',config,null,{status:422,data:{code:'PRODUCT_NAME_EXISTS'}});};
  navigator.onLine=true;await syncPending();const state=await load();assert.equal(state.queue[0].id,original.id);assert.equal(state.recovery.length,0);
+});
+
+test('an already paused needs-review request is skipped without a manual retry',async()=>{
+ await write('/api/products/1',{product_price:6},'patch');
+ await change(state=>{state.queue[0].blocked=true;state.queue[0].status=409;state.queue[0].problem='Review this remaining change against the latest shared data.';});
+ const shared=fixture();network.defaults.adapter=async config=>{assert.equal(config.method,'get');return {data:shared.cache[keyOf(config.url)]?.data||[],status:200,headers:headers(10),config};};
+ navigator.onLine=true;await syncPending();const state=await load();assert.equal(state.queue.length,0);assert.equal(state.recovery.length,1);assert.match(state.recovery[0].skipReason,/not updated/);
 });

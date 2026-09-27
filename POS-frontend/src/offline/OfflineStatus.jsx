@@ -35,12 +35,12 @@ export default function OfflineStatus(){
    <p><strong>{status} · {state?.queue.length||0} pending changes</strong></p>
    <p>{state?.prepared?'This account’s downloaded data is saved on this device.':'Connect and prepare this device before using it offline.'}</p>
    <p>{shellReady?'App files are saved for reopening offline.':'App files are not ready for offline reopening yet. Keep this page open and connected.'}</p>
-   <p>Pending changes are stored before an action succeeds. They stay here until confirmed, except rejected duplicate products, which move to recovery with a notice. Other devices cannot see them until synced.</p>
+   <p>Pending changes are stored before an action succeeds. They stay here until confirmed, except rejected requests, which move to recovery with a notice. Other devices cannot see them until synced.</p>
    <p>Last synchronization: {state?.lastSync?new Date(state.lastSync).toLocaleString():'Not prepared'}</p>
    <p>{persisted?'Persistent browser storage granted.':'Persistent storage is not granted. Keep an exported backup.'} Clearing browser/site data or losing this device can erase unsynced work.</p>
    <p>Offline figures are provisional. Approvals, payroll calculations and stock validation are finalized on sync. Keep the app open when reconnecting.</p>
    {(error||state?.error)&&<p role="alert" className="offline-error">{syncMessage(error||state.error)}</p>}
-   {!!notices.length&&<section role="alert"><h3>Changes not synced</h3><ul>{notices.map(record=><li key={record.id}>{record.skipReason}</li>)}</ul><p>Removed from the queue. Original requests remain in your recovery backup. Other requests continue unless they need a skipped product.</p><button onClick={()=>run(dismissSyncNotices)}>Dismiss notices</button></section>}
+   {!!notices.length&&<section role="alert"><h3>Changes not synced</h3><ul>{notices.map(record=><li key={record.id}>{record.skipReason}</li>)}</ul><p>Removed from the queue. Original requests remain in your recovery backup. Other requests continue. Requests that depend on a skipped addition also move to recovery with an explanation.</p><button onClick={()=>run(dismissSyncNotices)}>Dismiss notices</button></section>}
    <div className="offline-actions">
     <button onClick={()=>run(async()=>{setPersisted(await navigator.storage?.persist?.()||false);await prepareOffline();})}>Prepare / refresh offline data</button>
     <button onClick={()=>run(syncPending)}>Sync now</button>
