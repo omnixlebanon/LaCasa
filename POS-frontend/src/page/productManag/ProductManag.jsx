@@ -13,6 +13,8 @@ function ProductManag() {
     const [loadingCategories, setLoadingCategories] = useState(true);
     const [productError, setProductError] = useState('');
     const [saveError, setSaveError] = useState('');
+    const [savingProduct,setSavingProduct]=useState(false);
+    const [saveMessage,setSaveMessage]=useState('');
     const [categoryError, setCategoryError] = useState('');
     const { currencyLabel } = useCurrency();
     const [products, setProducts] = useState([]);
@@ -95,10 +97,11 @@ function ProductManag() {
     }, [products, searchQuery, categoryFilter, visibilityFilter]);
 
     const handleAdd = async (e) => {
-        setSaveError('');
         if (e) e.preventDefault();
+        if(savingProduct)return;
+        setSaveError('');setSaveMessage('');
         const form = e.target;
-        const product_name = form.elements.product_name.value;
+        const product_name = form.elements.product_name.value.trim();
         const product_category = form.elements.product_category.value;
         const product_price = new FormData(form).get('product_price');
 
@@ -109,16 +112,20 @@ function ProductManag() {
             product_description: form.elements.product_description.value,
             product_image: form.elements.product_image.value
         };
+        if(!product_name||!product_category||product_price===''||!Number.isFinite(Number(product_price))||Number(product_price)<0){setSaveError('Enter a product name, select a category, and enter a valid price.');return;}
+        setSavingProduct(true);
         try {
             const res = await api.post('/api/products', payload);
             if (res.status === 201) {
-                fetchData();
+                setSearchQuery('');setCategoryFilter('');setVisibilityFilter('');
+                await fetchData();
+                setSaveMessage('Saved '+product_name+' on this device. Check Sync for the server result.');
                 setIsAddPopupOpen(false);
                 form.reset();
             }
         } catch (error) {
             setSaveError(error.response?.data?.error || 'Could not save product. Please try again.');
-        }
+        } finally {setSavingProduct(false);}
     };
 
     // Open category popup and populate with existing categories
@@ -223,6 +230,7 @@ function ProductManag() {
     return (
         <>
             {/* ADD PRODUCT POPUP */}
+            {saveMessage&&<p role="status">{saveMessage}</p>}
             {isAddPopupOpen && createPortal(
                 <div className='editPopup'>
                     <form className='editPopup-container' onSubmit={handleAdd}>
@@ -241,7 +249,7 @@ function ProductManag() {
                             <div className='input-area-2nd-line'>
                                 <div className='label-input'>
                                     <label htmlFor="product_category">Category</label>
-                                    <select name="product_category" id="product_category">
+                                    <select name="product_category" id="product_category" required>
                                         <option value="">-- Select Category --</option>
                                         {categories.map((cat, index) => (
                                             <option key={index} value={cat}>{cat}</option>
@@ -256,7 +264,7 @@ function ProductManag() {
                             <div className='label-input'><label htmlFor="product_description">Menu description</label><textarea id="product_description" name="product_description" maxLength={2000}  /></div>
                             <div className='label-input'><label htmlFor="product_image">Menu image URL</label><input id="product_image" name="product_image" maxLength={255} placeholder="https://... or imgs/items/photo.png"  /></div>
                             <div className='edit-submit-container'>
-                                <button type='submit'>Save Changes</button>
+                                <button type='submit' disabled={savingProduct}>{savingProduct?'Saving...':'Save Changes'}</button>
                             </div>
                         </div>
                     </form>

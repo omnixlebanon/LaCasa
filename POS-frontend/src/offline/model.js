@@ -4,6 +4,11 @@ const copy = value => structuredClone(value);
 const same = (a,b)=>String(a)===String(b);
 export function cached(state,path){const exact=state.cache[path];if(exact)return exact.data;const key=Object.keys(state.cache).find(k=>pathOf(k)===path);return key?state.cache[key].data:undefined;}
 function each(state,path,fn){for(const [key,value]of Object.entries(state.cache))if(pathOf(key)===path)value.data=fn(value.data,key);}
+function removeSkippedProducts(state){
+ const removed=new Set((state.recovery||[]).filter(op=>op.skippedAt&&op.method==='post'&&op.url==='/api/products'&&Number(op.tempId)<0&&!state.idMap?.[op.tempId]&&!state.queue.some(pending=>pending.id===op.id)).map(op=>String(op.tempId)));
+ if(!removed.size)return;
+ for(const path of ['/api/products','/api/products/summary'])each(state,path,rows=>rows.filter(product=>!removed.has(String(product.product_id))));
+}
 function upsert(rows,key,id,patch){const existing=rows.find(r=>same(r[key],id));if(existing)Object.assign(existing,patch);else rows.push({[key]:id,...patch});return rows;}
 function localDay(date=new Date()){return new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Beirut',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date(date));}
 function deductStock(state,itemId,quantity){
@@ -25,6 +30,7 @@ function summaries(state){
  each(state,'/api/stock/summary',()=>({totalStockValue:items.reduce((s,i)=>s+Number(i.stock)*Number(i.item_cost),0),expiredItemsCount:items.filter(i=>i.exDate&&i.exDate<=new Date().toISOString().slice(0,10)).length,needsRefillCount:items.filter(i=>Number(i.stock)<=Number(i.safety_limit)).length}));
 }
 export function applyLocal(state,op) {
+ removeSkippedProducts(state);
  const path=pathOf(op.url), parts=path.split('/'), data=op.data||{}, method=op.method, id=op.tempId;
  const response={success:true,offline:true,insertId:id,id,item_id:id,user_id:id,shift_id:id,recurrence_id:id,requestId:id,i_category_id:id};
  if(path.startsWith('/api/open-orders/')){
@@ -137,6 +143,7 @@ export function expenseOccurrences(row,from,to){
  for(let i=0;i<10000;i++){let date;if(row.frequency==='weekly')date=new Date(Date.parse(start+'T00:00:00Z')+i*604800000);else{date=new Date(Date.UTC(y,m-1+i*(row.frequency==='yearly'?12:1),1));date.setUTCDate(Math.min(d,new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth()+1,0)).getUTCDate()));}const key=date.toISOString().slice(0,10);if(key>to||(row.repeat_until&&key>row.repeat_until))break;if(key>=from)result.push({...row,expense_date:key,occurrence_id:`${row.expense_id}:${key}`});}return result;
 }
 export function readLocal(state,key){
+ removeSkippedProducts(state);
  const path=pathOf(key),params=new URL(key,'https://local').searchParams;
  if(path==='/api/products'||path==='/api/products/categories'){
   let rows=copy(cached(state,path));if(!rows)throw Error('Connect once to download this page for offline use.');

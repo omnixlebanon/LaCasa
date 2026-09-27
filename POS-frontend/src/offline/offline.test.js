@@ -281,3 +281,11 @@ test('manual sync recovers an already applied review request instead of discardi
  const shared=fixture();network.defaults.adapter=async config=>({data:config.url.includes('/operations/')?{applied:true}:config.method==='get'?shared.cache[keyOf(config.url)]?.data||[]:{success:true},status:200,headers:headers(11),config});
  navigator.onLine=true;await syncPending({manual:true});const state=await load();assert.equal(state.queue.length,0);assert.equal(state.archive.length,1);assert.equal(state.recovery.length,0);
 });
+
+test('a skipped product cannot remain cached and block adding it again',async()=>{
+ await write('/api/products',{product_name:'Shia pudding',product_category:'Shia Pudding',product_price:4});
+ await change(state=>{const op=state.queue.shift();state.recovery.push({...op,skippedAt:new Date().toISOString(),skipReason:'Rejected'});});
+ assert.equal(readLocal(await load(),'/api/products').some(p=>p.product_name==='Shia pudding'),false);
+ await write('/api/products',{product_name:'Shia pudding',product_category:'Shia Pudding',product_price:4});
+ const state=await load();assert.equal(state.queue.length,1);assert.equal(state.cache['/api/products'].data.filter(p=>p.product_name==='Shia pudding').length,1);
+});
