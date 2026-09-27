@@ -1,0 +1,28 @@
+const test=require('node:test');
+const assert=require('node:assert/strict');
+const express=require('express');
+const {PGlite}=require('@electric-sql/pglite');
+const {wrap}=require('../config/postgres');
+test('menu ordering is admin-only, atomic, and used by the public menu',async t=>{
+ const engine=new PGlite();const db=wrap({async query(config,values){const result=await engine.query(typeof config==='string'?config:config.text,typeof config==='string'?values:config.values);return {...result,rowCount:result.affectedRows??result.rows.length};}});
+ await engine.exec(`CREATE TABLE product_categories(p_category_id integer PRIMARY KEY,p_category_name text,pos_hidden integer DEFAULT 0,menu_position integer DEFAULT 2147483647);
+ CREATE TABLE products(product_id integer PRIMARY KEY,product_name text,product_category text,product_price numeric,product_description text,product_image text,pos_hidden integer DEFAULT 0,menu_position integer DEFAULT 2147483647);
+ INSERT INTO product_categories(p_category_id,p_category_name) VALUES(1,'A'),(2,'B');
+ INSERT INTO products(product_id,product_name,product_category) VALUES(1,'One','A'),(2,'Two','A'),(3,'Three','B');`);
+ const path=require.resolve('../config/database');require.cache[path]={id:path,filename:path,loaded:true,exports:{...db,getConnection:async()=>({...db,beginTransaction:()=>engine.exec('BEGIN'),commit:()=>engine.exec('COMMIT'),rollback:()=>engine.exec('ROLLBACK'),release(){}})}};
+ const app=express();app.use(express.json());app.use((req,res,next)=>{req.user={access_level:req.headers['x-role']||'admin'};next();});
+ app.use('/api',require('../routes/productRout'));app.use('/public',require('../routes/publicMenuRout'));
+ const server=app.listen(0,'127.0.0.1');await new Promise(resolve=>server.once('listening',resolve));
+ t.after(async()=>{await new Promise(resolve=>server.close(resolve));await engine.close();});
+ const request=(body,role='admin')=>fetch(`http://127.0.0.1:${server.address().port}/api/products/menu-order`,{method:'PUT',headers:{'Content-Type':'application/json','x-role':role},body:JSON.stringify(body)});
+ const order={kind:'products',entries:[{product_id:3},{product_id:2},{product_id:1}]};
+ assert.equal((await request(order,'employee')).status,403);
+ assert.equal((await request({...order,entries:[{product_id:1},{product_id:1}]})).status,400);
+ assert.equal((await request({...order,entries:[{product_id:1}]})).status,409);
+ assert.equal((await request(order)).status,200);
+ assert.equal((await request({kind:'categories',entries:[{p_category_id:2},{p_category_id:1}]})).status,200);
+ const menu=await (await fetch(`http://127.0.0.1:${server.address().port}/public/menu`)).json();
+ assert.deepEqual(menu.products.map(p=>p.product_id),[3,2,1]);
+ assert.equal((await request({...order,entries:[{product_id:99},{product_id:2},{product_id:1}]})).status,409);
+ assert.deepEqual((await db.query('SELECT product_id FROM products ORDER BY menu_position'))[0].map(p=>p.product_id),[3,2,1]);
+});

@@ -184,3 +184,13 @@ test('an email change retains pending work and older email-keyed data is recover
  await leavePendingUnsynced(original.id);const saved=(await load()).queue[0];
  assert.equal(saved.id,original.id);assert.deepEqual(saved.sentData,original.sentData);assert.equal(saved.deferred,true);
  });
+
+test('menu order stays saved offline without changing visibility or product details',async()=>{
+ const created=await write('/api/products',{product_name:'Second',product_category:'Hot',product_price:2});
+ await write('/api/products/menu-order',{kind:'products',entries:[{product_id:created.data.insertId},{product_id:1}]},'put');
+ const state=await load();assert.deepEqual(state.cache['/api/products'].data.map(p=>p.product_name),['Second','Coffee']);
+ assert.equal(state.cache['/api/products'].data[1].product_price,5);
+ assert.equal(state.queue.at(-1).data.entries[0].product_id,created.data.insertId);
+ await write('/api/products/menu-order',{kind:'categories',entries:[{p_category_id:1}]},'put');
+ assert.equal((await load()).cache['/api/products/categories'].data[0].pos_hidden,0);
+});

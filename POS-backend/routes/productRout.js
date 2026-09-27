@@ -26,10 +26,32 @@ for (const [route, table, key] of [['/products/:id/visibility', 'products', 'pro
   });
 }
 
+// Both lists are validated before any positions change; durableSync wraps the write.
+router.put('/products/menu-order', requireAdmin, async (req, res) => {
+    const { kind, entries } = req.body || {};
+    const key = kind === 'categories' ? 'p_category_id' : 'product_id';
+    if (!['categories', 'products'].includes(kind) || !Array.isArray(entries) || entries.length > 10000 || entries.some(row => !Number.isSafeInteger(row?.[key]) || row[key] <= 0) || new Set(entries.map(row => row[key])).size !== entries.length) return res.status(400).json({error:'Provide a valid ordered list without duplicates.'});
+    const table = kind === 'categories' ? 'product_categories' : 'products';
+    let connection;
+    try {
+        connection = await db.getConnection(); await connection.beginTransaction();
+        const [rows] = await connection.query(`SELECT ${key} FROM ${table}`);
+        const ids = new Set(rows.map(row => Number(row[key])));
+        if (ids.size !== entries.length || entries.some(row => !ids.has(row[key]))) {
+            await connection.rollback(); return res.status(409).json({error:'The catalog changed. Refresh and reorder the current list.'});
+        }
+        for (const [index, row] of entries.entries()) await connection.query(`UPDATE ${table} SET menu_position = ? WHERE ${key} = ?`, [index, row[key]]);
+        await connection.commit(); res.json({success:true});
+    } catch (error) {
+        if (connection) await connection.rollback();
+        res.status(500).json({error:'Could not save menu order. Ensure the menu-order migration has run.'});
+    } finally { connection?.release(); }
+});
+
 // GET catefories
 router.get('/products/categories', async (req,res) => {
     try{
-        const [rows] = await db.query(`SELECT * FROM product_categories ${req.query.scope === 'pos' ? 'WHERE pos_hidden = 0' : ''}`);
+        const [rows] = await db.query(`SELECT * FROM product_categories ${req.query.scope === 'pos' ? 'WHERE pos_hidden = 0' : ''} ORDER BY menu_position, p_category_id`);
         res.json(rows);
     }catch (err){
         res.status(500).json({error:"Error getting products categories: " + err.message})
@@ -98,7 +120,7 @@ router.delete('/products/category/:name', async (req, res) => {
 // GET /products
 router.get('/products', async (req, res) => {
     try {
-        const [rows] = await db.query(`SELECT p.*, COALESCE(c.pos_hidden, 0) AS category_hidden FROM products p LEFT JOIN product_categories c ON c.p_category_name = p.product_category ${req.query.scope === 'pos' ? 'WHERE p.pos_hidden = 0 AND COALESCE(c.pos_hidden, 0) = 0' : ''}`);
+        const [rows] = await db.query(`SELECT p.*, COALESCE(c.pos_hidden, 0) AS category_hidden FROM products p LEFT JOIN product_categories c ON c.p_category_name = p.product_category ${req.query.scope === 'pos' ? 'WHERE p.pos_hidden = 0 AND COALESCE(c.pos_hidden, 0) = 0' : ''} ORDER BY c.menu_position, c.p_category_id, p.menu_position, p.product_id`);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: "Error getting products: " + err.message });

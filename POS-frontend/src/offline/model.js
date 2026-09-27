@@ -45,6 +45,9 @@ export function applyLocal(state,op) {
   each(state,'/api/seating/floors',()=>copy(data.floors));
  } else if(path.startsWith('/api/seating/tables/')){
   each(state,'/api/seating/floors',floors=>{for(const f of floors)for(const t of f.tables)if(same(t.t_id,parts[4])||t.t_name===data.t_name){t.t_status=data.t_status;if(data.open_order&&state.drafts){const drafts=state.drafts;let order=drafts.orders.find(o=>same(o.tableId,t.t_id));if(!order){const key=crypto.randomUUID();drafts.nextOrder++;order={id:key,checkoutOperationId:key,label:t.t_name,tableId:t.t_id,tableName:t.t_name,orderType:'dine-in',items:[]};drafts.orders.push(order);}drafts.activeOrderId=order.id;data.order=copy(order);each(state,'/api/open-orders',rows=>upsert(rows,'checkoutOperationId',order.checkoutOperationId,copy(order)));}}return floors;});
+ } else if(path==='/api/products/menu-order'){
+  const key=data.kind==='categories'?'p_category_id':'product_id';
+  each(state,data.kind==='categories'?'/api/products/categories':'/api/products',rows=>rows.map(row=>({...row,menu_position:data.entries.findIndex(entry=>same(entry[key],row[key]))})).sort((a,b)=>a.menu_position-b.menu_position));
  } else if(path==='/api/products/category'||path.startsWith('/api/products/category/')){
   each(state,'/api/products/categories',rows=>{if(method==='post')rows.push({p_category_id:id,p_category_name:data.category_name,pos_hidden:0});if(method==='put')for(const c of rows)if(c.p_category_name===data.old_name)c.p_category_name=data.new_name;return method==='delete'?rows.filter(c=>c.p_category_name!==decodeURIComponent(parts[4])):rows;});
   each(state,'/api/products',rows=>rows.map(p=>({...p,product_category:method==='put'&&p.product_category===data.old_name?data.new_name:method==='delete'&&p.product_category===decodeURIComponent(parts[4])?null:p.product_category})));

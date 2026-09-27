@@ -7,7 +7,7 @@ router.get('/menu', async (req, res) => {
             p.product_price, p.product_description, p.product_image
             FROM products p LEFT JOIN product_categories c ON c.p_category_name = p.product_category
             WHERE p.pos_hidden = 0 AND COALESCE(c.pos_hidden, 0) = 0
-            ORDER BY p.product_id`);
+            ORDER BY c.menu_position, c.p_category_id, p.menu_position, p.product_id`);
         res.json({ products });
     } catch (error) {
         console.error('Public menu load failed:', error.message);

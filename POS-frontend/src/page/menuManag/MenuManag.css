@@ -4,3 +4,17 @@
 .menu-public-card p { margin-top: 12px; line-height: 1.6; overflow-wrap: anywhere; }
 .menu-public-card a { color: var(--main-color); }
 .menu-public-note { color: var(--font-color); font-size: 13px; }
+
+.menu-order-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:16px; margin-top:20px; }
+.menu-order-list { list-style:none; margin:16px 0 0; padding:0; max-height:65vh; overflow:auto; }
+.menu-order-list li { display:flex; align-items:center; justify-content:space-between; gap:12px; padding:10px 0; border-bottom:1px solid var(--border-color); }
+.menu-order-list li span { min-width:0; overflow-wrap:anywhere; }
+.menu-order-list small { display:block; color:#666; }
+.menu-order-controls { display:flex; flex-shrink:0; gap:6px; }
+.menu-order-controls button { display:grid; place-items:center; width:44px; height:44px; border:1px solid var(--border-color); border-radius:8px; background:#f6f7fa; cursor:pointer; }
+.menu-order-controls button:disabled { opacity:.35; cursor:default; }
+.menu-order-controls button:focus-visible { outline:2px solid var(--main-color); outline-offset:2px; }
+.menu-category-picker { display:flex; flex-direction:column; gap:8px; margin-top:16px; }
+.menu-category-picker select { width:100%; min-height:44px; padding:8px; border:1px solid var(--border-color); border-radius:8px; background:white; }
+.menu-order-error { color:#a52222; margin-top:16px; }
+@media(max-width:700px) { .menu-order-layout { grid-template-columns:minmax(0,1fr); } .menu-order-layout .menu-public-card { padding:14px; } }

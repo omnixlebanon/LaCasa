@@ -1,10 +1,3 @@
-const groups = [
-    { id: 'hotDrinks', name: 'Hot Drinks', categories: ['Hot Drinks'] },
-    { id: 'coldDrinks', name: 'Cold Drinks', categories: ['Milkshakes', 'Iced Coffee', 'Frappes', 'Smoothies', 'Juices', 'Water', 'Soft Drinks', 'Energy Drinks'] },
-    { id: 'desserts', name: 'Desserts', categories: ['Desserts'] },
-    { id: 'shisha', name: 'Shisha', categories: ['Shisha'] },
-    { id: 'food', name: 'Food', categories: ['Tablye', 'Yogurt Bowls', 'Sandwiches', 'Saj', 'Croissants'] },
-];
 const content = document.getElementById('menu-content');
 const status = document.getElementById('menu-status');
 const retry = document.getElementById('menu-retry');
@@ -41,8 +34,7 @@ function renderMenu(products) {
         if (!categories.has(category)) categories.set(category, []);
         categories.get(category).push(product);
     }
-    const known = new Set(groups.flatMap(group => group.categories));
-    const sections = [...groups, { id: 'other', name: 'More', categories: [...categories.keys()].filter(name => !known.has(name)) }];
+    const sections = [...categories.keys()].map(name => ({ id: 'category-' + encodeURIComponent(name), name, categories: [name] }));
     const fragment = document.createDocumentFragment();
     const navigation = document.createDocumentFragment();
     for (const group of sections) {
