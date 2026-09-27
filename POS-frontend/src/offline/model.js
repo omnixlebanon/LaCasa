@@ -54,6 +54,12 @@ export function applyLocal(state,op) {
  } else if(path.startsWith('/api/products/categories/')){
   each(state,'/api/products/categories',rows=>rows.map(c=>same(c.p_category_id,parts[4])?{...c,pos_hidden:data.hidden?1:0}:c));
  } else if(path.startsWith('/api/products')){
+  if((path==='/api/products'&&method==='post'||parts.length===4&&method==='patch')&&data.product_name!==undefined){
+   if(typeof data.product_name!=='string'||!data.product_name.trim()||data.product_name.trim().length>120)throw Error('Product name must contain 1?120 characters.');
+   data.product_name=data.product_name.trim();
+   const duplicate=(cached(state,'/api/products')||[]).find(product=>!same(product.product_id,method==='patch'?parts[3]:null)&&String(product.product_name).trim().toLowerCase()===data.product_name.toLowerCase());
+   if(duplicate)throw Error('A product with this name already exists. Edit the existing product or choose a different name.');
+  }
   each(state,'/api/products',rows=>{if(path==='/api/products')return upsert(rows,'product_id',id,{...data,pos_hidden:0});if(method==='delete')return rows.filter(p=>!same(p.product_id,parts[3]));return rows.map(p=>same(p.product_id,parts[3])?{...p,...(parts[4]==='visibility'?{pos_hidden:data.hidden?1:0}:data)}:p);});
  } else if(path==='/api/items'||/^\/api\/stock\/[^/]+\/(edit|delete|batch)$/.test(path)){
   each(state,'/api/items',rows=>{if(method==='delete')return rows.filter(i=>!same(i.item_id,parts[3]));const itemId=path==='/api/items'?id:parts[3];const old=rows.find(i=>same(i.item_id,itemId))||{};const patch={};const fields={stock_name:'item_name',stock_category:'item_category',stock_uom:'uom',stock_limit:'safety_limit',stock_cost:'item_cost',stock_shelf_life:'shelf_life',stock_supplier:'supplier_name',stock_supplier_contact:'supplier_contact'};for(const [from,to]of Object.entries(fields))if(data[from]!==undefined)patch[to]=data[from];if(parts[4]==='batch')patch.stock=Number(old.stock||0)+Number(data.batch_stock);return upsert(rows,'item_id',itemId,{stock:0,item_cost:0,safety_limit:0,...old,...patch});});

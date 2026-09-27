@@ -194,3 +194,13 @@ test('menu order stays saved offline without changing visibility or product deta
  await write('/api/products/menu-order',{kind:'categories',entries:[{p_category_id:1}]},'put');
  assert.equal((await load()).cache['/api/products/categories'].data[0].pos_hidden,0);
 });
+
+test('duplicate product names are rejected before saving locally, including renames',async()=>{
+ await assert.rejects(write('/api/products',{product_name:' Coffee ',product_category:'Hot',product_price:8}),/already exists/);
+ assert.equal((await load()).queue.length,0);
+ const second=await write('/api/products',{product_name:'Tea',product_category:'Hot',product_price:3});
+ await assert.rejects(write('/api/products/'+second.data.insertId,{product_name:'coffee'},'patch'),/already exists/);
+ assert.equal((await load()).queue.length,1);
+ await write('/api/products/1',{product_name:'Coffee',product_price:6},'patch');
+ assert.equal((await load()).cache['/api/products'].data.find(p=>p.product_id===1).product_price,6);
+});

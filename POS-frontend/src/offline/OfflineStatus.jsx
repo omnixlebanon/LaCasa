@@ -4,13 +4,15 @@ import { load, exportBackup, restoreBackup } from './storage.js';
 import { prepareOffline, syncPending, resolvePending, correctPending, latestSharedData, activePending, isWaitingOnHeld, leavePendingUnsynced, resumeHeld, connectionState } from './transport.js';
 import './offline.css';
 function redact(value){if(Array.isArray(value))return value.map(redact);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,v])=>[key,/password|token|evidence/i.test(key)?'[private]':redact(v)]));return value;}
+function syncMessage(message){return /products_product_name_key/i.test(message||'')?'A product with this name already exists on the server. Change the saved name or leave this request unsynced.':message;}
 function PendingChange({op,active,waiting,run}){
- const [editing,setEditing]=useState(false),[text,setText]=useState('');
+ const [editing,setEditing]=useState(false),[text,setText]=useState(''),[productName,setProductName]=useState(op.data.product_name||'');
  return <details><summary>{op.method.toUpperCase()} {op.url} — {op.deferred?'Left unsynced':waiting?'Waiting for a related unsynced request':op.blocked?'Needs review':'Waiting to sync'}</summary>
   <time>{new Date(op.createdAt).toLocaleString()}</time><pre>{JSON.stringify(redact(op.data),null,2)}</pre>
-  {op.problem&&<p role="alert">{op.problem}</p>}
+  {op.problem&&<p role="alert">{syncMessage(op.problem)}</p>}
   {op.deferred&&<button onClick={()=>run(()=>resumeHeld(op.id))}>Review and retry later</button>}
   {active&&(op.blocked||op.problem)&&<>
+   {op.blocked&&/^\/api\/products(?:\/-?\d+)?$/.test(op.url)&&typeof op.data.product_name==='string'&&<div><label>Saved product name<input aria-label="Saved product name" maxLength={120} value={productName} onChange={e=>setProductName(e.target.value)}/></label><button disabled={!productName.trim()||productName.trim()===op.data.product_name} onClick={()=>run(()=>correctPending({...op.data,product_name:productName.trim()}))}>Save new name and retry</button><p>The original request stays in your recovery backup.</p></div>}
    <button onClick={()=>run(()=>leavePendingUnsynced(op.id))}>Leave unsynced</button>
    <button onClick={()=>run(async()=>{if(window.confirm('Apply this saved change against the latest shared data? Review the current shared values first: this may overwrite newer values.'))await resolvePending();})}>Reviewed — retry this change</button>
    <button onClick={()=>{setText(JSON.stringify(op.data,null,2));setEditing(!editing);}}>Correct saved fields</button>
@@ -36,7 +38,7 @@ export default function OfflineStatus(){
    <p>Last synchronization: {state?.lastSync?new Date(state.lastSync).toLocaleString():'Not prepared'}</p>
    <p>{persisted?'Persistent browser storage granted.':'Persistent storage is not granted. Keep an exported backup.'} Clearing browser/site data or losing this device can erase unsynced work.</p>
    <p>Offline figures are provisional. Approvals, payroll calculations and stock validation are finalized on sync. Keep the app open when reconnecting.</p>
-   {(error||state?.error)&&<p role="alert" className="offline-error">{error||state.error}</p>}
+   {(error||state?.error)&&<p role="alert" className="offline-error">{syncMessage(error||state.error)}</p>}
    <div className="offline-actions">
     <button onClick={()=>run(async()=>{setPersisted(await navigator.storage?.persist?.()||false);await prepareOffline();})}>Prepare / refresh offline data</button>
     <button onClick={()=>run(syncPending)}>Sync now</button>

@@ -3,6 +3,10 @@ const router = express.Router();
 const db = require('../config/database');
 const { requireAdmin } = require('../middleware/auth');
 function validateMenuDetails(body) {
+    if (body.product_name !== undefined) {
+        if (typeof body.product_name !== 'string' || !body.product_name.trim() || body.product_name.trim().length > 120) return 'Product name must contain 1?120 characters.';
+        body.product_name = body.product_name.trim();
+    }
     if (body.product_description !== undefined && (typeof body.product_description !== 'string' || body.product_description.length > 2000)) return 'Description must be at most 2000 characters.';
     if (body.product_image !== undefined) {
         const image = body.product_image;
@@ -129,9 +133,9 @@ router.get('/products', async (req, res) => {
 
 // POST /products
 router.post('/products', requireAdmin, async (req, res) => {
-    const { product_name, product_category, product_price, product_description = '', product_image = '' } = req.body;
     const issue = validateMenuDetails(req.body);
     if (issue) return res.status(400).json({ error: issue });
+    const { product_name, product_category, product_price, product_description = '', product_image = '' } = req.body;
     
     if (!product_name || !product_category || product_price === undefined) {
         return res.status(400).json({ error: "fields are all required" });
@@ -147,6 +151,7 @@ router.post('/products', requireAdmin, async (req, res) => {
             insertId: result.insertId
         });
     } catch (err) {
+        if (['23505','ER_DUP_ENTRY'].includes(err.code)) return res.status(422).json({error:'A product with this name already exists. Edit the existing product or choose a different name.'});
         console.error('Error adding product: ', err.message);
         res.status(500).json({ error: err.message });
     }
@@ -178,6 +183,7 @@ router.patch('/products/:id', requireAdmin, async (req, res) => {
         }
         return res.status(200).json({ message: "Product updated successfully." });
     } catch (err) {
+        if (['23505','ER_DUP_ENTRY'].includes(err.code)) return res.status(422).json({error:'A product with this name already exists. Choose a different name.'});
         res.status(500).json({ error: err.message });
     }
 });
