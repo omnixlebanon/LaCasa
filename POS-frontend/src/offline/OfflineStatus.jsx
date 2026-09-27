@@ -7,12 +7,13 @@ function redact(value){if(Array.isArray(value))return value.map(redact);if(value
 function syncMessage(message){return /products_product_name_key/i.test(message||'')?'A product with this name already exists on the server. Change the saved name or leave this request unsynced.':message;}
 function PendingChange({op,active,waiting,run}){
  const [editing,setEditing]=useState(false),[text,setText]=useState(''),[productName,setProductName]=useState(op.data.product_name||'');
- return <details><summary>{op.method.toUpperCase()} {op.url} — {op.deferred?'Left unsynced':waiting?'Waiting for a related unsynced request':op.blocked?'Needs review':'Waiting to sync'}</summary>
+ return <details><summary>{op.method.toUpperCase()} {op.url} — {op.deferred?'Left unsynced':waiting?'Waiting for a related unsynced request':op.blocked?'Will be checked and skipped on Sync now':'Waiting to sync'}</summary>
   <time>{new Date(op.createdAt).toLocaleString()}</time><pre>{JSON.stringify(redact(op.data),null,2)}</pre>
   {op.problem&&<p role="alert">{syncMessage(op.problem)}</p>}
   {op.deferred&&<button onClick={()=>run(()=>resumeHeld(op.id))}>Review and retry later</button>}
   {active&&(op.blocked||op.problem)&&<>
    {op.blocked&&/^\/api\/products(?:\/-?\d+)?$/.test(op.url)&&typeof op.data.product_name==='string'&&<div><label>Saved product name<input aria-label="Saved product name" maxLength={120} value={productName} onChange={e=>setProductName(e.target.value)}/></label><button disabled={!productName.trim()||productName.trim()===op.data.product_name} onClick={()=>run(()=>correctPending({...op.data,product_name:productName.trim()}))}>Save new name and retry</button><p>The original request stays in your recovery backup.</p></div>}
+   <button onClick={()=>run(()=>syncPending({manual:true,resumeAuth:true}))}>Ignore failed requests and continue sync</button>
    <button onClick={()=>run(()=>leavePendingUnsynced(op.id))}>Leave unsynced</button>
    <button onClick={()=>run(async()=>{if(window.confirm('Apply this saved change against the latest shared data? Review the current shared values first: this may overwrite newer values.'))await resolvePending();})}>Reviewed — retry this change</button>
    <button onClick={()=>{setText(JSON.stringify(op.data,null,2));setEditing(!editing);}}>Correct saved fields</button>

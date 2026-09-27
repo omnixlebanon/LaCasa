@@ -181,14 +181,24 @@ async function skipDuplicateProduct(owner,op,reason=op.problem,code){
 export async function dismissSyncNotices(){await change(state=>{for(const record of state.recovery||[])if(record.skippedAt)record.noticeRead=true;});}
 export async function syncPending({resumeAuth=false,manual=false}={}) {
  const owner=accountId();if(!owner||!navigator.onLine||!navigator.locks)return;
- return navigator.locks.request('lacasa-sync-'+owner,{ifAvailable:true},async lock=>{
+ return navigator.locks.request('lacasa-sync-'+owner,manual?{}:{ifAvailable:true},async lock=>{
   if(!lock){if(manual){connectionState='sync already running';announce();}return;}
-  if(manual)await change(state=>{for(const op of state.queue)if(op.deferred&&rejectedRequest(op,op.status,op.problem))op.deferred=false;},owner);
+  if(manual)await change(state=>{for(const op of state.queue)if(op.deferred&&(op.blocked||op.problem))op.deferred=false;},owner);
   let completed=false;
   for(;;){
    if(accountId()!==owner)return;
    const snapshot=await load(owner);const op=activePending(snapshot);if(!op){connectionState=snapshot.queue.length?'requests left unsynced':'online';announce();if(completed)await prepareOffline();if(manual&&snapshot.queue.length)await change(state=>{state.error='Requests are left unsynced. Open a saved request and choose Review and retry later to resume it.';},owner);return;}
    if(op.blocked&&rejectedRequest(op,op.status,op.problem)){try{await skipDuplicateProduct(owner,op);completed=true;continue;}catch(error){await change(state=>{state.error=error.response?.data?.error||error.message;},owner);return;}}
+   if(op.blocked&&manual&&Number(op.status)!==401){
+    try{
+     connectionState='checking saved request';announce();
+     const receipt=await network.get('/api/offline/operations/'+op.id,{headers:{'X-Offline-Account-Id':owner.split(':')[0]}});
+     if(typeof receipt.data.applied!=='boolean')throw Error('The server did not confirm whether this request was saved.');
+     if(!receipt.data.applied){await skipDuplicateProduct(owner,op,op.problem||'This old request was paused for review.');completed=true;continue;}
+     // Retry the exact original request to recover its idempotent receipt.
+     op.blocked=false;
+    }catch(error){connectionState='sync paused';await change(state=>{state.error='Could not check this request on the server: '+(error.response?.data?.error||error.message);},owner);announce();return;}
+   }
    if(op.blocked){if(resumeAuth&&op.status===401){await change(s=>{activePending(s).blocked=false;},owner);continue;}connectionState=op.status===401?'sign-in required':'sync paused';await change(state=>{state.error=op.problem||'This request could not be confirmed. Sign in or retry when the server is available.';},owner);announce();return;}
    if(!op.sentData){await change(s=>{const first=activePending(s);first.sentData=remap(first.data,s.idMap);first.sentUrl=first.url.split('/').map(segment=>encodeURIComponent(remap(decodeURIComponent(segment),s.idMap,'shift_id'))).join('/');first.expectedRevision??=s.revision;},owner);continue;}
    try{
@@ -212,6 +222,12 @@ export async function syncPending({resumeAuth=false,manual=false}={}) {
    }catch(error){
     if(rejectedRequest(op,error.response?.status,error.response?.data?.error,error.response?.data?.code)){
      try{await skipDuplicateProduct(owner,op,error.response?.data?.error,error.response?.data?.code);completed=true;continue;}catch(refreshError){await change(state=>{state.error='Could not refresh the catalog. The rejected request is still saved. '+refreshError.message;},owner);return;}
+    }
+    if(manual&&error.response&&Number(error.response.status)!==401){
+     try{
+      const receipt=await network.get('/api/offline/operations/'+op.id,{headers:{'X-Offline-Account-Id':owner.split(':')[0]}});
+      if(receipt.data.applied===false){await skipDuplicateProduct(owner,op,error.response.data?.error||error.message);completed=true;continue;}
+     }catch{/* Keep unconfirmed requests saved and display the failure below. */}
     }
     const status=error.response?.status;connectionState=status===401?'sign-in required':status===409?'conflict':status?'sync paused':'offline';
     await change(s=>{s.error=error.response?.data?.error||error.message;if(activePending(s)?.id===op.id){activePending(s).blocked=!!status&&status!==503;activePending(s).problem=s.error;activePending(s).conflictRevision=error.response?.data?.revision;activePending(s).status=status;if(status===409)for(const later of s.queue.filter(pending=>pending.id!==op.id&&!pending.deferred)){later.blocked=true;later.status=409;later.problem='Review this remaining change against the latest shared data.';}}},owner);announce();return;

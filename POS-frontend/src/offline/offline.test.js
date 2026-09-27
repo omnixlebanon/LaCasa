@@ -262,3 +262,22 @@ test('manual sync handles old deferred review requests with string status codes'
  const shared=fixture();network.defaults.adapter=async config=>({data:shared.cache[keyOf(config.url)]?.data||[],status:200,headers:headers(10),config});
  navigator.onLine=true;await syncPending({manual:true});assert.equal((await load()).queue.length,0);assert.equal((await load()).recovery.length,1);
 });
+
+test('manual sync removes legacy review requests with missing or server-error status after receipt verification',async()=>{
+ for(const status of [undefined,500,'500',403]){
+  navigator.onLine=false;await write('/api/products/1',{product_price:6},'patch');
+  await change(state=>{Object.assign(state.queue[0],{blocked:true,deferred:true,status,problem:'Old failure'});});
+  let checks=0;const shared=fixture();network.defaults.adapter=async config=>{
+   assert.equal(config.method,'get');if(config.url.includes('/operations/')){checks++;return {data:{applied:false},status:200,headers:headers(10),config};}
+   return {data:shared.cache[keyOf(config.url)]?.data||[],status:200,headers:headers(10),config};
+  };
+  navigator.onLine=true;await syncPending({manual:true});assert.equal((await load()).queue.length,0);assert.equal(checks,1);
+ }
+ assert.equal((await load()).recovery.length,4);
+});
+test('manual sync recovers an already applied review request instead of discarding it',async()=>{
+ await write('/api/products/1',{product_price:6},'patch');
+ await change(state=>{const op=state.queue[0];Object.assign(op,{blocked:true,status:500,problem:'Lost response',sentData:op.data,sentUrl:op.url,expectedRevision:10});});
+ const shared=fixture();network.defaults.adapter=async config=>({data:config.url.includes('/operations/')?{applied:true}:config.method==='get'?shared.cache[keyOf(config.url)]?.data||[]:{success:true},status:200,headers:headers(11),config});
+ navigator.onLine=true;await syncPending({manual:true});const state=await load();assert.equal(state.queue.length,0);assert.equal(state.archive.length,1);assert.equal(state.recovery.length,0);
+});
