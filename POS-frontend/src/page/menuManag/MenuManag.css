@@ -28,3 +28,11 @@
 .menu-structure .menu-order-controls button { width:auto; }
 .menu-structure button:disabled { opacity:.5; cursor:default; }
 @media(max-width:700px){.menu-structure li { flex-wrap:wrap; }.menu-structure-form { flex-basis:100%; }.menu-structure select { flex:1; }}
+
+.menu-management-actions { display:flex; flex-wrap:wrap; gap:12px; margin:20px 0; }
+.menu-management-actions button,.menu-structure-dialog>header button { min-height:44px; padding:10px 16px; border:1px solid var(--border-color); border-radius:8px; cursor:pointer; background:var(--main-color); color:white; }
+.menu-structure-dialog { margin:auto; width:min(860px,calc(100vw - 24px)); max-height:calc(100dvh - 24px); overflow:auto; padding:20px; border:0; border-radius:14px; }
+.menu-structure-dialog::backdrop { background:#0008; }
+.menu-structure-dialog>header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
+.menu-structure-dialog .menu-structure { margin-top:12px; }
+@media(max-width:700px){.menu-structure-dialog { padding:12px; }.menu-structure-dialog .menu-public-card { padding:12px; }}
