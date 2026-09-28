@@ -23,20 +23,23 @@ function PendingChange({op,active,waiting,run}){
 }
 export default function OfflineStatus(){
  const {user}=useAuth();const [state,setState]=useState(null);const [status,setStatus]=useState(connectionState);const [error,setError]=useState('');const [persisted,setPersisted]=useState(false);const dialog=useRef();
- const [shared,setShared]=useState(null),[shellReady,setShellReady]=useState(false);
+ const [shared,setShared]=useState(null),[shellReady,setShellReady]=useState(false),[storageInfo,setStorageInfo]=useState(null);
  useEffect(()=>{let active=true;navigator.serviceWorker?.ready.then(()=>{if(active)setShellReady(true);}).catch(()=>{});return()=>{active=false;};},[]);
  useEffect(()=>{if(!user)return;let active=true;const update=()=>{load().then(s=>{if(active){setState(s);setStatus(connectionState);}}).catch(e=>{if(active)setError(e.message);});};update();window.addEventListener('offline-change',update);const timer=setInterval(update,5000);navigator.storage?.persisted?.().then(setPersisted);void syncPending({resumeAuth:true}).then(prepareOffline);return()=>{active=false;clearInterval(timer);window.removeEventListener('offline-change',update);};},[user]);
  if(!user)return null;
  const notices=(state?.recovery||[]).filter(record=>record.skippedAt&&!record.noticeRead);
  const run=async fn=>{try{setError('');await fn();}catch(e){setError(e.message);}};
  return <>
-  <button className={`offline-indicator ${state?.queue.length?'has-pending':''}`} title={`${state?.queue.length||0} pending changes · ${status} · ${state?.prepared?'Offline data ready':'Prepare offline data'}`} aria-label={`Open sync: ${state?.queue.length||0} pending changes, ${status}`} onClick={()=>dialog.current.showModal()}>Sync<small>{state?.queue.length||(notices.length?'!':!state?.prepared?'Setup':status==='online'?'✓':'!')}</small></button>
+  <button className={`offline-indicator ${state?.queue.length?'has-pending':''}`} title={`${state?.queue.length||0} pending changes · ${status} · ${state?.prepared?'Offline data ready':'Prepare offline data'}`} aria-label={`Open sync: ${state?.queue.length||0} pending changes, ${status}`} onClick={()=>{dialog.current.showModal();navigator.storage?.estimate?.().then(setStorageInfo).catch(()=>{});}}>Sync<small>{state?.queue.length||(notices.length?'!':!state?.prepared?'Setup':status==='online'?'✓':'!')}</small></button>
   <dialog ref={dialog} className="offline-dialog">
    <header><h2>Offline data & sync</h2><button onClick={()=>dialog.current.close()} aria-label="Close sync panel">✕</button></header>
    <p><strong>{status} · {state?.queue.length||0} pending changes</strong></p>
    <p>{state?.prepared?'This account’s downloaded data is saved on this device.':'Connect and prepare this device before using it offline.'}</p>
    <p>{shellReady?'App files are saved for reopening offline.':'App files are not ready for offline reopening yet. Keep this page open and connected.'}</p>
    <p>Pending changes are stored before an action succeeds. They stay here until confirmed, except rejected requests, which move to recovery with a notice. Other devices cannot see them until synced.</p>
+   <p><strong>{state?.queue.filter(op=>op.url==='/api/checkout').length||0} sales waiting to sync</strong> ? {state?.queue.length||0} total saved changes</p>
+   {storageInfo&&<p>Browser storage used: {(storageInfo.usage/1048576).toFixed(1)} MB of {(storageInfo.quota/1048576).toFixed(0)} MB available to this site.</p>}
+   {storageInfo?.quota>0&&storageInfo.usage/storageInfo.quota>0.8&&<p role="alert" className="offline-error">Storage is nearly full. Export a backup and sync when connected.</p>}
    <p>Last synchronization: {state?.lastSync?new Date(state.lastSync).toLocaleString():'Not prepared'}</p>
    <p>{persisted?'Persistent browser storage granted.':'Persistent storage is not granted. Keep an exported backup.'} Clearing browser/site data or losing this device can erase unsynced work.</p>
    <p>Offline figures are provisional. Approvals, payroll calculations and stock validation are finalized on sync. Keep the app open when reconnecting.</p>

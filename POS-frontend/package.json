@@ -13,6 +13,7 @@
     "prebuild": "npm run styles:sales",
     "postbuild": "node scripts/build-offline.mjs",
     "test:offline": "node --test src/offline/offline.test.js",
+    "test:offline:day": "node scripts/smoke-offline.mjs --full-day",
     "test:offline:browser": "node scripts/smoke-offline.mjs"
   },
   "dependencies": {

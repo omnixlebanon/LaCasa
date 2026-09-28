@@ -125,7 +125,7 @@ test('correcting a rejected change keeps the original and pauses remaining chang
 test('open cart edits are durable operations and another device downloads them',async()=>{
  const key=crypto.randomUUID();await saveDraftEdit(drafts=>{drafts.orders.push({id:key,checkoutOperationId:key,label:'Shared cart',items:[]});drafts.activeOrderId=key;});
  await saveDraftEdit(drafts=>{drafts.orders[0].items.push({product_id:1,qty:2,product_price:5});});
- assert.equal((await load()).queue.length,2);assert.equal((await load()).queue[0].data.order.items.length,0);
+ assert.equal((await load()).queue.length,1);assert.equal((await load()).queue[0].data.order.items.length,1);
  let shared=[],revision=10;
  network.defaults.adapter=async config=>{
   if(config.method==='get')return {data:config.url==='/api/open-orders'?shared:fixture().cache[keyOf(config.url)]?.data||[],status:200,headers:headers(revision),config};
@@ -288,4 +288,11 @@ test('a skipped product cannot remain cached and block adding it again',async()=
  assert.equal(readLocal(await load(),'/api/products').some(p=>p.product_name==='Shia pudding'),false);
  await write('/api/products',{product_name:'Shia pudding',product_category:'Shia Pudding',product_price:4});
  const state=await load();assert.equal(state.queue.length,1);assert.equal(state.cache['/api/products'].data.filter(p=>p.product_name==='Shia pudding').length,1);
+});
+
+test('cart compaction never changes a request that may have reached the server',async()=>{
+ const key=crypto.randomUUID();await saveDraftEdit(drafts=>drafts.orders.push({id:key,checkoutOperationId:key,items:[]}));
+ await change(state=>{state.queue[0].sentData=structuredClone(state.queue[0].data);});
+ await saveDraftEdit(drafts=>drafts.orders[0].items.push({product_id:1,qty:1,product_price:5}));
+ const state=await load();assert.equal(state.queue.length,2);assert.equal(state.queue[0].data.order.items.length,0);assert.equal(state.queue[1].data.order.items.length,1);
 });

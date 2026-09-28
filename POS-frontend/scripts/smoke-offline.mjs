@@ -6,16 +6,24 @@ import { tmpdir } from 'node:os';
 import { resolve, join, sep } from 'node:path';
 import { spawn } from 'node:child_process';
 
+const fullDay=process.argv.includes('--full-day');
 const root=resolve(import.meta.dirname,'..');
 const profile=await mkdtemp(join(tmpdir(),'lacasa-offline-browser-'));
 const browser=process.env.BROWSER_EXE||'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe';
 const storageModule='data:text/javascript;base64,'+(await readFile(join(root,'src/offline/storage.js'))).toString('base64');
 const catalog=[{product_id:1,product_name:'Test coffee',product_category:'Drinks',product_price:5,pos_hidden:0,category_hidden:0}];
+if(fullDay)for(let id=2;id<=100;id++)catalog.push({...catalog[0],product_id:id,product_name:'Test product '+id});
 let revision=1,shared=[],history=[],checkouts=0;
 const receipts=new Map();
 const server=http.createServer(async(req,res)=>{
  try{
   const path=new URL(req.url,'http://local').pathname;
+  if(path.startsWith('/test-modules/')){
+   const name=path.split('/').at(-1);if(!['transport.js','storage.js','model.js','axios.js'].includes(name)){res.statusCode=404;return res.end();}
+   let source=await readFile(name==='axios.js'?join(root,'node_modules/axios/dist/esm/axios.js'):join(root,'src/offline',name),'utf8');
+   if(name==='transport.js')source=source.replace("from 'axios'","from './axios.js'");
+   res.setHeader('Content-Type','text/javascript');return res.end(source);
+  }
   if(path.startsWith('/api/')){
    let body='';for await(const chunk of req)body+=chunk;
    const data=body?JSON.parse(body):{};
@@ -29,7 +37,7 @@ const server=http.createServer(async(req,res)=>{
     if(path==='/api/checkout'){checkouts++;result={success:true,orderId:'test-sale-'+checkouts};history.push({order_id:result.orderId,total_amount:data.totalAmount,details:data.details,order_date:req.headers['x-offline-created-at']});shared=shared.filter(order=>order.checkoutOperationId!==data.details.checkout_operation_id);}
     revision++;receipts.set(id,{data:result,revision});res.setHeader('X-Sync-Revision',String(revision));return res.end(JSON.stringify(result));
    }
-   const payload=path==='/api/products'?catalog:path==='/api/products/categories'?[{p_category_id:1,p_category_name:'Drinks',pos_hidden:0}]:path==='/api/open-orders'?shared:path==='/api/history'?history:path==='/api/stock/summary'?{}:path==='/api/offline/revision'?{ready:true}:[];
+   const payload=path==='/api/seating/floors'?[{floor_id:1,floor_name:'Test floor',tables:[{t_id:1,t_name:'T1',t_status:'available',t_seats:2,t_type:'square'}]}]:path==='/api/products'?catalog:path==='/api/products/categories'?[{p_category_id:1,p_category_name:'Drinks',pos_hidden:0}]:path==='/api/open-orders'?shared:path==='/api/history'?history:path==='/api/stock/summary'?{}:path==='/api/offline/revision'?{ready:true}:[];
    return res.end(JSON.stringify(payload));
   }
   const requested=resolve(root,'dist','.'+path);
@@ -56,7 +64,7 @@ try{
  function command(method,params={}){return new Promise((resolve,reject)=>{const id=++sequence;const timer=setTimeout(()=>{requests.delete(id);reject(Error('CDP timeout: '+method));},25000);requests.set(id,{resolve,reject,timer});ws.send(JSON.stringify({id,method,params}));});}
  async function evaluate(expression){const result=await command('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(result.exceptionDetails)throw Error(result.exceptionDetails.text+': '+result.exceptionDetails.exception?.description);return result.result?.value;}
  const state=()=>evaluate(`import(${JSON.stringify(storageModule)}).then(m=>m.load())`);
- diagnose=async()=>console.log(JSON.stringify({page:await evaluate('document.body.innerText.slice(0,1500)'),local:await state()},null,2));
+ diagnose=async()=>{const saved=await state();console.log(JSON.stringify({page:await evaluate('document.body.innerText.slice(0,1500)'),local:fullDay?{queue:saved.queue.length,first:saved.queue[0],error:saved.error,recovery:saved.recovery.length}:saved},null,2));};
  await command('Page.enable');await command('Network.enable');
  await command('Page.addScriptToEvaluateOnNewDocument',{source:`localStorage.setItem('auth_user',JSON.stringify({id:1,email:'test@fixture.invalid',name:'Test admin',accessLevel:'admin'}));`});
  await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
@@ -86,6 +94,31 @@ try{
  await command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
  await until(async()=>(await state()).queue.length===0,'reconnect synchronization');
  assert.equal(checkouts,1);assert.equal(history.length,1);assert.equal(shared.length,0);
+ if(fullDay){
+  await evaluate(`import('/test-modules/transport.js').then(m=>{window.dayTransport=m;m.network.defaults.baseURL=location.origin;})`);
+  await command('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
+  const began=Date.now();
+  for(let batch=0;batch<50;batch++){
+   await evaluate(`(async()=>{const m=window.dayTransport;for(let n=0;n<10;n++){
+    const id=crypto.randomUUID();
+    await m.saveDraftEdit(d=>{d.orders.push({id,checkoutOperationId:id,label:'Full day test',items:[]});d.activeOrderId=id;});
+    for(let qty=1;qty<=5;qty++)await m.saveDraftEdit(d=>{d.orders.find(o=>o.id===id).items=[{product_id:1,product_name:'Test coffee',qty,product_price:5}];});
+    await m.offlineAdapter({url:'/api/seating/tables/1/status',method:'put',data:{t_status:'occupied'}});
+    await m.offlineAdapter({url:'/api/checkout',method:'post',data:{totalAmount:25,customerName:'Full day test',details:{checkout_operation_id:id,table_id:1,items:[{product_id:1,qty:5,price:5}]}}});
+   }return true;})()`);
+   if((batch+1)%10===0)console.log('Full-day test: '+((batch+1)*10)+' orders saved offline');
+  }
+  const saved=await state();assert.equal(saved.queue.filter(op=>op.url==='/api/checkout').length,500);assert.equal(saved.queue.length,1500);assert.equal(saved.cache['/api/history'].data.length,501);
+  console.log('500 orders and 2,500 cart edits saved in '+((Date.now()-began)/1000).toFixed(1)+'s; encrypted state payload '+(Buffer.byteLength(JSON.stringify(saved))/1048576).toFixed(2)+' MiB');
+  await command('Page.reload');await until(()=>evaluate("!!document.querySelector('.product-card-btn')"),'full day offline reload');
+  assert.equal((await state()).queue.filter(op=>op.url==='/api/checkout').length,500);
+  await command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
+  const syncStart=Date.now();
+  while((await state()).queue.length){if(Date.now()-syncStart>300000)throw Error('Full-day sync exceeded five minutes');await pause(1000);}
+  assert.equal(checkouts,501);assert.equal(history.length,501);assert.equal(new Set(history.map(sale=>sale.order_id)).size,501);
+  await command('Page.reload');await pause(1000);assert.equal(checkouts,501);
+  console.log('PASS: 500 offline orders survived reload and synced exactly once in '+((Date.now()-syncStart)/1000).toFixed(1)+'s.');
+ }
  console.log('PASS: mobile layout, offline reopening, durable cart, shared open order, offline checkout, reconnect and one sale only.');
 }catch(error){await diagnose?.().catch(()=>{});throw error;}
 finally{

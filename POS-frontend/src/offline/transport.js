@@ -53,7 +53,7 @@ export async function saveDraftEdit(fn){
   if(!state.prepared)throw Error('Prepare offline data in Sync before editing orders.');
   const before=new Map(state.drafts.orders.map(order=>[order.checkoutOperationId,JSON.stringify(order)]));
   const result=fn(state.drafts);
-  for(const order of state.drafts.orders){if(before.get(order.checkoutOperationId)!==JSON.stringify(order)){const op=draftOperation(order);applyLocal(state,op);state.queue.push(op);}before.delete(order.checkoutOperationId);}
+  for(const order of state.drafts.orders){if(before.get(order.checkoutOperationId)!==JSON.stringify(order)){const op=draftOperation(order);applyLocal(state,op);const previous=state.queue.at(-1);if(previous?.method==='put'&&previous.url===op.url&&!previous.sentData&&!previous.blocked&&!previous.deferred){previous.data=op.data;}else state.queue.push(op);}before.delete(order.checkoutOperationId);}
   for(const previous of before.values()){const op=draftOperation(JSON.parse(previous),'delete');applyLocal(state,op);state.queue.push(op);}
   return result;
  });

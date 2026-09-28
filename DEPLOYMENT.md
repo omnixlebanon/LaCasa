@@ -136,3 +136,10 @@ Validation: `npm run test:offline` and `npm run test:offline:browser` from `POS-
 
 ### Menu ordering
 Before deploying the menu ordering update, run `npm run migrate:menu-order` from POS-backend for the local database and `npm run migrate:menu-order -- --supabase` for the live database. This adds positions without deleting catalog data. Deploy both backend and frontend; menu management saves ordering through the offline sync queue.
+
+### A full day offline
+Before going offline, sign in on the device, open Sync, and choose Prepare / refresh offline data. Check that both downloaded data and app files are ready. The panel shows pending sales separately from all saved changes and reports browser storage usage. Request persistent storage using the preparation button and export a backup during an extended outage. Do not clear site data.
+
+Consecutive unsent edits to the same cart are compacted to its latest saved contents. Submitted operations and checkouts are never compacted. Reconnect with the app open to sync; rejected changes are reported and retained in recovery rather than silently treated as successful sales.
+
+Run `npm run test:offline:day` in POS-frontend after building with a same-origin API URL (`VITE_API_URL=/`). It uses isolated Chrome storage and a fixture API, with 100 products, 500 offline orders, 2,500 item edits, table changes, offline reload, and duplicate-sale checks after reconnect. It does not touch production data. Device performance and server/network latency may differ from the test.

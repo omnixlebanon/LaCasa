@@ -1,3 +1,10 @@
+const groups = [
+    { id: 'hotDrinks', name: 'Hot Drinks', categories: ['Hot Drinks'] },
+    { id: 'coldDrinks', name: 'Cold Drinks', categories: ['Milkshakes', 'Iced Coffee', 'Frappes', 'Smoothies', 'Juices', 'Water', 'Soft Drinks', 'Energy Drinks'] },
+    { id: 'desserts', name: 'Desserts', categories: ['Desserts', 'Shia Pudding', 'Chia Pudding'] },
+    { id: 'shisha', name: 'Shisha', categories: ['Shisha'] },
+    { id: 'food', name: 'Food', categories: ['Tablye', 'Yogurt Bowls', 'Sandwiches', 'Saj', 'Croissants'] },
+];
 const content = document.getElementById('menu-content');
 const status = document.getElementById('menu-status');
 const retry = document.getElementById('menu-retry');
@@ -34,7 +41,11 @@ function renderMenu(products) {
         if (!categories.has(category)) categories.set(category, []);
         categories.get(category).push(product);
     }
-    const sections = [...categories.keys()].map(name => ({ id: 'category-' + encodeURIComponent(name), name, categories: [name] }));
+    const categoryNames = [...categories.keys()];
+    const normalize = name => name.trim().toLowerCase();
+    const known = new Set(groups.flatMap(group => group.categories.map(normalize)));
+    const sections = groups.map(group => ({ ...group, categories: categoryNames.filter(name => group.categories.some(member => normalize(member) === normalize(name))) }));
+    sections.push({ id: 'other', name: 'More', categories: categoryNames.filter(name => !known.has(normalize(name))) });
     const fragment = document.createDocumentFragment();
     const navigation = document.createDocumentFragment();
     for (const group of sections) {
@@ -53,6 +64,7 @@ function renderMenu(products) {
             const heading = element('h3', name); heading.id = group.id + '-category-' + index;
             if (name !== group.name) section.append(heading);
             const grid = element('div', undefined, 'menu-grid');
+            if (name === group.name) grid.id = heading.id;
             for (const product of categories.get(name)) grid.append(createCard(product));
             section.append(grid);
         });
