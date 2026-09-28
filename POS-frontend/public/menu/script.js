@@ -86,8 +86,8 @@ async function loadMenu() {
         if (signature !== previous) { renderMenu(data.products); previous = signature; }
         status.textContent = data.products.length ? '' : 'The menu is being updated. Please check back soon.';
     } catch {
-        status.textContent = previous === null ? 'Could not load the menu. Please try again.' : 'Could not refresh the menu. Displayed prices may be out of date.';
-        retry.hidden = false;
+        status.textContent = previous === null ? 'Could not load the menu. Please try again.' : '';
+        retry.hidden = previous !== null;
     } finally { busy = false; content.setAttribute('aria-busy', 'false'); }
 }
 document.getElementById('themeToggle').addEventListener('click', () => {
