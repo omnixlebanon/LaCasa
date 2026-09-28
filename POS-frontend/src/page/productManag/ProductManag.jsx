@@ -1,4 +1,4 @@
-import MenuStructure from "../../components/MenuStructure.jsx";
+import StructurePopup from "../../components/StructurePopup.jsx";
 import LoadingState from '../../components/LoadingState.jsx';
 import { useCurrency } from '../../global.jsx';
 import MoneyInput from '../../components/MoneyInput.jsx';
@@ -27,7 +27,7 @@ function ProductManag() {
     const [categoryFilter, setCategoryFilter] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
     const [isAddPopupOpen, setIsAddPopupOpen] = useState(false);
-    const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
+    const [structurePopup,setStructurePopup]=useState(null);
 
     // Local states for the Category Management popup
 
@@ -125,7 +125,7 @@ function ProductManag() {
         } finally {setSavingProduct(false);}
     };
 
-    const openCategoryManager=()=>setIsAddCategoryOpen(true);
+    const openCategoryManager=()=>setStructurePopup('categories');
 
     return (
         <>
@@ -171,7 +171,7 @@ function ProductManag() {
                 </div>, document.body
             )}
 
-            {isAddCategoryOpen&&createPortal(<div className="editPopup"><div className="editPopup-container"><div className="editPopup-head"><h3>Manage Categories</h3><button aria-label="Close category management" onClick={()=>setIsAddCategoryOpen(false)}><X/></button></div><MenuStructure categoriesOnly onChanged={async()=>{await fetchCategories();await fetchData();}}/></div></div>,document.body)}
+            {structurePopup&&<StructurePopup kind={structurePopup} onClose={()=>setStructurePopup(null)} onChanged={async()=>{await fetchCategories();await fetchData();}}/>}
 
             <div className='main-area'>
                 <div className='head-area'>
@@ -196,6 +196,7 @@ function ProductManag() {
                         </select>
                     </div>
                     <div className='addition-btns'>
+                        <button type="button" className="manage-categories-btn" onClick={()=>setStructurePopup('groups')}>Manage Groups</button>
                         <button className='manage-categories-btn' onClick={openCategoryManager}>
                             <p>Manage Categories</p>
                         </button>

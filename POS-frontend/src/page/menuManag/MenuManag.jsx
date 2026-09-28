@@ -1,20 +1,12 @@
-import { useEffect, useState, useRef } from "react";
-import {createPortal} from "react-dom";
-import MenuStructure from "../../components/MenuStructure.jsx";
+import { useEffect, useState } from "react";
 import api from "../../api.js";
 import LoadingState from "../../components/LoadingState.jsx";
 import { LayoutList, ExternalLink, ArrowUp, ArrowDown } from "lucide-react";
 import './MenuManag.css';
 
-function StructurePopup({kind,onClose,onChanged}){
-    const ref=useRef(null);
-    useEffect(()=>{ref.current.showModal();},[]);
-    return createPortal(<dialog ref={ref} className="menu-structure-dialog" aria-label={kind==='groups'?'Manage groups':'Manage categories'} onCancel={onClose} onClose={onClose}><header><h2>{kind==='groups'?'Manage groups':'Manage categories'}</h2><button type="button" aria-label="Close management" onClick={onClose}>Close</button></header><MenuStructure groupsOnly={kind==='groups'} categoriesOnly={kind==='categories'} onChanged={onChanged}/></dialog>,document.body);
-}
 function MenuManag() {
     const [products,setProducts]=useState([]),[categories,setCategories]=useState([]);
     const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
-    const [popup,setPopup]=useState(null);
     const [selected,setSelected]=useState(null);
     async function refresh(){
         setLoading(true);setError('');
@@ -56,12 +48,10 @@ function MenuManag() {
             <p>Share this address with customers: <a href="/menu" target="_blank" rel="noopener noreferrer">{window.location.origin}/menu</a></p>
             <p className="menu-public-note">Manage names, prices, descriptions and images in Product Management. Products and categories hidden from the POS are also hidden from the menu. Open menus refresh automatically.</p>
         </section>
-        <div className="menu-management-actions"><button type="button" onClick={()=>setPopup('groups')}>Manage groups</button><button type="button" onClick={()=>setPopup('categories')}>Manage categories</button></div>
-        {popup&&<StructurePopup kind={popup} onClose={()=>setPopup(null)} onChanged={refresh}/>}
         {error&&<div role="alert" className="menu-order-error">{error} <button onClick={refresh} disabled={busy}>Reload menu</button></div>}
         {message&&<p role="status">{message}</p>}
         {loading?<LoadingState label="Loading menu"/>:<div className="menu-order-layout" aria-busy={busy}>
-            <section className="menu-public-card"><h3>Category order</h3><p>Use the arrows to change category order within each customer-menu group. Use Manage groups and Manage categories to edit names and assignments.</p>
+            <section className="menu-public-card"><h3>Category order</h3><p>Use the arrows to change category order within each customer-menu group. Edit groups and category assignments in Product Management.</p>
                 <ol className="menu-order-list">{categoryList.map((category,index)=><li key={category.p_category_id}><span>{category.p_category_name}{!!Number(category.pos_hidden)&&<small>Hidden</small>}</span>{controls('categories',category,index,categoryList.length)}</li>)}</ol>
                 {!categoryList.length&&<p>No categories yet. Add one in Product Management.</p>}
             </section>
