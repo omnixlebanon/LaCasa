@@ -23,6 +23,7 @@ let account=0;
 function fixture(){
  const cache={};for(const [path,data]of Object.entries({
   '/api/products':[{product_id:1,product_name:'Coffee',product_category:'Hot',product_price:5}],
+  '/api/products/groups':[],
   '/api/products/categories':[{p_category_id:1,p_category_name:'Hot',pos_hidden:0}],
   '/api/products/summary':[], '/api/stock/summary':{}, '/api/stock/categories':[],
   '/api/items':[{item_id:2,item_name:'Milk',stock:100,item_cost:0.1,safety_limit:10,shelf_life:3}],
@@ -295,4 +296,13 @@ test('cart compaction never changes a request that may have reached the server',
  await change(state=>{state.queue[0].sentData=structuredClone(state.queue[0].data);});
  await saveDraftEdit(drafts=>drafts.orders[0].items.push({product_id:1,qty:1,product_price:5}));
  const state=await load();assert.equal(state.queue.length,2);assert.equal(state.queue[0].data.order.items.length,0);assert.equal(state.queue[1].data.order.items.length,1);
+});
+
+test('group assignment and category renaming preserve products and visibility offline',async()=>{
+ const group=await write('/api/products/groups',{group_name:'Drinks'});
+ await write('/api/products/categories/1/group',{menu_group_id:group.data.insertId},'patch');
+ await write('/api/products/category',{old_name:'Hot',new_name:'Hot drinks'},'put');
+ let state=await load();assert.equal(state.cache['/api/products/categories'].data[0].menu_group_id,group.data.insertId);assert.equal(state.cache['/api/products/categories'].data[0].pos_hidden,0);assert.equal(state.cache['/api/products'].data[0].product_category,'Hot drinks');
+ await assert.rejects(write('/api/products/category',{category_name:'hot DRINKS'}),/already exists/);
+ await write('/api/products/groups/'+group.data.insertId,{},'delete');state=await load();assert.equal(state.cache['/api/products/categories'].data[0].menu_group_id,null);assert.equal(state.cache['/api/products'].data.length,1);
 });

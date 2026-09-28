@@ -14,6 +14,7 @@
     "test:integration": "node --test tests/integration/*.integration.js",
     "migrate:expenses": "node scripts/migrate-expenses.js",
     "migrate:product-visibility": "node scripts/migrate-product-visibility.js",
+    "migrate:menu-groups": "node scripts/migrate-menu-groups.js",
     "migrate:menu-order": "node scripts/migrate-menu-order.js",
     "migrate:offline": "node scripts/migrate-offline.js"
   },

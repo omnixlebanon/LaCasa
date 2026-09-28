@@ -1,3 +1,4 @@
+import MenuStructure from "../../components/MenuStructure.jsx";
 import LoadingState from '../../components/LoadingState.jsx';
 import { useCurrency } from '../../global.jsx';
 import MoneyInput from '../../components/MoneyInput.jsx';
@@ -29,10 +30,6 @@ function ProductManag() {
     const [isAddCategoryOpen, setIsAddCategoryOpen] = useState(false);
 
     // Local states for the Category Management popup
-    const [tempCategories, setTempCategories] = useState([]);
-    const [selectedCatId, setSelectedCatId] = useState("");
-    const [editCatName, setEditCatName] = useState("");
-    const [newCatName, setNewCatName] = useState("");
 
     const toggleCategoryVisibility = async category => {
         if (visibilityBusy !== null) return;
@@ -128,104 +125,7 @@ function ProductManag() {
         } finally {setSavingProduct(false);}
     };
 
-    // Open category popup and populate with existing categories
-    const openCategoryManager = () => {
-        const initialTemp = categories.map((cat, index) => ({
-            id: index.toString(),
-            name: cat,
-            originalName: cat,
-            isNew: false
-        }));
-        setTempCategories(initialTemp);
-        setSelectedCatId("");
-        setEditCatName("");
-        setNewCatName("");
-        setIsAddCategoryOpen(true);
-    };
-
-    const handleSelectCategory = (id) => {
-        setSelectedCatId(id);
-        const category = tempCategories.find(cat => cat.id === id);
-        if (category) {
-            setEditCatName(category.name);
-        } else {
-            setEditCatName("");
-        }
-    };
-
-    // Temporary Add
-    const handleAddTempCategory = () => {
-        if (!newCatName.trim()) return;
-
-        const newId = `new-${Date.now()}`;
-        const updatedTemp = [
-            ...tempCategories,
-            {
-                id: newId,
-                name: newCatName.trim(),
-                originalName: null,
-                isNew: true
-            }
-        ];
-        setTempCategories(updatedTemp);
-        setNewCatName("");
-    };
-
-    // Temporary Edit/Rename
-    const handleRenameTempCategory = () => {
-        if (!selectedCatId || !editCatName.trim()) return;
-
-        setTempCategories(prev =>
-            prev.map(cat => (cat.id === selectedCatId ? { ...cat, name: editCatName.trim() } : cat))
-        );
-    };
-
-    const handleDeleteTempCategory = () => {
-        const isConfirmed = window.confirm("Are you sure you want to delete this?");
-        if (isConfirmed) {
-        if (!selectedCatId) return;
-
-        setTempCategories(prev => prev.filter(cat => cat.id !== selectedCatId));
-        setSelectedCatId("");
-        setEditCatName("");
-        }
-    };
-    
-    const handleSaveCategoryChanges = async () => {
-        const added = tempCategories.filter(cat => cat.isNew);
-        const deleted = categories.filter(origName => !tempCategories.some(cat => cat.originalName === origName));
-        const renamed = tempCategories.filter(cat => !cat.isNew && cat.originalName && cat.name !== cat.originalName);
-
-        try {
-            for (const cat of added) {
-                await api.post('/api/products/category', { category_name: cat.name });
-            }
-
-            // 2. Process Renames
-            for (const cat of renamed) {
-                await api.put('/api/products/category', { old_name: cat.originalName, new_name: cat.name });
-            }
-
-            // 3. Process Deletions
-            for (const catName of deleted) {
-                await api.delete(`/api/products/category/${encodeURIComponent(catName)}`);
-            }
-
-            // Refresh data sets from backend
-            await fetchCategories();
-            await fetchData();
-            setIsAddCategoryOpen(false);
-        } catch (error) {
-            console.error('Error saving category changes: ', error.response?.data?.error || error.message);
-        }
-    };
-
-    useEffect(() => {
-        fetchData();
-        fetchCategories();
-    }, []);
-
-    if (loadingProducts || loadingCategories || productError || categoryError) return <LoadingState page label="Loading products and categories..." error={loadingProducts || loadingCategories ? null : productError || categoryError} onRetry={() => { fetchData(); fetchCategories(); }} />;
+    const openCategoryManager=()=>setIsAddCategoryOpen(true);
 
     return (
         <>
@@ -271,66 +171,7 @@ function ProductManag() {
                 </div>, document.body
             )}
 
-            {/* MANAGE CATEGORY POPUP */}
-            {isAddCategoryOpen && createPortal(
-                <div className='editPopup'>
-                    <div className='editPopup-container'>
-                        <div className='editPopup-head'>
-                            <p>Manage Categories</p>
-                            <button type="button" className='close-btn' onClick={() => setIsAddCategoryOpen(false)}>
-                                <X />
-                            </button>
-                        </div>
-
-                        <div className='input-area'>
-                            <div className='label-input'>
-                                <label htmlFor="new_category_input">Add New Category</label>
-                                <div className='add-category-area'>
-                                    <input type="text" id='new_category_input' value={newCatName} placeholder="Category name..."
-                                        onChange={(e) => setNewCatName(e.target.value)}
-                                    />
-                                    <button className='add-btn' type="button" onClick={handleAddTempCategory}>Add</button>
-                                </div>
-                            </div>
-                            <div className='label-input'>
-                                <label htmlFor="select_category">Select Category to Edit/Delete</label>
-                                <div className='select-category'>
-                                    <select id='select_category' value={selectedCatId} 
-                                    onChange={(e) => handleSelectCategory(e.target.value)}
-                                    >
-                                        <option value="">Choose Category</option>
-                                        {tempCategories.map((cat) => (
-                                            <option key={cat.id} value={cat.id}>
-                                                {cat.name} {cat.isNew ? '(New)' : ''}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                            </div>
-
-                            {selectedCatId && (
-                                <div className='label-input'>
-                                    <label htmlFor="edit_category_name">Edit Selected Name</label>
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                        <input type="text" id='edit_category_name' value={editCatName}
-                                            onChange={(e) => setEditCatName(e.target.value)}
-                                        />
-                                        <button className='edit-button' type="button" onClick={handleRenameTempCategory}>Rename</button>
-                                        <button className='delete-button' type="button" onClick={handleDeleteTempCategory}>Delete</button>
-                                    </div>
-                                </div>
-                            )}
-
-                            <div className='edit-submit-container'>
-                                <button className='save-btn' type='button' onClick={handleSaveCategoryChanges}>
-                                    Save Changes
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>, document.body
-            )}
+            {isAddCategoryOpen&&createPortal(<div className="editPopup"><div className="editPopup-container"><div className="editPopup-head"><h3>Manage Categories</h3><button aria-label="Close category management" onClick={()=>setIsAddCategoryOpen(false)}><X/></button></div><MenuStructure categoriesOnly onChanged={async()=>{await fetchCategories();await fetchData();}}/></div></div>,document.body)}
 
             <div className='main-area'>
                 <div className='head-area'>

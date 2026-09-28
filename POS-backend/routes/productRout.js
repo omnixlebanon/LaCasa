@@ -30,12 +30,32 @@ for (const [route, table, key] of [['/products/:id/visibility', 'products', 'pro
   });
 }
 
+router.get('/products/groups', async(req,res)=>{
+ try{res.json((await db.query('SELECT * FROM menu_groups ORDER BY menu_position, group_id'))[0]);}catch{res.status(503).json({error:'Menu groups are not set up. Run the menu-groups migration.'});}
+});
+router.post('/products/groups',requireAdmin,async(req,res)=>{
+ const name=String(req.body.group_name||'').trim();if(!name||name.length>60)return res.status(400).json({error:'Group name must contain 1-60 characters.'});
+ try{const [result]=await db.query('INSERT INTO menu_groups (group_name) VALUES (?)',[name]);res.status(201).json({insertId:result.insertId});}catch(e){res.status(422).json({error:'Could not add group. Its name may already exist.'});}
+});
+router.patch('/products/groups/:id',requireAdmin,async(req,res)=>{
+ const name=String(req.body.group_name||'').trim();if(!name||name.length>60)return res.status(400).json({error:'Group name must contain 1-60 characters.'});
+ try{const [result]=await db.query('UPDATE menu_groups SET group_name = ? WHERE group_id = ?',[name,req.params.id]);res.status(result.affectedRows?200:404).json(result.affectedRows?{success:true}:{error:'Group not found.'});}catch{res.status(422).json({error:'Could not rename group. Its name may already exist.'});}
+});
+router.delete('/products/groups/:id',requireAdmin,async(req,res)=>{
+ let connection;try{connection=await db.getConnection();await connection.beginTransaction();await connection.query('UPDATE product_categories SET menu_group_id = NULL WHERE menu_group_id = ?',[req.params.id]);await connection.query('DELETE FROM menu_groups WHERE group_id = ?',[req.params.id]);await connection.commit();res.json({success:true});}catch{if(connection)await connection.rollback();res.status(500).json({error:'Could not delete group.'});}finally{connection?.release();}
+});
+router.patch('/products/categories/:id/group',requireAdmin,async(req,res)=>{
+ const id=req.body.menu_group_id;
+ if(id!==null&&(!Number.isSafeInteger(id)||id<=0))return res.status(400).json({error:'Choose a valid group.'});
+ try{if(id!==null&&!(await db.query('SELECT group_id FROM menu_groups WHERE group_id = ?',[id]))[0].length)return res.status(404).json({error:'Group no longer exists.'});const [result]=await db.query('UPDATE product_categories SET menu_group_id = ? WHERE p_category_id = ?',[id,req.params.id]);res.status(result.affectedRows?200:404).json(result.affectedRows?{success:true}:{error:'Category not found.'});}catch{res.status(500).json({error:'Could not assign category.'});}
+});
+
 // Both lists are validated before any positions change; durableSync wraps the write.
 router.put('/products/menu-order', requireAdmin, async (req, res) => {
     const { kind, entries } = req.body || {};
-    const key = kind === 'categories' ? 'p_category_id' : 'product_id';
-    if (!['categories', 'products'].includes(kind) || !Array.isArray(entries) || entries.length > 10000 || entries.some(row => !Number.isSafeInteger(row?.[key]) || row[key] <= 0) || new Set(entries.map(row => row[key])).size !== entries.length) return res.status(400).json({error:'Provide a valid ordered list without duplicates.'});
-    const table = kind === 'categories' ? 'product_categories' : 'products';
+    const key = kind === 'groups' ? 'group_id' : kind === 'categories' ? 'p_category_id' : 'product_id';
+    if (!['groups', 'categories', 'products'].includes(kind) || !Array.isArray(entries) || entries.length > 10000 || entries.some(row => !Number.isSafeInteger(row?.[key]) || row[key] <= 0) || new Set(entries.map(row => row[key])).size !== entries.length) return res.status(400).json({error:'Provide a valid ordered list without duplicates.'});
+    const table = kind === 'groups' ? 'menu_groups' : kind === 'categories' ? 'product_categories' : 'products';
     let connection;
     try {
         connection = await db.getConnection(); await connection.beginTransaction();
@@ -70,8 +90,9 @@ router.post('/products/category', requireAdmin, async (req,res) => {
     } catch(error) { res.status(['23505','ER_DUP_ENTRY'].includes(error.code)?409:500).json({error:'Could not create category. The name may already exist.'}); }
 });
 // PUT category
-router.put('/products/category', async (req, res) => {
-    const { old_name, new_name } = req.body;
+router.put('/products/category', requireAdmin, async (req, res) => {
+    const old_name=String(req.body.old_name||'').trim(),new_name=String(req.body.new_name||'').trim();
+    if(new_name.length>30)return res.status(400).json({error:'Category name must be at most 30 characters.'});
     if (!old_name || !new_name) {
         return res.status(400).json({ error: "Both old_name and new_name are required" });
     }
@@ -102,7 +123,7 @@ router.put('/products/category', async (req, res) => {
     } finally { connection?.release(); }
 });
 // DELETE category
-router.delete('/products/category/:name', async (req, res) => {
+router.delete('/products/category/:name', requireAdmin, async (req, res) => {
     const { name } = req.params;
     let connection;
     try {

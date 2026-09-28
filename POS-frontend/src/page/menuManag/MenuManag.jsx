@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import MenuStructure from "../../components/MenuStructure.jsx";
 import api from "../../api.js";
 import LoadingState from "../../components/LoadingState.jsx";
 import { LayoutList, ExternalLink, ArrowUp, ArrowDown } from "lucide-react";
@@ -48,10 +49,11 @@ function MenuManag() {
             <p>Share this address with customers: <a href="/menu" target="_blank" rel="noopener noreferrer">{window.location.origin}/menu</a></p>
             <p className="menu-public-note">Manage names, prices, descriptions and images in Product Management. Products and categories hidden from the POS are also hidden from the menu. Open menus refresh automatically.</p>
         </section>
+        <MenuStructure onChanged={refresh}/>
         {error&&<div role="alert" className="menu-order-error">{error} <button onClick={refresh} disabled={busy}>Reload menu</button></div>}
         {message&&<p role="status">{message}</p>}
         {loading?<LoadingState label="Loading menu"/>:<div className="menu-order-layout" aria-busy={busy}>
-            <section className="menu-public-card"><h3>Category order</h3><p>Use the arrows to change category order within each customer-menu group. The menu keeps its Hot Drinks, Cold Drinks, Desserts, Shisha and Food sections.</p>
+            <section className="menu-public-card"><h3>Category order</h3><p>Use the arrows to change category order within each customer-menu group. Manage the groups and assignments above.</p>
                 <ol className="menu-order-list">{categoryList.map((category,index)=><li key={category.p_category_id}><span>{category.p_category_name}{!!Number(category.pos_hidden)&&<small>Hidden</small>}</span>{controls('categories',category,index,categoryList.length)}</li>)}</ol>
                 {!categoryList.length&&<p>No categories yet. Add one in Product Management.</p>}
             </section>

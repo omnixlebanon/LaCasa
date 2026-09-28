@@ -1,10 +1,3 @@
-const groups = [
-    { id: 'hotDrinks', name: 'Hot Drinks', categories: ['Hot Drinks'] },
-    { id: 'coldDrinks', name: 'Cold Drinks', categories: ['Milkshakes', 'Iced Coffee', 'Frappes', 'Smoothies', 'Juices', 'Water', 'Soft Drinks', 'Energy Drinks'] },
-    { id: 'desserts', name: 'Desserts', categories: ['Desserts', 'Shia Pudding', 'Chia Pudding'] },
-    { id: 'shisha', name: 'Shisha', categories: ['Shisha'] },
-    { id: 'food', name: 'Food', categories: ['Tablye', 'Yogurt Bowls', 'Sandwiches', 'Saj', 'Croissants'] },
-];
 const content = document.getElementById('menu-content');
 const status = document.getElementById('menu-status');
 const retry = document.getElementById('menu-retry');
@@ -34,7 +27,7 @@ function createCard(product) {
     card.append(img, details);
     return card;
 }
-function renderMenu(products) {
+function renderMenu(products, groups) {
     const categories = new Map();
     for (const product of products) {
         const category = product.product_category || 'Other';
@@ -42,10 +35,10 @@ function renderMenu(products) {
         categories.get(category).push(product);
     }
     const categoryNames = [...categories.keys()];
-    const normalize = name => name.trim().toLowerCase();
-    const known = new Set(groups.flatMap(group => group.categories.map(normalize)));
-    const sections = groups.map(group => ({ ...group, categories: categoryNames.filter(name => group.categories.some(member => normalize(member) === normalize(name))) }));
-    sections.push({ id: 'other', name: 'More', categories: categoryNames.filter(name => !known.has(normalize(name))) });
+    const assigned = new Map(products.map(product => [product.product_category || 'Other', product.menu_group_id]));
+    const known = new Set(groups.map(group => String(group.group_id)));
+    const sections = groups.map(group => ({id:'group-'+group.group_id,name:group.group_name,categories:categoryNames.filter(name=>String(assigned.get(name))===String(group.group_id))}));
+    sections.push({id:'other',name:'More',categories:categoryNames.filter(name=>!known.has(String(assigned.get(name))))});
     const fragment = document.createDocumentFragment();
     const navigation = document.createDocumentFragment();
     for (const group of sections) {
@@ -82,8 +75,8 @@ async function loadMenu() {
         if (!response.ok) throw new Error('Menu unavailable');
         const data = await response.json();
         if (!Array.isArray(data.products)) throw new Error('Invalid menu');
-        const signature = JSON.stringify(data.products);
-        if (signature !== previous) { renderMenu(data.products); previous = signature; }
+        const signature = JSON.stringify([data.products,data.groups]);
+        if (signature !== previous) { renderMenu(data.products,data.groups||[]); previous = signature; }
         status.textContent = data.products.length ? '' : 'The menu is being updated. Please check back soon.';
     } catch {
         status.textContent = previous === null ? 'Could not load the menu. Please try again.' : '';

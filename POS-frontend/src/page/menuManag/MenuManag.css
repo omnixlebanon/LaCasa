@@ -18,3 +18,13 @@
 .menu-category-picker select { width:100%; min-height:44px; padding:8px; border:1px solid var(--border-color); border-radius:8px; background:white; }
 .menu-order-error { color:#a52222; margin-top:16px; }
 @media(max-width:700px) { .menu-order-layout { grid-template-columns:minmax(0,1fr); } .menu-order-layout .menu-public-card { padding:14px; } }
+
+.menu-structure { margin-top:20px; }
+.menu-structure h4 { margin:20px 0 12px; }
+.menu-structure-form { display:flex; gap:8px; flex:1; min-width:0; }
+.menu-structure input,.menu-structure select { min-width:0; min-height:44px; padding:8px; border:1px solid var(--border-color); border-radius:8px; }
+.menu-structure input { width:100%; }
+.menu-structure button { min-height:44px; padding:8px 12px; border:1px solid var(--border-color); border-radius:8px; cursor:pointer; }
+.menu-structure .menu-order-controls button { width:auto; }
+.menu-structure button:disabled { opacity:.5; cursor:default; }
+@media(max-width:700px){.menu-structure li { flex-wrap:wrap; }.menu-structure-form { flex-basis:100%; }.menu-structure select { flex:1; }}
