@@ -31,7 +31,7 @@ export default function OfflineStatus(){
  const notices=(state?.recovery||[]).filter(record=>record.skippedAt&&!record.noticeRead);
  const run=async fn=>{try{setError('');await fn();}catch(e){setError(e.message);}};
  return <>
-  <div className="sync-top-center"><button className={`offline-indicator ${state?.queue.length?'has-pending':''}`} aria-label="Open sync" onClick={()=>{dialog.current.showModal();navigator.storage?.estimate?.().then(setStorageInfo).catch(()=>{});}}><span>{progress.active?'Syncing...':'Sync'}</span>{progress.active&&<progress aria-label="Sync progress" max={progress.total||1} value={progress.total?Math.min(progress.done,progress.total):undefined}/>}</button></div>
+  <div className="sync-control-container"><button className={`offline-indicator ${state?.queue.length?'has-pending':''}`} aria-label="Open sync" onClick={()=>{dialog.current.showModal();navigator.storage?.estimate?.().then(setStorageInfo).catch(()=>{});}}><span>{progress.active?'Syncing...':'Sync'}</span>{progress.active&&<progress aria-label="Sync progress" max={progress.total||1} value={progress.total?Math.min(progress.done,progress.total):undefined}/>}</button></div>
   <dialog ref={dialog} className="offline-dialog">
    <header><h2>Sync</h2><button onClick={()=>dialog.current.close()} aria-label="Close sync panel">Close</button></header>
    <p role="status">{progress.active?(progress.stage==='download'?'Refreshing offline data...':`Syncing ${progress.done} of ${progress.total} changes...`):state?.queue.length?`${state.queue.length} changes waiting to sync`:state?.prepared?'Your changes are up to date.':'Prepare this device for offline use.'}</p>
@@ -39,7 +39,7 @@ export default function OfflineStatus(){
    {(error||state?.error)&&<p role="alert" className="offline-error">{syncMessage(error||state.error)}</p>}
    {!!notices.length&&<p role="alert">{notices.length} changes could not be applied. Open More details to see why.</p>}
    <button className="sync-primary" disabled={progress.active} onClick={()=>run(async()=>{await syncPending({manual:true,resumeAuth:true});if(!(await load()).queue.length)await prepareOffline();})}>{progress.active?'Syncing...':'Sync now'}</button>
-   <p className="sync-close-hint">You can close this window. Progress stays at the top of the page.</p>
+   <p className="sync-close-hint">You can close this window. The Sync button will keep showing progress.</p>
    <details className="sync-more-details"><summary>More details</summary>
    <p>{state?.prepared?'This account’s downloaded data is saved on this device.':'Connect and prepare this device before using it offline.'}</p>
    <p>{shellReady?'App files are saved for reopening offline.':'App files are not ready for offline reopening yet. Keep this page open and connected.'}</p>

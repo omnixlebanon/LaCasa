@@ -1,0 +1,25 @@
+.currency-controls {display:flex;align-items:center;gap:4px;min-width:0;}
+.currency-controls button {height:44px;min-width:0;border:1px solid var(--border-color);border-radius:8px;background:white;color:var(--main-color);cursor:pointer;display:flex;align-items:center;justify-content:center;}
+.currency-switch {flex:1;padding:0 10px;font-size:12px;font-weight:700;}
+.currency-rate-icon {width:40px;flex-shrink:0;padding:0;}
+.currency-controls button:hover {background:var(--main-soft);}
+.sidebar:not(.is-expanded) .currency-controls {gap:2px;}
+.sidebar:not(.is-expanded) .currency-controls button {padding:0;font-size:10px;border:0;}
+.sidebar:not(.is-expanded) .currency-rate-icon {width:24px;}
+.currency-rate-dialog {margin:auto;width:min(420px,calc(100vw - 24px));padding:24px;border:1px solid var(--border-color);border-radius:18px;box-shadow:0 20px 70px #0003;color:var(--text-color);}
+.currency-rate-dialog::backdrop {background:#10271b80;backdrop-filter:blur(3px);}
+.currency-rate-dialog header,.currency-rate-heading {display:flex;align-items:center;gap:12px;}
+.currency-rate-dialog header {justify-content:space-between;margin-bottom:18px;}
+.currency-rate-heading>span {display:grid;place-items:center;background:var(--main-soft);color:var(--main-color);padding:10px;border-radius:12px;}
+.currency-rate-dialog h2 {font-size:20px;margin:0;}
+.currency-rate-dialog p {font-size:14px;line-height:1.5;margin:12px 0 20px;color:var(--font-color);}
+.currency-rate-dialog label {display:block;margin-bottom:8px;font-weight:600;}
+.currency-rate-input {display:flex;border:1px solid var(--border-color);border-radius:10px;overflow:hidden;align-items:center;}
+.currency-rate-input:focus-within {outline:2px solid var(--main-color);outline-offset:2px;}
+.currency-rate-input input {width:100%;min-width:0;font-size:20px;padding:14px;border:0;outline:none;}
+.currency-rate-input span {padding:0 14px;color:var(--main-color);font-weight:700;}
+.currency-rate-dialog .currency-rate-current {font-size:12px;}
+.currency-rate-dialog button {min-height:44px;padding:10px 16px;border:1px solid var(--border-color);border-radius:9px;background:white;cursor:pointer;}
+.currency-rate-dialog header>button {padding:8px;display:grid;place-items:center;}
+.currency-rate-dialog footer {display:flex;justify-content:flex-end;gap:10px;margin-top:24px;}
+.currency-rate-dialog .currency-rate-save {background:var(--main-color);border-color:var(--main-color);color:white;}

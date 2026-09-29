@@ -36,3 +36,7 @@
 .menu-structure-dialog>header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .menu-structure-dialog .menu-structure { margin-top:12px; }
 @media(max-width:700px){.menu-structure-dialog { padding:12px; }.menu-structure-dialog .menu-public-card { padding:12px; }}
+
+.menu-category-placement li { flex-wrap:wrap; }
+.menu-category-placement select { min-width:0; max-width:100%; flex:1 1 120px; min-height:44px; padding:8px; border:1px solid var(--border-color); border-radius:8px; background:white; }
+.menu-category-placement li>span { flex:1 1 120px; }

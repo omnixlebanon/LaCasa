@@ -1,6 +1,5 @@
 import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom';
 import './App.css'
-import OfflineStatus from './offline/OfflineStatus.jsx';
 import RequestActivity from './components/RequestActivity.jsx';
 import { AuthProvider, useAuth } from './context/AuthContext'
 import Login from './page/login/Login.jsx';
@@ -32,8 +31,7 @@ const Layout = () => {
   return (
     <>
       {isMobile ? <MobileNavigation /> : <Sidebar />}
-      <OfflineStatus key={user.id}/>
-      <div className="sync-page-content"><Outlet key={`${user.id}:${user.email}`} /></div>
+      <Outlet key={`${user.id}:${user.email}`} />
     </>
   );
 };

@@ -1,3 +1,5 @@
+import CurrencyControls from '../../components/CurrencyControls.jsx';
+import OfflineStatus from '../../offline/OfflineStatus.jsx';
 import './Sidebar.css';
 import {
   Armchair, ShoppingCart, LayoutDashboard, History as HistoryIcon, Package, Settings,
@@ -5,37 +7,21 @@ import {
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { NavLink } from 'react-router-dom';
-import { useCurrency } from '../../global';
 import { useAuth } from '../../context/AuthContext';
 function Sidebar() {
-  const { currency, toggleCurrency, rate, changeRate } = useCurrency();
-  const [isEditingRate, setIsEditingRate] = useState(false);
-  const [tempRate, setTempRate] = useState('');
   const [isPinned, setIsPinned] = useState(() => {
     try { return localStorage.getItem('pos_sidebar_pinned') === 'true'; }
     catch { return false; }
   });
   const [isHovered, setIsHovered] = useState(false);
   const [hasKeyboardFocus, setHasKeyboardFocus] = useState(false);
-  const isExpanded = isPinned || isHovered || hasKeyboardFocus || isEditingRate;
+  const isExpanded = isPinned || isHovered || hasKeyboardFocus;
   useEffect(() => {
     try { localStorage.setItem('pos_sidebar_pinned', String(isPinned)); }
     catch { /* The toggle still works when browser storage is unavailable. */ }
   }, [isPinned]);
   const { user, logout } = useAuth()
   const isAdmin = user?.accessLevel === 'admin';
-  const openSettings = () => {
-    setTempRate(rate.toString())
-    setIsEditingRate(true);
-  };
-  const closeSettings = (e) => {
-    e?.stopPropagation();
-    setIsEditingRate(false);
-  };
-  const handleRateChange = () => {
-    changeRate(tempRate);
-    closeSettings();
-  }
   const handleLogout = async () => {
     try {
       await logout();           
@@ -60,7 +46,6 @@ function Sidebar() {
           if (event.key === 'Escape') {
             setIsPinned(false);
             setIsHovered(false);
-            setIsEditingRate(false);
             setHasKeyboardFocus(false);
           }
         }}
@@ -76,7 +61,7 @@ function Sidebar() {
             aria-controls="sidebar-navigation"
             onClick={() => setIsPinned((pinned) => !pinned)}
           ><Menu aria-hidden="true" /></button>
-          <div className="logo">logo/name</div>
+          <div className="logo">La Casa</div>
         </div>
         <nav className='navbar' id="sidebar-navigation" aria-label="Pages">
           <NavLink to='/tables' title='Tables'>
@@ -118,61 +103,12 @@ function Sidebar() {
         </nav>
 
         <div className='sidebar-bottomSection'>
-          <div className='currency-area'>
-
-            {/* 3. Conditionals updated to check context values ("USD" / "LBP") */}
-            {!isEditingRate && currency === 'USD' && (
-              <button className='changeCurrency' onClick={toggleCurrency} aria-label='Change currency from USD to LBP' title='Change currency'>
-                <Coins />
-                <p className='currencyTxt'>Currency</p>
-                <p className='currencyType'>USD</p>
-              </button>
-            )}
-
-            {!isEditingRate && currency === 'LBP' && (
-              <button className='changeCurrency' onClick={toggleCurrency} aria-label='Change currency from LBP to USD' title='Change currency'>
-                <Coins />
-                <p className='currencyTxt'>Currency</p>
-                <p className='currencyType'>L.L</p>
-              </button>
-            )}
-
-            {/* 4. Display rate setting mode if state switch is true */}
-            {isEditingRate && (
-              <div className='currency-setting-area'>
-                <div className='currency-head'>
-                  <label htmlFor="rate">Current Rate</label>
-                  <button className='close-btn' onClick={closeSettings} aria-label="Close currency settings"><X /></button>
-                </div>
-                <div className='label-input '>
-                  <input
-                    type="number"
-                    min="1"
-                    id='rate'
-                    value={tempRate}
-                    onChange={(e) => setTempRate(e.target.value)}
-                  />
-                </div>
-                <div className='currency-action-btn'>
-                  <button className='save-btn' onClick={handleRateChange}>Save</button>
-                </div>
-
-              </div>
-            )}
-
-            {!isEditingRate && (
-              <button className='currency-settings' onClick={openSettings} aria-label='Currency settings' title='Currency settings'>
-                <Settings />
-                <span className="navTxt">Currency settings</span>
-              </button>
-            )}
-          </div>
-          {!isEditingRate && (
+          <OfflineStatus />
+          <CurrencyControls />
             <button className='logoOut' onClick={handleLogout} aria-label='Log out' title='Log out'>
               <LogOut />
               <p className='logOutTxt'>Log out</p>
             </button>
-          )}
         </div>
       </aside>
     </>
