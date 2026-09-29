@@ -24,3 +24,6 @@
 .offline-dialog .sync-primary:disabled { opacity:.65; cursor:wait; }
 .sync-close-hint { font-size:13px; color:var(--font-color); }
 .sync-more-details>summary { cursor:pointer; min-height:44px; display:flex; align-items:center; font-weight:600; color:var(--main-color); }
+
+.sidebar-bottomSection>.sync-control-container { margin-bottom:10px; }
+.mobile-header-actions>.sync-control-container { margin-right:6px; }

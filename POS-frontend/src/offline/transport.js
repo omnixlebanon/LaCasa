@@ -166,7 +166,7 @@ async function skipDuplicateProduct(owner,op,reason=op.problem,code){
    ? (op.method==='post'?`"${name}" was not added because a product with this name already exists.`:`"${name}" was not updated because that product name already exists. None of this request's changes were applied.`)
    : `"${name}" was not ${op.method==='post'?'added':op.method==='delete'?'deleted':'updated'}. Reason: ${reason||'The server rejected this change.'}`;
   state.recovery=state.recovery||[];
-  state.recovery.push({...op,skippedAt:new Date().toISOString(),skipReason:notice});
+  state.recovery.push({...op,skippedAt:new Date().toISOString(),skipReason:notice,noticeRead:/^\/api\/(bot(?:\/|$)|management\/requests(?:\/|$)|history\/[^/]+\/refund-request(?:\/|$))/.test(op.url)});
   state.queue=state.queue.filter(pending=>pending.id!==op.id);
   // Keep the prior revision so skipping never silently accepts concurrent edits.
   const drafts=state.drafts;

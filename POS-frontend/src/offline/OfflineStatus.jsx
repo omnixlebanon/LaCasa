@@ -4,12 +4,13 @@ import { load, exportBackup, restoreBackup } from './storage.js';
 import { prepareOffline, syncPending, resolvePending, correctPending, latestSharedData, activePending, isWaitingOnHeld, leavePendingUnsynced, resumeHeld, dismissSyncNotices, connectionState, syncProgress } from './transport.js';
 import './offline.css';
 function redact(value){if(Array.isArray(value))return value.map(redact);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,v])=>[key,/password|token|evidence/i.test(key)?'[private]':redact(v)]));return value;}
-function syncMessage(message){return /products_product_name_key/i.test(message||'')?'A product with this name already exists on the server. Change the saved name or leave this request unsynced.':message;}
+function isChatbotRecord(record){return /^\/api\/(bot(?:\/|$)|management\/requests(?:\/|$)|history\/[^/]+\/refund-request(?:\/|$))/.test(record.url||'');}
+function syncMessage(message){if(/Telegram chatbot features are disabled/i.test(message||''))return '';return /products_product_name_key/i.test(message||'')?'A product with this name already exists on the server. Change the saved name or leave this request unsynced.':message;}
 function PendingChange({op,active,waiting,run}){
  const [editing,setEditing]=useState(false),[text,setText]=useState(''),[productName,setProductName]=useState(op.data.product_name||'');
  return <details><summary>{op.method.toUpperCase()} {op.url} — {op.deferred?'Left unsynced':waiting?'Waiting for a related unsynced request':op.blocked?'Will be checked and skipped on Sync now':'Waiting to sync'}</summary>
   <time>{new Date(op.createdAt).toLocaleString()}</time><pre>{JSON.stringify(redact(op.data),null,2)}</pre>
-  {op.problem&&<p role="alert">{syncMessage(op.problem)}</p>}
+  {syncMessage(op.problem)&&<p role="alert">{syncMessage(op.problem)}</p>}
   {op.deferred&&<button onClick={()=>run(()=>resumeHeld(op.id))}>Review and retry later</button>}
   {active&&(op.blocked||op.problem)&&<>
    {op.blocked&&/^\/api\/products(?:\/-?\d+)?$/.test(op.url)&&typeof op.data.product_name==='string'&&<div><label>Saved product name<input aria-label="Saved product name" maxLength={120} value={productName} onChange={e=>setProductName(e.target.value)}/></label><button disabled={!productName.trim()||productName.trim()===op.data.product_name} onClick={()=>run(()=>correctPending({...op.data,product_name:productName.trim()}))}>Save new name and retry</button><p>The original request stays in your recovery backup.</p></div>}
@@ -28,7 +29,9 @@ export default function OfflineStatus(){
  useEffect(()=>{let active=true;navigator.serviceWorker?.ready.then(()=>{if(active)setShellReady(true);}).catch(()=>{});return()=>{active=false;};},[]);
  useEffect(()=>{if(!user)return;let active=true;const update=()=>{setProgress({...syncProgress});setStatus(connectionState);load().then(s=>{if(active){setState(s);setStatus(connectionState);}}).catch(e=>{if(active)setError(e.message);});};update();window.addEventListener('offline-change',update);const timer=setInterval(update,5000);navigator.storage?.persisted?.().then(setPersisted);void syncPending({resumeAuth:true}).then(prepareOffline);return()=>{active=false;clearInterval(timer);window.removeEventListener('offline-change',update);};},[user]);
  if(!user)return null;
- const notices=(state?.recovery||[]).filter(record=>record.skippedAt&&!record.noticeRead);
+ const recovery=(state?.recovery||[]).filter(record=>!isChatbotRecord(record));
+ const notices=recovery.filter(record=>record.skippedAt&&!record.noticeRead&&syncMessage(record.skipReason));
+ const visibleError=syncMessage(error||state?.error);
  const run=async fn=>{try{setError('');await fn();}catch(e){setError(e.message);}};
  return <>
   <div className="sync-control-container"><button className={`offline-indicator ${state?.queue.length?'has-pending':''}`} aria-label="Open sync" onClick={()=>{dialog.current.showModal();navigator.storage?.estimate?.().then(setStorageInfo).catch(()=>{});}}><span>{progress.active?'Syncing...':'Sync'}</span>{progress.active&&<progress aria-label="Sync progress" max={progress.total||1} value={progress.total?Math.min(progress.done,progress.total):undefined}/>}</button></div>
@@ -36,7 +39,7 @@ export default function OfflineStatus(){
    <header><h2>Sync</h2><button onClick={()=>dialog.current.close()} aria-label="Close sync panel">Close</button></header>
    <p role="status">{progress.active?(progress.stage==='download'?'Refreshing offline data...':`Syncing ${progress.done} of ${progress.total} changes...`):state?.queue.length?`${state.queue.length} changes waiting to sync`:state?.prepared?'Your changes are up to date.':'Prepare this device for offline use.'}</p>
    {progress.active&&<progress className="sync-dialog-progress" aria-label="Sync progress" max={progress.total||1} value={progress.total?Math.min(progress.done,progress.total):undefined}/>}
-   {(error||state?.error)&&<p role="alert" className="offline-error">{syncMessage(error||state.error)}</p>}
+   {visibleError&&<p role="alert" className="offline-error">{visibleError}</p>}
    {!!notices.length&&<p role="alert">{notices.length} changes could not be applied. Open More details to see why.</p>}
    <button className="sync-primary" disabled={progress.active} onClick={()=>run(async()=>{await syncPending({manual:true,resumeAuth:true});if(!(await load()).queue.length)await prepareOffline();})}>{progress.active?'Syncing...':'Sync now'}</button>
    <p className="sync-close-hint">You can close this window. The Sync button will keep showing progress.</p>
@@ -50,7 +53,7 @@ export default function OfflineStatus(){
    <p>Last synchronization: {state?.lastSync?new Date(state.lastSync).toLocaleString():'Not prepared'}</p>
    <p>{persisted?'Persistent browser storage granted.':'Persistent storage is not granted. Keep an exported backup.'} Clearing browser/site data or losing this device can erase unsynced work.</p>
    <p>Offline figures are provisional. Approvals, payroll calculations and stock validation are finalized on sync. Keep the app open when reconnecting.</p>
-   {(error||state?.error)&&<p role="alert" className="offline-error">{syncMessage(error||state.error)}</p>}
+   {visibleError&&<p role="alert" className="offline-error">{visibleError}</p>}
    {!!notices.length&&<section role="alert"><h3>Changes not synced</h3><ul>{notices.map(record=><li key={record.id}>{record.skipReason}</li>)}</ul><p>Removed from the queue. Original requests remain in your recovery backup. Other requests continue. Requests that depend on a skipped addition also move to recovery with an explanation.</p><button onClick={()=>run(dismissSyncNotices)}>Dismiss notices</button></section>}
    <div className="offline-actions">
     <button onClick={()=>run(async()=>{setPersisted(await navigator.storage?.persist?.()||false);await prepareOffline();})}>Prepare / refresh offline data</button>
@@ -65,7 +68,7 @@ export default function OfflineStatus(){
    {shared&&<details open><summary>Latest shared data (pending changes are still saved separately)</summary><pre>{JSON.stringify(redact(shared),null,2)}</pre></details>}
    {(state?.queue||[]).map((op)=><PendingChange key={op.id} op={op} active={activePending(state)?.id===op.id} waiting={isWaitingOnHeld(state,op)} run={run}/>)}
    <p>Confirmed operations retained in local backup: {state?.archive.length||0}.</p>
-   {!!state?.recovery?.length&&<details><summary>Recovery records: corrected or skipped changes ({state.recovery.length})</summary><pre>{JSON.stringify(redact(state.recovery),null,2)}</pre></details>}
+   {!!recovery.length&&<details><summary>Recovery records: corrected or skipped changes ({recovery.length})</summary><pre>{JSON.stringify(redact(recovery),null,2)}</pre></details>}
    </details>
   </dialog>
  </>;
