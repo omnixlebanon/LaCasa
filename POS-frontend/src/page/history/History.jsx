@@ -6,7 +6,7 @@ import { History as HistoryIcon, X } from 'lucide-react';
 import api, { apiAssetUrl } from '/src/api.js';
 import { useCurrency } from '../../global.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
-import WorkflowRequests from '../../components/workflow/WorkflowRequests.jsx';
+
 function OrderHistory() {
     const [loading, setLoading] = useState(true);
     const [loadError, setLoadError] = useState('');
@@ -25,7 +25,7 @@ function OrderHistory() {
         else if (!selectedEvidence && dialog.open) dialog.close();
     }, [selectedEvidence, loading, loadError]);
     const [refundOpen, setRefundOpen] = useState(null)
-    const [refundRequestId, setRefundRequestId] = useState(null);
+    const [refundError,setRefundError]=useState(''),[refundBusy,setRefundBusy]=useState(false),[refundMessage,setRefundMessage]=useState('');
     const { formatPrice } = useCurrency();
     const { user } = useAuth();
     const isManager = user?.accessLevel === 'admin' || /manager|owner|supervisor/i.test(user?.position || '');
@@ -107,13 +107,11 @@ function OrderHistory() {
         return Number(selectedOrder?.total_amount) || 0;
     }, [selectedOrder]);
 
-    const submitRefund = async (event) => {
-        event.preventDefault();
-        const data = new FormData(event.currentTarget);
-        try {
-            const response = await api.post(`/api/history/${refundOpen.order_id}/refund-request`, { reason: data.get('reason'), confirmed: data.get('confirmed') === 'on' });
-            setRefundRequestId(response.data.requestId);
-        } catch (error) { alert(error.response?.data?.error || 'Refund failed.'); }
+    const submitRefund = async(event)=>{
+        event.preventDefault();if(refundBusy)return;
+        const form=new FormData(event.currentTarget);setRefundBusy(true);setRefundError('');
+        try{await api.post(`/api/history/${encodeURIComponent(refundOpen.order_id)}/refund`,{reason:form.get('reason'),returnToStock:form.get('stock')==='return'});setRefundOpen(null);setRefundMessage('Refund saved on this device. Check Sync for confirmation.');await fetchData();}
+        catch(error){setRefundError(error.response?.data?.error||'Could not save refund.');}finally{setRefundBusy(false);}
     };
 
     if (loading || loadError) return <LoadingState page label="Loading order history..." error={loadError} onRetry={fetchData} />;
@@ -159,36 +157,17 @@ function OrderHistory() {
                     </div>
                 </div>
             )}
-            {refundOpen && (
-                <div className="editPopup">
-                    <form className="editPopup-container" onSubmit={submitRefund}>
-                        <div className="editPopup-head">
-                            <p>Refunding (#{refundOpen.order_id})</p>
-                            <button type="button" className="close-btn" onClick={() => { setRefundOpen(null); setRefundRequestId(null); }}>
-                                <X />
-                            </button>
-                        </div>
-                        {refundRequestId ? <div className="input-area refund-telegram-step">
-                            <p>Refund request #{refundRequestId} was saved.</p>
-                            <p>Open Telegram and send:</p>
-                            <code>/refund {refundRequestId}</code>
-                            <p>Then send the evidence image. A manager can review it after the image is attached.</p>
-                            <button type="button" onClick={() => { setRefundOpen(null); setRefundRequestId(null); }}>Done</button>
-                        </div> : <div className="input-area">
-                            <div className="label-input">
-                                <label htmlFor="refund-reason">Enter the reason for refund</label>
-                                <input id="refund-reason" name="reason" type="text" required />
-                            </div>
-                            <div className='checkbox-area'>
-                                <input type="checkbox" name="confirmed" id="refund-confirmed" required />
-                                <label htmlFor="refund-confirmed">I confirm the refund details are accurate and understand they will be reviewed.</label>
-                            </div>
-                            <div className="edit-submit-container"><button type="submit">Save and Get Telegram Code</button></div>
-                        </div>}
-                    </form>
-                </div>
-            )}
-
+            {refundOpen&&<div className="editPopup" role="dialog" aria-modal="true" aria-labelledby="refund-title"><form className="editPopup-container" onSubmit={submitRefund}><div className="editPopup-head"><h3 id="refund-title">Refund order #{refundOpen.order_id}</h3><button type="button" disabled={refundBusy} aria-label="Cancel refund" onClick={()=>setRefundOpen(null)}><X/></button></div><div className="input-area">
+                <p>Refund the full order amount: <strong>{formatPrice(Number(refundOpen.total_amount))}</strong>.</p>
+                <label>Reason for refund<textarea name="reason" required maxLength={500}/></label>
+                <fieldset className="refund-stock-choice"><legend>Return ingredients to stock?</legend>
+                    <label><input type="radio" name="stock" value="keep" required/> <span><strong>No, keep stock unchanged</strong><small>The ingredients were used or cannot be reused.</small></span></label>
+                    <label><input type="radio" name="stock" value="return" required/> <span><strong>Yes, restore ingredient quantities</strong><small>Use only when the ingredients were not used and are still available.</small></span></label>
+                </fieldset>
+                {refundError&&<p role="alert">{refundError}</p>}
+                <div className="edit-submit-container"><button type="button" disabled={refundBusy} onClick={()=>setRefundOpen(null)}>Cancel</button><button type="submit" disabled={refundBusy}>{refundBusy?'Saving...':'Confirm refund'}</button></div>
+            </div></form></div>}
+            {refundMessage&&<p role="status">{refundMessage}</p>}
             <div className='main-area'>
                 <div className="head-area">
                     <div className="PageTitle">
@@ -221,7 +200,6 @@ function OrderHistory() {
 
                     {isManager && <div className="state-buttons">
                         <button className={`search-button ${statusFilter === "discounted" ? "active" : ""}`} onClick={() => handleStatusToggle('discounted')}>Discounted</button>
-                        <button className={`search-button ${statusFilter === "refund_requests" ? "active" : ""}`} onClick={() => handleStatusToggle('refund_requests')}>Refund Requests</button>
                         <button
                             className={`search-button ${statusFilter === "refunded" ? "active" : ""}`}
                             onClick={() => handleStatusToggle('refunded')}
@@ -233,7 +211,6 @@ function OrderHistory() {
 
                 <div className='Gap-1rem' />
 
-                {isManager && statusFilter === 'refund_requests' && <><WorkflowRequests  type="refund" title="Refund Requests" emptyMessage="No refund requests have been submitted." onReviewed={fetchData} /><div className='Gap-1rem' /></>}
 
                 {statusFilter !== 'refund_requests' && <div className='history-display-area'>
                     <table border='1'>
@@ -278,7 +255,7 @@ function OrderHistory() {
                                                             : <span className="history-refunded-status">Refunded</span>)
                                                         :
                                                         statusFilter === 'discounted' ? <span>{formatPrice(Number(getOrderDetails(item).discount) || 0)}</span> :
-                                                        <button className='refund-btn' onClick={() => { setRefundRequestId(null); setRefundOpen(item); }}>Refund</button>
+                                                        isManager ? <button className='refund-btn' onClick={()=>{setRefundError('');setRefundOpen(item);}}>Refund</button> : <span>Completed</span>
                                                 }
                                             </td>
                                         </tr>

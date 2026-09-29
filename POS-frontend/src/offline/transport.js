@@ -69,7 +69,7 @@ async function downloadSnapshot(owner) {
   urls.push(`/api/shifts?from=${from}&to=${to}`);
  }
  if(user.accessLevel==='admin')urls.push('/api/employees',`/api/expenses?through=${year+1}-12-31`,`/api/employees/payroll?month=${month}`);
- if(user.accessLevel==='admin'||/manager|owner|supervisor/i.test(user.position||''))urls.push('/api/stock/expired-batches',...['refund','stock_receipt','stock_usage','shift_checkin'].map(type=>'/api/management/requests?type='+type));
+ if(user.accessLevel==='admin'||/manager|owner|supervisor/i.test(user.position||''))urls.push('/api/stock/expired-batches');
  const previous=await load(owner);
  urls.push(...Object.keys(previous.cache).filter(key=>/^\/api\/(shifts|expenses|employees\/payroll)\?/.test(key)));
  for(let attempt=0;attempt<3;attempt++){
@@ -150,7 +150,7 @@ function referencesId(op,id){
  return op.url.split('/').some(part=>decodeURIComponent(part)===String(id))||values(op.data);
 }
 function rejectedRequest(op,status,message,code){
- return duplicateProduct(op,code,message)||[400,404,409,422].includes(Number(status))||(op.blocked&&/Review this remaining change against the latest shared data/i.test(message||''));
+ return duplicateProduct(op,code,message)||[400,404,409,410,422].includes(Number(status))||(op.blocked&&/Review this remaining change against the latest shared data/i.test(message||''));
 }
 async function skipDuplicateProduct(owner,op,reason=op.problem,code){
  // Removing a rejected request must not depend on unrelated snapshot endpoints.
@@ -242,6 +242,7 @@ export async function resolvePending() {
 }
 async function offlineAdapterImpl(config){
  const url=keyOf(config.url,config.params),method=(config.method||'get').toLowerCase();
+ if(/^\/api\/(bot(?:\/|$)|management\/requests(?:\/|$)|history\/[^/]+\/refund-request(?:\/|$))/.test(url))throw httpError('Telegram chatbot features are disabled.');
  const body=typeof config.data==='string'?JSON.parse(config.data):config.data;
  if(isAuth(url))return network.request({...config,adapter:undefined});
  const owner=accountId();if(!owner)return network.request({...config,adapter:undefined});

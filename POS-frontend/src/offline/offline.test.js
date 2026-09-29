@@ -306,3 +306,19 @@ test('group assignment and category renaming preserve products and visibility of
  await assert.rejects(write('/api/products/category',{category_name:'hot DRINKS'}),/already exists/);
  await write('/api/products/groups/'+group.data.insertId,{},'delete');state=await load();assert.equal(state.cache['/api/products/categories'].data[0].menu_group_id,null);assert.equal(state.cache['/api/products'].data.length,1);
 });
+
+test('disabled chatbot requests cannot create offline operations',async()=>{
+ await assert.rejects(write('/api/history/123/refund-request',{reason:'Test'}),/disabled/);
+ await assert.rejects(offlineAdapter({url:'/api/management/requests',method:'get'}),/disabled/);
+ assert.equal((await load()).queue.length,0);
+});
+
+test('offline refund preserves the sale and optionally restores saved ingredient quantities',async()=>{
+ const checkout=crypto.randomUUID();await write('/api/checkout',{totalAmount:10,details:{checkout_operation_id:checkout,items:[{product_id:1,qty:2,price:5}]}});
+ assert.equal((await load()).cache['/api/items'].data[0].stock,90);
+ await write('/api/history/offline-'+checkout+'/refund',{reason:'Not prepared',returnToStock:true});
+ let state=await load();assert.equal(state.cache['/api/items'].data[0].stock,100);assert.equal(state.cache['/api/history'].data[0].status,'refunded');assert.equal(state.cache['/api/history'].data.length,1);
+ await assert.rejects(write('/api/history/offline-'+checkout+'/refund',{reason:'Again',returnToStock:true}),/already been refunded/);
+ const next=crypto.randomUUID();await write('/api/checkout',{totalAmount:10,details:{checkout_operation_id:next,items:[{product_id:1,qty:2,price:5}]}});
+ await write('/api/history/offline-'+next+'/refund',{reason:'Already consumed',returnToStock:false});assert.equal((await load()).cache['/api/items'].data[0].stock,90);
+});

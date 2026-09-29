@@ -3,12 +3,11 @@ import { useMemo, useState, useEffect } from 'react';
 import api from '/src/api.js';
 import './Stock.css';
 import { useCurrency } from "../../global.jsx";
-import { TrendingUp, TriangleAlert, ShieldAlert, ClipboardList, BookOpen, Warehouse, BotMessageSquare } from 'lucide-react';
+import { TrendingUp, TriangleAlert, ShieldAlert, ClipboardList, BookOpen, Warehouse } from 'lucide-react';
 
 import StockInventory from '../../components/stock/stockInventory/StockInventory.jsx';
 import RecipesLinking from '../../components/stock/recipesLinking/RecipesLinking.jsx';
 import BulkChange from '../../components/stock/bulkChange/BulkChange.jsx';
-import AIProcessingLogs from '../../components/stock/AIProcessingLogs/AIProcessingLogs.jsx';
 import DiscardExpiredStock from '../../components/stock/DiscardExpiredStock.jsx';
 
 function Stock() {
@@ -119,7 +118,6 @@ function Stock() {
         { id: 'btn1', label: 'Stock Inventory', icon: <ClipboardList /> },
         { id: 'btn2', label: 'Recipes Linking', icon: <BookOpen /> },
         { id: 'btn3', label: 'Bulk Change', icon: <Warehouse /> },
-        { id: 'btn4', label: 'AI Processing Logs', icon: <BotMessageSquare /> }
     ];
 
     if (loading || error) return <LoadingState page label="Loading inventory..." error={error} onRetry={fetchData} />;
@@ -207,9 +205,7 @@ function Stock() {
                     />
                 )}
 
-                {activeID === 'btn4' && (
-                    <AIProcessingLogs />
-                )}
+
             </div>
         </div>
     );

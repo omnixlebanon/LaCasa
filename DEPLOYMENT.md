@@ -146,3 +146,6 @@ Run `npm run test:offline:day` in POS-frontend after building with a same-origin
 
 ### Editable menu groups
 Run `npm run migrate:menu-groups` in POS-backend for local MySQL and `npm run migrate:menu-groups -- --supabase` for production before deploying both apps. The migration preserves products/categories and assigns the original menu groups once. Groups and category assignments are included in offline preparation.
+
+### Telegram disabled
+Telegram chatbot UI, stock/shift approvals, employee Telegram links, and new Telegram refund requests are disabled. Backend workflow entry points return HTTP 410, and telegram-bot/bot.js exits without polling. Historical business records are retained. Deploy both apps; stop any separately hosted running bot worker as well.

@@ -1,3 +1,7 @@
+// Telegram workflows are disabled. Exit before loading credentials or starting polling.
+console.log('Telegram chatbot is disabled.');
+process.exit(0);
+
 require("dotenv").config();
 const TelegramBotApi = require("node-telegram-bot-api");
 const TelegramBot = TelegramBotApi.default || TelegramBotApi;

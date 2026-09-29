@@ -49,6 +49,10 @@ router.post('/checkout', async (req, res) => {
     return res.status(500).json({ success: false, error: "An unexpected server error occurred." });
   }
 });
+router.post('/history/:orderId/refund', require('../middleware/auth').requireManager, async(req,res)=>{
+ try{res.json(await require('../services/refundService')(req.params.orderId,req.body,req.user.user_id));}catch(error){res.status(error.status||500).json({error:error.message});}
+});
+
 router.post('/history/:orderId/refund-request', async (req, res) => {
   const reason = String(req.body?.reason || '').trim();
   if (!reason) return res.status(400).json({ error: 'A refund reason is required.' });

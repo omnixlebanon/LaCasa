@@ -30,7 +30,7 @@ app.use(cookieParser())
 
 app.use('/api/public', require('./routes/publicMenuRout'));
 app.use('/api/auth', auth_routes)
-app.use('/api/bot', require('./middleware/durableSync'), workflow_routes.botRouter);
+app.use(require('./middleware/disabledChatbot'));
 app.use('/api', verifyToken, require('./middleware/durableSync'));
 app.get('/api/offline/revision', (req,res) => res.json({ ready: true }));
 app.get('/api/offline/operations/:id', async (req,res,next) => {

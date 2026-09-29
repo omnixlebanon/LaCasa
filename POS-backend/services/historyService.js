@@ -64,7 +64,7 @@ async function processOrderCheckout(totalAmount, customerName, details = {}, rec
             const unitCost = Math.round(rawCost * 100) / 100;
             savedItems.push({ ...item, unit_cost: unitCost, total_cost: Math.round(unitCost * Number(item.qty) * 100) / 100, cost_source: recipe.length ? (recordedAt ? 'offline_checkout_recipe' : 'checkout_recipe') : 'no_recipe' });
         }
-        details = { ...details, items: savedItems, cost_snapshot_version: 1,
+        details = { ...details, items: savedItems, recipe_snapshot: [...recipes].map(([product_id,ingredients])=>({product_id:Number(product_id),ingredients})), cost_snapshot_version: 1,
             total_cost: savedItems.reduce((cents, item) => cents + Math.round(item.total_cost * 100), 0) / 100 };
 
         // 2. Insert order history record

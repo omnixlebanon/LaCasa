@@ -129,6 +129,23 @@ export function applyLocal(state,op) {
    if(recurring){for(let date=data.date;date<=to;date=new Date(Date.parse(date+'T00:00:00Z')+86400000).toISOString().slice(0,10)){if(date>=from&&(data.weekdays||[]).map(Number).includes(new Date(date+'T00:00:00Z').getUTCDay()||7))rows.push({shift_id:String(id)+':'+date,recurrence_id:id,user_id:data.userId,user_name:name,shift_date:date,start_time:data.startTime,end_time:data.endTime,notes:data.notes,pending_sync:true});}return rows;}
    rows=rows.filter(r=>!same(r.shift_id,parts[3]));if(data.date>=from&&data.date<=to)rows.push({shift_id:method==='post'?id:parts[3],user_id:data.userId,user_name:name,shift_date:data.date,start_time:data.startTime,end_time:data.endTime,notes:data.notes,pending_sync:true});return rows;
   });
+ } else if(path.startsWith('/api/history/')&&path.endsWith('/refund')){
+  const user=JSON.parse(localStorage.getItem('auth_user'));
+  if(user?.accessLevel!=='admin'&&!/manager|owner|supervisor/i.test(user?.position||''))throw Error('Manager access required to refund orders.');
+  const order=(cached(state,'/api/history')||[]).find(o=>same(o.order_id,parts[3]));
+  if(!order)throw Error('Order not found on this device.');
+  if(order.status==='refunded')throw Error('This order has already been refunded.');
+  if(typeof data.returnToStock!=='boolean'||!data.reason?.trim()||data.reason.length>500)throw Error('Enter a reason and choose whether to return ingredients to stock.');
+  const details=typeof order.details==='string'?JSON.parse(order.details):copy(order.details);
+  if(data.returnToStock){
+   const snapshot=details.recipe_snapshot||details.offline_recipe_snapshot;
+   if(!Array.isArray(snapshot))throw Error('This older order has no saved ingredient quantities. Choose no stock return.');
+   let index=0;
+   for(const sold of details.items||[]){const recipe=snapshot.find(r=>same(r.product_id,sold.product_id));if(!Array.isArray(recipe?.ingredients))throw Error('Saved ingredient quantities are incomplete. Choose no stock return.');
+    for(const ingredient of recipe.ingredients){if(!(cached(state,'/api/items')||[]).some(item=>same(item.item_id,ingredient.item_id)))throw Error('An ingredient no longer exists. Choose no stock return.');receiveStock(state,ingredient.item_id,Number(sold.qty)*Number(ingredient.qty),id-index++,op.createdAt);}
+   }
+  }
+  details.refund={return_to_stock:data.returnToStock};order.details=details;order.status='refunded';order.refund_reason=data.reason.trim();order.refunded_at=op.createdAt;order.refunded_by=user.id;
  } else if(path.startsWith('/api/history/')&&path.endsWith('/refund-request')){
   each(state,'/api/management/requests',rows=>[...rows,{request_id:id,request_type:'refund',status:'pending',payload:{orderId:parts[3],...data},created_at:op.createdAt,pending_sync:true}]);
  } else if(path.startsWith('/api/management/requests/')){

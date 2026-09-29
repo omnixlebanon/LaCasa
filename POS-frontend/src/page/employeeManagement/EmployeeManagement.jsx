@@ -6,7 +6,7 @@ import { useAuth } from '../../context/AuthContext.jsx';
 import './EmployeeManagement.css';
 import EmployeePayroll from './EmployeePayroll.jsx';
 
-const emptyEmployee = { name: '', email: '', password: '', position: '', accessLevel: 'employee', telegramId: '' };
+const emptyEmployee = { name: '', email: '', password: '', position: '', accessLevel: 'employee' };
 
 export default function EmployeeManagement() {
   const { user } = useAuth();
@@ -50,7 +50,7 @@ export default function EmployeeManagement() {
 
   const editEmployee = (employee) => {
     setEditingId(employee.user_id);
-    setEmployeeForm({ name: employee.user_name, email: employee.user_email, password: '', position: employee.user_position, accessLevel: employee.access_level, telegramId: employee.telegram_id || '' });
+    setEmployeeForm({ name: employee.user_name, email: employee.user_email, password: '', position: employee.user_position, accessLevel: employee.access_level });
   };
 
   const deleteEmployee = async (id) => {
@@ -72,7 +72,6 @@ export default function EmployeeManagement() {
         <input aria-label="Email" type="email" placeholder="Email" value={employeeForm.email} onChange={e => setEmployeeForm({ ...employeeForm, email: e.target.value })} required />
         <input aria-label="Password" type="password" placeholder={editingId ? 'New password (optional)' : 'Password'} value={employeeForm.password} onChange={e => setEmployeeForm({ ...employeeForm, password: e.target.value })} required={!editingId} />
         <input aria-label="Position" placeholder="Position (e.g. Cashier)" value={employeeForm.position} onChange={e => setEmployeeForm({ ...employeeForm, position: e.target.value })} required />
-        <input aria-label="Telegram ID" inputMode="numeric" pattern="[0-9]*" placeholder="Telegram ID (from /id)" value={employeeForm.telegramId} onChange={e => setEmployeeForm({ ...employeeForm, telegramId: e.target.value.trim() })} />
         <select aria-label="Access level" value={employeeForm.accessLevel} onChange={e => setEmployeeForm({ ...employeeForm, accessLevel: e.target.value })}>
           <option value="employee">Employee</option><option value="admin">Admin</option>
         </select>
@@ -86,8 +85,8 @@ export default function EmployeeManagement() {
 
     {isAdmin && <section className="employee-panel employee-list">
       <h3>Employees</h3>
-      {loading || loadError ? <LoadingState label="Loading employees..." error={loadError} onRetry={loadData} /> : <div className="employee-table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Position</th><th>Access</th><th>Telegram ID</th><th>Joined</th><th>Actions</th></tr></thead>
-        <tbody>{employees.map(employee => <tr key={employee.user_id}><td data-label="Name">{employee.user_name}</td><td data-label="Email">{employee.user_email}</td><td data-label="Position">{employee.user_position}</td><td data-label="Access"><span className={`access-badge ${employee.access_level}`}>{employee.access_level}</span></td><td data-label="Telegram ID">{employee.telegram_id || 'Not linked'}</td><td data-label="Joined">{new Date(employee.created_at).toLocaleDateString()}</td><td data-label="Actions"><button className="icon-button edit" onClick={() => editEmployee(employee)} aria-label={`Edit ${employee.user_name}`}><Pencil /></button><button className="icon-button delete" onClick={() => deleteEmployee(employee.user_id)} aria-label={`Delete ${employee.user_name}`}><Trash2 /></button></td></tr>)}</tbody>
+      {loading || loadError ? <LoadingState label="Loading employees..." error={loadError} onRetry={loadData} /> : <div className="employee-table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Position</th><th>Access</th><th>Joined</th><th>Actions</th></tr></thead>
+        <tbody>{employees.map(employee => <tr key={employee.user_id}><td data-label="Name">{employee.user_name}</td><td data-label="Email">{employee.user_email}</td><td data-label="Position">{employee.user_position}</td><td data-label="Access"><span className={`access-badge ${employee.access_level}`}>{employee.access_level}</span></td><td data-label="Joined">{new Date(employee.created_at).toLocaleDateString()}</td><td data-label="Actions"><button className="icon-button edit" onClick={() => editEmployee(employee)} aria-label={`Edit ${employee.user_name}`}><Pencil /></button><button className="icon-button delete" onClick={() => deleteEmployee(employee.user_id)} aria-label={`Delete ${employee.user_name}`}><Trash2 /></button></td></tr>)}</tbody>
       </table>{!employees.length && <p>No employees found.</p>}</div>}
     </section>}
 
