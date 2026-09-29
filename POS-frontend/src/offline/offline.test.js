@@ -322,3 +322,15 @@ test('offline refund preserves the sale and optionally restores saved ingredient
  const next=crypto.randomUUID();await write('/api/checkout',{totalAmount:10,details:{checkout_operation_id:next,items:[{product_id:1,qty:2,price:5}]}});
  await write('/api/history/offline-'+next+'/refund',{reason:'Already consumed',returnToStock:false});assert.equal((await load()).cache['/api/items'].data[0].stock,90);
 });
+
+test('sync progress tracks completed requests and stops on failure',async()=>{
+ await write('/api/products',{product_name:'Progress one',product_category:'Hot',product_price:2});
+ await write('/api/products',{product_name:'Progress two',product_category:'Hot',product_price:2});
+ const transport=await import('./transport.js');let sent=0;
+ network.defaults.adapter=async config=>{
+  assert.equal(transport.syncProgress.active,true);assert.equal(transport.syncProgress.total,2);assert.equal(transport.syncProgress.done,sent);
+  if(sent++)throw new AxiosError('Network lost','ERR_NETWORK',config);
+  return {data:{insertId:100},status:201,headers:headers(11),config};
+ };
+ navigator.onLine=true;await syncPending();assert.equal(transport.syncProgress.active,false);assert.equal(transport.syncProgress.done,1);assert.equal((await load()).queue.length,1);
+});

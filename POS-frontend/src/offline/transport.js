@@ -3,6 +3,7 @@ import { accountId, load, change, announceSnapshot } from './storage.js';
 import { keyOf, readLocal, applyLocal, remap } from './model.js';
 export const network = axios.create({baseURL:import.meta.env?.VITE_API_URL || (import.meta.env?.DEV?'http://localhost:8080':''),withCredentials:true,timeout:15000});
 export let connectionState = 'online';
+export let syncProgress = {active:false,done:0,total:0,stage:'sync'};
 const announce=()=>window.dispatchEvent(new Event('offline-change'));
 const httpError=message=>Object.assign(new Error(message),{response:{data:{error:message}}});
 let warming;
@@ -81,6 +82,7 @@ async function downloadSnapshot(owner) {
    if(rev===undefined)throw Error('Deploy the offline backend and run its migration first.');
    if(revision!==null&&revision!==rev)consistent=false;
    revision=rev;cache[keyOf(url)]={data:res.data,downloadedAt:new Date().toISOString()};
+   if(syncProgress.active&&syncProgress.stage==='download'){syncProgress={...syncProgress,done:Object.keys(cache).length,total:new Set(urls).size};announce();}
   }
   if(consistent)return {cache,revision:Number(revision)};
  }
@@ -91,6 +93,7 @@ export async function prepareOffline() {
  const owner=accountId();if(!owner||!navigator.onLine)return;
  warming=(async()=>{
   if((await load(owner)).queue.length)return;
+  syncProgress={active:true,done:0,total:0,stage:'download'};announce();
   const snapshot=await downloadSnapshot(owner);
   await change(state=>{
    if(state.queue.length)return;
@@ -109,7 +112,7 @@ export async function prepareOffline() {
  })().catch(async error=>{
   connectionState=error.response?.status===401?'sign-in required':'offline';
   await change(s=>{s.error=error.response?.data?.error||error.message;},owner).catch(()=>{});
- }).finally(()=>{warming=null;announce();void syncPending();});
+ }).finally(()=>{warming=null;if(syncProgress.stage==='download')syncProgress={...syncProgress,active:false};announce();void syncPending();});
  return warming;
 }
 export async function latestSharedData() {
@@ -185,16 +188,18 @@ export async function syncPending({resumeAuth=false,manual=false}={}) {
   if(!lock){if(manual){connectionState='sync already running';announce();}return;}
   if(manual)await change(state=>{for(const op of state.queue)if(op.deferred&&(op.blocked||op.problem))op.deferred=false;},owner);
   let completed=false;
+  syncProgress={active:true,done:0,total:(await load(owner)).queue.length,stage:'sync'};announce();
+  try {
   for(;;){
    if(accountId()!==owner)return;
-   const snapshot=await load(owner);const op=activePending(snapshot);if(!op){connectionState=snapshot.queue.length?'requests left unsynced':'online';announce();if(completed)await prepareOffline();if(manual&&snapshot.queue.length)await change(state=>{state.error='Requests are left unsynced. Open a saved request and choose Review and retry later to resume it.';},owner);return;}
-   if(op.blocked&&rejectedRequest(op,op.status,op.problem)){try{await skipDuplicateProduct(owner,op);completed=true;continue;}catch(error){await change(state=>{state.error=error.response?.data?.error||error.message;},owner);return;}}
+   const snapshot=await load(owner);const op=activePending(snapshot);if(syncProgress.stage==='sync')syncProgress={...syncProgress,total:Math.max(syncProgress.total,syncProgress.done+snapshot.queue.length)};if(!op){connectionState=snapshot.queue.length?'requests left unsynced':'online';announce();if(completed)await prepareOffline();if(manual&&snapshot.queue.length)await change(state=>{state.error='Requests are left unsynced. Open a saved request and choose Review and retry later to resume it.';},owner);return;}
+   if(op.blocked&&rejectedRequest(op,op.status,op.problem)){try{await skipDuplicateProduct(owner,op);completed=true;syncProgress={...syncProgress,done:syncProgress.done+1};announce();continue;}catch(error){await change(state=>{state.error=error.response?.data?.error||error.message;},owner);return;}}
    if(op.blocked&&manual&&Number(op.status)!==401){
     try{
      connectionState='checking saved request';announce();
      const receipt=await network.get('/api/offline/operations/'+op.id,{headers:{'X-Offline-Account-Id':owner.split(':')[0]}});
      if(typeof receipt.data.applied!=='boolean')throw Error('The server did not confirm whether this request was saved.');
-     if(!receipt.data.applied){await skipDuplicateProduct(owner,op,op.problem||'This old request was paused for review.');completed=true;continue;}
+     if(!receipt.data.applied){await skipDuplicateProduct(owner,op,op.problem||'This old request was paused for review.');completed=true;syncProgress={...syncProgress,done:syncProgress.done+1};announce();continue;}
      // Retry the exact original request to recover its idempotent receipt.
      op.blocked=false;
     }catch(error){connectionState='sync paused';await change(state=>{state.error='Could not check this request on the server: '+(error.response?.data?.error||error.message);},owner);announce();return;}
@@ -218,21 +223,22 @@ export async function syncPending({resumeAuth=false,manual=false}={}) {
      if(sharedKey)s.drafts.syncedKeys=[...new Set([...(s.drafts.syncedKeys||[]),sharedKey])];
      s.revision=Number(res.headers['x-sync-revision']);s.archive.push({id:op.id,method:op.method,url:op.url,createdAt:op.createdAt,acknowledgedAt:new Date().toISOString(),serverResponse:data});s.queue.splice(s.queue.findIndex(pending=>pending.id===op.id),1);s.error=null;s.lastSync=new Date().toISOString();
     },owner);
-    completed=true;connectionState='online';announce();
+    completed=true;syncProgress={...syncProgress,done:syncProgress.done+1};connectionState='online';announce();
    }catch(error){
     if(rejectedRequest(op,error.response?.status,error.response?.data?.error,error.response?.data?.code)){
-     try{await skipDuplicateProduct(owner,op,error.response?.data?.error,error.response?.data?.code);completed=true;continue;}catch(refreshError){await change(state=>{state.error='Could not refresh the catalog. The rejected request is still saved. '+refreshError.message;},owner);return;}
+     try{await skipDuplicateProduct(owner,op,error.response?.data?.error,error.response?.data?.code);completed=true;syncProgress={...syncProgress,done:syncProgress.done+1};announce();continue;}catch(refreshError){await change(state=>{state.error='Could not refresh the catalog. The rejected request is still saved. '+refreshError.message;},owner);return;}
     }
     if(manual&&error.response&&Number(error.response.status)!==401){
      try{
       const receipt=await network.get('/api/offline/operations/'+op.id,{headers:{'X-Offline-Account-Id':owner.split(':')[0]}});
-      if(receipt.data.applied===false){await skipDuplicateProduct(owner,op,error.response.data?.error||error.message);completed=true;continue;}
+      if(receipt.data.applied===false){await skipDuplicateProduct(owner,op,error.response.data?.error||error.message);completed=true;syncProgress={...syncProgress,done:syncProgress.done+1};announce();continue;}
      }catch{/* Keep unconfirmed requests saved and display the failure below. */}
     }
     const status=error.response?.status;connectionState=status===401?'sign-in required':status===409?'conflict':status?'sync paused':'offline';
     await change(s=>{s.error=error.response?.data?.error||error.message;if(activePending(s)?.id===op.id){activePending(s).blocked=!!status&&status!==503;activePending(s).problem=s.error;activePending(s).conflictRevision=error.response?.data?.revision;activePending(s).status=status;if(status===409)for(const later of s.queue.filter(pending=>pending.id!==op.id&&!pending.deferred)){later.blocked=true;later.status=409;later.problem='Review this remaining change against the latest shared data.';}}},owner);announce();return;
    }
   }
+  } finally {syncProgress={...syncProgress,active:false};announce();}
  });
 }
 export async function resolvePending() {

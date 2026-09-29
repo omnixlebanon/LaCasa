@@ -14,3 +14,14 @@
 .offline-error { color: var(--danger-color); }
 .offline-dialog textarea { width: 100%; min-height: 180px; padding: 10px; }
 .offline-dialog { text-align: left; font-size: 14px; }
+
+.sync-top-center { position:fixed; top:max(8px,env(safe-area-inset-top)); left:calc(50% + var(--sidebar-width,80px)/2); transform:translateX(-50%); z-index:1001; }
+.sync-top-center .offline-indicator { min-width:120px; padding:10px 16px; gap:7px; box-shadow:0 3px 14px #0001; cursor:pointer; font-size:14px; font-weight:600; }
+.sync-top-center progress { width:112px; height:5px; accent-color:var(--main-color); }
+.sync-dialog-progress { width:100%; height:10px; accent-color:var(--main-color); }
+.offline-dialog .sync-primary { width:100%; background:var(--main-color); color:white; margin-top:12px; font-weight:600; }
+.offline-dialog .sync-primary:disabled { opacity:.65; cursor:wait; }
+.sync-close-hint { font-size:13px; color:var(--font-color); }
+.sync-more-details>summary { cursor:pointer; min-height:44px; display:flex; align-items:center; font-weight:600; color:var(--main-color); }
+.sync-page-content { padding-top:60px; }
+@media(max-width:768px){.sync-top-center { left:50%; }.sync-top-center .offline-indicator { min-width:96px; padding:8px 12px; }.sync-top-center progress { width:80px; }.sync-page-content { padding-top:8px; }}

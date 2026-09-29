@@ -1,5 +1,4 @@
 import './Sidebar.css';
-import OfflineStatus from '../../offline/OfflineStatus.jsx';
 import {
   Armchair, ShoppingCart, LayoutDashboard, History as HistoryIcon, Package, Settings,
   ClipboardList, LayoutList, User, Coins, LogOut, X, CalendarDays, Menu
@@ -119,7 +118,6 @@ function Sidebar() {
         </nav>
 
         <div className='sidebar-bottomSection'>
-          <OfflineStatus />
           <div className='currency-area'>
 
             {/* 3. Conditionals updated to check context values ("USD" / "LBP") */}
