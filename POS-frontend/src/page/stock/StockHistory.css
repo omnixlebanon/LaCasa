@@ -1,7 +1,4 @@
 .stock-history-page { min-width:0; }
-.stock-history-heading { display:flex; align-items:center; gap:10px; margin:12px 0; }
-.stock-history-heading h2 { font-size:24px; }
-.stock-history-intro { color:var(--font-color); line-height:1.6; max-width:760px; }
 .stock-history-totals { display:flex; flex-wrap:wrap; gap:16px; margin:24px 0; }
 .stock-history-totals > div { flex:1; min-width:180px; padding:20px; border:1px solid var(--border-color); border-radius:14px; background:white; }
 .stock-history-totals span { display:block; font-size:14px; color:var(--font-color); }.stock-history-totals strong { display:block; margin-top:8px; font-size:26px; }

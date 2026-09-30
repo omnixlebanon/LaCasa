@@ -18,8 +18,6 @@ export default function StockHistory(){
   return text.includes(search.trim().toLowerCase())&&(!from||date>=from)&&(!to||date<=to);
  }).sort((a,b)=>new Date(b.purchased_at)-new Date(a.purchased_at)),[rows,search,from,to]);
  return <section className="stock-history-page" aria-label="Stock History">
-  <div className="stock-history-heading"><PackagePlus/><h2>Stock History</h2></div>
-  <p className="stock-history-intro">Purchased stock, with the quantity and ingredient cost recorded when it was added. Tracking starts with new stock additions; older purchases are not included.</p>
   {loading||error?<LoadingState label="Loading stock purchases..." error={error} onRetry={refresh}/>:<>
    <div className="stock-history-totals"><div><span>Purchases shown</span><strong>{filtered.length.toLocaleString()}</strong></div><div><span>Recorded purchase value</span><strong>{formatPrice(filtered.reduce((sum,row)=>sum+Number(row.total_cost),0))}</strong></div></div>
    <div className="stock-history-filters"><label className="stock-history-search"><span>Search purchases</span><div><Search size={18}/><input type="search" placeholder="Ingredient, category or supplier" value={search} onChange={e=>setSearch(e.target.value)}/></div></label><label>From<input type="date" value={from} max={to||undefined} onChange={e=>setFrom(e.target.value)}/></label><label>To<input type="date" value={to} min={from||undefined} onChange={e=>setTo(e.target.value)}/></label></div>

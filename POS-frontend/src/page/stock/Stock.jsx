@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import api from '/src/api.js';
 import './Stock.css';
 import { useCurrency } from "../../global.jsx";
-import { TrendingUp, TriangleAlert, ShieldAlert, ClipboardList, BookOpen, Warehouse, History } from 'lucide-react';
+import { TrendingUp, TriangleAlert, ShieldAlert, ClipboardList, BookOpen, PackagePlus, History } from 'lucide-react';
 
 import StockInventory from '../../components/stock/stockInventory/StockInventory.jsx';
 import RecipesLinking from '../../components/stock/recipesLinking/RecipesLinking.jsx';
@@ -118,7 +118,7 @@ function Stock({initialTab = "btn1"}) {
     const buttons = [
         { id: 'btn1', label: 'Stock Inventory', icon: <ClipboardList /> },
         { id: 'btn2', label: 'Recipes Linking', icon: <BookOpen /> },
-        { id: 'btn3', label: 'Bulk Change', icon: <Warehouse /> },
+        { id: 'btn3', label: 'Bulk Change', icon: <PackagePlus /> },
         { id: 'btn4', label: 'Stock History', icon: <History /> },
     ];
 
