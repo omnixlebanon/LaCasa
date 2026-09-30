@@ -117,16 +117,28 @@ export function applyLocal(state,op) {
    for(const occurrence of expenseOccurrences(row,from,to))rows.push(occurrence);return rows;
   });
  } else if(/^\/api\/employees\/[^/]+\/(salary|payroll-payment)$/.test(path)){
+  let paymentFound=false;
   each(state,'/api/employees/payroll',rows=>rows.map(r=>{
    if(!same(r.userId,parts[3])||r.month.slice(0,7)!==data.month.slice(0,7))return r;
    const salary=parts[4]==='salary'?Number(data.amount):r.baseSalary;
    const net=salary===null?null:Math.round((salary-Number(r.deductionsTotal||0))*100)/100;
    const payable=net===null?null:Math.max(0,net);
    if(parts[4]==='payroll-payment'&&data.status==='paid'&&(payable===null||Number(data.expectedAmount)!==payable))throw Error('Refresh salary details before marking paid.');
+   if(parts[4]==='payroll-payment'&&(!['paid','unpaid'].includes(data.status)||(data.status==='paid'&&r.unpricedRefunds?.length)))throw Error('Resolve payroll details before marking paid.');
+   if(parts[4]==='payroll-payment')paymentFound=true;
+   if(parts[4]==='payroll-payment'&&r.paymentStatus===data.status)return r;
+   if(parts[4]==='payroll-payment'){
+    if(!state.cache['/api/employees/payroll-costs'])state.cache['/api/employees/payroll-costs']={data:[]};
+    each(state,'/api/employees/payroll-costs',costs=>{
+     const remaining=costs.filter(p=>!(same(p.user_id,parts[3])&&p.salary_month.slice(0,7)===data.month));
+     return data.status==='paid'?[...remaining,{user_id:r.userId,employee_name:r.name,salary_month:data.month+'-01',amount_paid:payable,paid_at:op.createdAt,pending_sync:true}]:remaining;
+    });
+   }
    const paid=parts[4]==='payroll-payment'?(data.status==='paid'?payable:0):Number(r.amountPaid||0);
    const wasPaid=parts[4]==='payroll-payment'?data.status==='paid':r.paymentStatus!=='unpaid';
-   return {...r,baseSalary:salary,netSalary:net,payableAmount:payable,amountPaid:paid,paymentDifference:payable===null?null:payable-paid,paymentStatus:wasPaid?(paid===payable?'paid':'adjustment_required'):'unpaid',pending_sync:true};
+   return {...r,paidAt:parts[4]==='payroll-payment'?(data.status==='paid'?op.createdAt:null):r.paidAt,baseSalary:salary,netSalary:net,payableAmount:payable,amountPaid:paid,paymentDifference:payable===null?null:payable-paid,paymentStatus:wasPaid?(paid===payable?'paid':'adjustment_required'):'unpaid',pending_sync:true};
   }));
+  if(parts[4]==='payroll-payment'&&!paymentFound)throw Error('Download this salary month before recording a payment offline.');
  } else if(path.startsWith('/api/employees')){
   each(state,'/api/employees',rows=>{if(method==='delete')return rows.filter(r=>!same(r.user_id,parts[3]));const old=rows.find(r=>same(r.user_id,parts[3]))||{};return upsert(rows,'user_id',method==='post'?id:parts[3],{...old,user_name:data.name,user_email:data.email,user_position:data.position,access_level:data.accessLevel,telegram_id:data.telegramId,created_at:old.created_at||op.createdAt});});
  } else if(path.startsWith('/api/shifts')||path.startsWith('/api/recurring-shifts')){

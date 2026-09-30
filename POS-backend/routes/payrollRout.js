@@ -7,6 +7,11 @@ const { salaryMonth, salaryAmount } = require('../services/payrollRules');
 
 const router = express.Router();
 
+router.get('/employees/payroll-costs', requireAdmin, async (req,res)=>{
+  try { res.json(await require('../services/payrollCostService').getPaidPayrollCosts(db)); }
+  catch(error){res.status(500).json({error:error.message});}
+});
+
 router.get('/employees/payroll', requireAdmin, async (req, res) => {
   try { res.json(await getPayroll(req.query.month)); }
   catch (error) { res.status(error.status || 500).json({ error: error.message }); }
@@ -53,12 +58,13 @@ router.put('/employees/:id/payroll-payment', requireAdmin, async (req, res) => {
       await connection.commit(); return res.json({ success: true });
     }
     const amount = status === 'paid' ? payroll.payableAmount : 0;
+    const paidAt=status==='paid'?require('../services/payrollCostService').paymentTimestamp(req.get('X-Operation-Id')?req.get('X-Offline-Created-At'):null):null;
     await connection.execute(`INSERT INTO employee_payroll_payments (user_id, salary_month, status, amount_paid, paid_at, paid_by)
-      VALUES (?, ?, ?, ?, ${sql(`IF(? = 'paid', CURRENT_TIMESTAMP, NULL)`, `CASE WHEN ? = 'paid' THEN CURRENT_TIMESTAMP ELSE NULL END`)}, ?)
+      VALUES (?, ?, ?, ?, ?, ?)
       ${sql(`ON DUPLICATE KEY UPDATE status = VALUES(status), amount_paid = VALUES(amount_paid), paid_at = VALUES(paid_at), paid_by = VALUES(paid_by)`, `ON CONFLICT (user_id, salary_month) DO UPDATE SET status = EXCLUDED.status, amount_paid = EXCLUDED.amount_paid, paid_at = EXCLUDED.paid_at, paid_by = EXCLUDED.paid_by`)}`,
-    [employee.user_id, start, status, amount, status, req.user.user_id]);
-    await connection.execute('INSERT INTO payroll_payment_events (user_id, salary_month, status, amount, recorded_by) VALUES (?, ?, ?, ?, ?)',
-      [employee.user_id, start, status, amount, req.user.user_id]);
+    [employee.user_id, start, status, amount, paidAt, req.user.user_id]);
+    await connection.execute('INSERT INTO payroll_payment_events (user_id, salary_month, status, amount, recorded_by, recorded_at) VALUES (?, ?, ?, ?, ?, ?)',
+      [employee.user_id, start, status, amount, req.user.user_id, require('../services/payrollCostService').paymentTimestamp(req.get('X-Operation-Id')?req.get('X-Offline-Created-At'):null)]);
     await connection.commit();
     res.json({ success: true });
   } catch (error) {

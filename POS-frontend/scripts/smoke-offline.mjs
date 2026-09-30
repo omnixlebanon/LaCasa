@@ -38,6 +38,7 @@ const server=http.createServer(async(req,res)=>{
     if(path==='/api/checkout'){checkouts++;result={success:true,orderId:'test-sale-'+checkouts};history.push({order_id:result.orderId,total_amount:data.totalAmount,details:data.details,order_date:req.headers['x-offline-created-at']});shared=shared.filter(order=>order.checkoutOperationId!==data.details.checkout_operation_id);}
     revision++;receipts.set(id,{data:result,revision});res.setHeader('X-Sync-Revision',String(revision));return res.end(JSON.stringify(result));
    }
+   if(path==='/api/employees/payroll-costs')return res.end(JSON.stringify([{user_id:7,employee_name:'Test cashier',salary_month:new Date().toISOString().slice(0,7)+'-01',amount_paid:600,paid_at:new Date().toISOString()}]));
    const payload=path==='/api/seating/floors'?[{floor_id:1,floor_name:'Test floor',tables:[{t_id:1,t_name:'T1',t_status:'available',t_seats:2,t_type:'square'}]}]:path==='/api/products'?catalog:path==='/api/products/categories'?[{p_category_id:1,p_category_name:'Drinks',pos_hidden:0}]:path==='/api/open-orders'?shared:path==='/api/history'?history:path==='/api/stock/summary'?{}:path==='/api/offline/revision'?{ready:true}:[];
    return res.end(JSON.stringify(payload));
   }
@@ -141,6 +142,16 @@ try{
   assert.equal(checkouts,501);assert.equal(history.length,501);assert.equal(new Set(history.map(sale=>sale.order_id)).size,501);
   await command('Page.reload');await pause(1000);assert.equal(checkouts,501);
   console.log('PASS: 500 offline orders survived reload and synced exactly once in '+((Date.now()-syncStart)/1000).toFixed(1)+'s.');
+ }
+ if(!fullDay){
+  await command('Page.navigate',{url:`http://127.0.0.1:${server.address().port}/POS/employees`});
+  await until(()=>evaluate("!!document.querySelector('.employee-page-nav')"),'employee navigation');
+  assert.equal(await evaluate("!!document.querySelector('.employee-payroll')"),false,'salary controls are separate from employee management');
+  await evaluate("document.querySelector('.employee-page-nav a[href$=\"/employees/payroll\"]').click()");
+  await until(()=>evaluate("!!document.querySelector('.employee-payroll')"),'separate payroll page');
+  await command('Page.navigate',{url:`http://127.0.0.1:${server.address().port}/POS/sales`});
+  await until(()=>evaluate("!!document.querySelector('.sales-kpi-grid')"),'sales with payroll');
+  assert.match(await evaluate("Array.from(document.querySelectorAll('.sales-alert')).find(el=>el.querySelector('.sales-alert-type')?.textContent==='Payroll Paid')?.textContent||''"),/600/);
  }
  console.log('PASS: mobile layout, offline reopening, durable cart, shared open order, offline checkout, reconnect and one sale only.');
 }catch(error){await diagnose?.().catch(()=>{});throw error;}

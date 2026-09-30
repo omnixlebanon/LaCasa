@@ -4,7 +4,7 @@ import { Pencil, Plus, Trash2, Users } from 'lucide-react';
 import api from '../../api.js';
 import { useAuth } from '../../context/AuthContext.jsx';
 import './EmployeeManagement.css';
-import EmployeePayroll from './EmployeePayroll.jsx';
+import EmployeeNavigation from './EmployeeNavigation.jsx';
 
 const emptyEmployee = { name: '', email: '', password: '', position: '', accessLevel: 'employee' };
 
@@ -63,6 +63,7 @@ export default function EmployeeManagement() {
     <div className="head-area">
       <div className="PageTitle"><Users /><h2 className="PageName">Employee Management</h2></div>
     </div>
+    <EmployeeNavigation />
     {error && <p className="employee-error" role="alert">{error}</p>}
 
     {isAdmin && <section className="employee-admin-grid">
@@ -90,6 +91,6 @@ export default function EmployeeManagement() {
       </table>{!employees.length && <p>No employees found.</p>}</div>}
     </section>}
 
-    {isAdmin && <EmployeePayroll refreshKey={employees} />}
+
   </div>;
 }

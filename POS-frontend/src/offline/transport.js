@@ -69,7 +69,7 @@ async function downloadSnapshot(owner) {
   const to=new Date(Date.UTC(year,offset+1,0)).toISOString().slice(0,10);
   urls.push(`/api/shifts?from=${from}&to=${to}`);
  }
- if(user.accessLevel==='admin')urls.push('/api/employees',`/api/expenses?through=${year+1}-12-31`,`/api/employees/payroll?month=${month}`);
+ if(user.accessLevel==='admin')urls.push('/api/employees','/api/employees/payroll-costs',`/api/expenses?through=${year+1}-12-31`,`/api/employees/payroll?month=${month}`);
  if(user.accessLevel==='admin'||/manager|owner|supervisor/i.test(user.position||''))urls.push('/api/stock/expired-batches');
  const previous=await load(owner);
  urls.push(...Object.keys(previous.cache).filter(key=>/^\/api\/(shifts|expenses|employees\/payroll)\?/.test(key)));

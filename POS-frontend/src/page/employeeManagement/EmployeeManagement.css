@@ -30,3 +30,8 @@
     .employee-panel { padding: 1rem; }
     .employee-form-actions > button { flex: 1; }
 }
+
+.employee-page-nav { display:flex; gap:8px; overflow-x:auto; border-bottom:1px solid var(--border-color); margin:12px 0 24px; }
+.employee-page-nav a { display:flex; align-items:center; gap:8px; flex-shrink:0; padding:14px 12px; border-bottom:2px solid transparent; border-radius:8px 8px 0 0; color:var(--font-color); font-size:14px; font-weight:600; text-decoration:none; }
+.employee-page-nav a.active { color:var(--main-color); background:var(--main-soft); border-bottom-color:var(--main-color); }
+.employee-page-nav a:hover { color:var(--main-color); background:var(--hover-bg); }

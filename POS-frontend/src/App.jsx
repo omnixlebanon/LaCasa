@@ -1,3 +1,4 @@
+import PayrollPage from './page/employeeManagement/PayrollPage.jsx';
 import StockHistory from './page/stock/StockHistory.jsx';
 import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom';
 import './App.css'
@@ -61,7 +62,8 @@ const router = createBrowserRouter([
           { path: "expenses", element: <Navigate to="/sales" replace /> },
           { path: "product_management", element: <ProductManag /> },
           { path: "menu_management", element: <MenuManag /> },
-          { path: "employees", element: <EmployeeManagement /> }
+          { path: "employees", element: <EmployeeManagement /> },
+          { path: "employees/payroll", element: <PayrollPage /> }
         ]
       },
       {

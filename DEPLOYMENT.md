@@ -152,3 +152,6 @@ Telegram chatbot UI, stock/shift approvals, employee Telegram links, and new Tel
 
 ### Stock purchase history
 Before deploying stock history, run `npm run migrate:stock-history -- --supabase` from `POS-backend` for Supabase (omit `-- --supabase` for the configured local database). This adds `stock_purchases` without changing existing inventory. Stock batch additions record original quantity, ingredient unit cost, supplier and timestamp transactionally; refunds do not count as purchases. Historical purchases cannot be reconstructed from remaining stock. Deploy the backend before the frontend and reconnect each device to prepare its offline history cache.
+
+### Payroll in sales
+Deploy the backend before the frontend to enable `/api/employees/payroll-costs`. No new database migration is needed. Sales includes recorded paid salary amounts on their payment dates, including payments saved offline. Changing a salary rate leaves the recorded cost unchanged until the payment amount is updated; marking it unpaid removes that payment from costs. Salary controls are at `/POS/employees/payroll`. Reconnect once to download payroll costs for offline use.

@@ -359,3 +359,22 @@ test('purchased stock keeps its original quantity and cost after use, edits and 
  saved=await load();
  assert.deepEqual(saved.cache['/api/stock/history'].data[0],purchase);
 });
+
+test('paid payroll updates sales costs offline once, preserves paid amount after salary edits, and clears on unpaid',async()=>{
+ await change(state=>{
+  state.cache['/api/employees/payroll?month=2026-09']={data:[{userId:7,name:'Cashier',month:'2026-09',baseSalary:600,deductionsTotal:50,payableAmount:550,amountPaid:0,paymentStatus:'unpaid',unpricedRefunds:[]}]};
+  state.cache['/api/employees/payroll-costs']={data:[]};
+ });
+ await write('/api/employees/7/payroll-payment',{month:'2026-09',status:'paid',expectedAmount:550},'put');
+ let saved=await load();let costs=saved.cache['/api/employees/payroll-costs'].data;
+ assert.equal(costs.length,1);assert.equal(costs[0].amount_paid,550);assert.equal(costs[0].paid_at,saved.queue[0].createdAt);
+ await write('/api/employees/7/payroll-payment',{month:'2026-09',status:'paid',expectedAmount:550},'put');
+ assert.equal((await load()).cache['/api/employees/payroll-costs'].data.length,1);
+ await write('/api/employees/7/salary',{month:'2026-09',amount:650},'put');
+ assert.equal((await load()).cache['/api/employees/payroll-costs'].data[0].amount_paid,550);
+ await write('/api/employees/7/payroll-payment',{month:'2026-09',status:'paid',expectedAmount:600},'put');
+ costs=(await load()).cache['/api/employees/payroll-costs'].data;assert.equal(costs.length,1);assert.equal(costs[0].amount_paid,600);
+ await write('/api/employees/7/payroll-payment',{month:'2026-09',status:'unpaid'},'put');
+ assert.equal((await load()).cache['/api/employees/payroll-costs'].data.length,0);
+ await assert.rejects(write('/api/employees/7/payroll-payment',{month:'2026-08',status:'paid',expectedAmount:550},'put'),/Download this salary month/);
+});

@@ -92,3 +92,7 @@ export function normalizeSales(history, summary) {
  transactions.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
  return {products,transactions,skipped};
 }
+
+export function normalizePayrollCosts(rows) {
+ return rows.map(row=>({id:`payroll-${row.user_id}-${String(row.salary_month).slice(0,7)}`,description:`Salary: ${row.employee_name}`,salaryMonth:String(row.salary_month).slice(0,7),timestamp:String(row.paid_at).replace(' ','T'),totalRevenue:0,totalCost:Number(row.amount_paid),totalProfit:-Number(row.amount_paid),quantity:0,pending_sync:row.pending_sync}));
+}

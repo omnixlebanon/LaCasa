@@ -1,6 +1,6 @@
 import LoadingState from '../../components/LoadingState.jsx';
 import { useCallback, useEffect, useState } from 'react';
-import { Banknote, Check, ChevronDown, Clock3, Pencil, RefreshCw } from 'lucide-react';
+import { Banknote, Check, ChevronDown, Pencil, RefreshCw } from 'lucide-react';
 import api from '../../api.js';
 import MoneyInput from '../../components/MoneyInput.jsx';
 import { useCurrency } from '../../global.jsx';
@@ -51,7 +51,6 @@ function SalaryCard({ payroll, reload, disabled }) {
       <div><span>Monthly salary</span><strong>{payroll.baseSalary === null ? 'Not set' : formatPrice(payroll.baseSalary)}</strong><button className="payroll-edit" disabled={locked} onClick={() => { setSalary(payroll.baseSalary ?? ''); setEditing(!editing); }}><Pencil />{payroll.baseSalary === null ? 'Set salary' : 'Edit salary'}</button></div>
       <div><span>Rejected refunds</span><strong className={payroll.deductionsTotal > 0 ? 'payroll-deduction' : ''}>{payroll.deductionsTotal > 0 ? '−' : ''}{formatPrice(payroll.deductionsTotal)}</strong><small>{payroll.deductions.length} {payroll.deductions.length === 1 ? 'order' : 'orders'} deducted</small></div>
       <div><span>Net salary</span><strong className="payroll-net">{payroll.netSalary === null ? '—' : formatPrice(payroll.netSalary)}</strong><small>Salary after refund deductions</small></div>
-      <div><span><Clock3 /> Late check-ins</span><strong>{payroll.lateCount}</strong><small>{payroll.lateMinutes} minutes total · No penalty</small></div>
     </div>
     {editing && <form className="payroll-salary-form" onSubmit={saveSalary}>
       <label htmlFor={`salary-${payroll.userId}`}>Monthly salary ({currencyLabel})<MoneyInput id={`salary-${payroll.userId}`} name="salary" value={salary} onChange={event => setSalary(event.target.value)} min="0" required disabled={locked} /></label>
@@ -66,12 +65,10 @@ function SalaryCard({ payroll, reload, disabled }) {
     </div>
     {payroll.paymentStatus === 'adjustment_required' && <p className="payroll-notice">The salary or deductions changed after payment was recorded. {payroll.paymentDifference < 0 ? `${formatPrice(-payroll.paymentDifference)} was recorded above the current payable amount.` : `${formatPrice(payroll.paymentDifference)} remains due.`}</p>}
     <details className="payroll-details">
-      <summary>Refund deductions &amp; attendance <ChevronDown /></summary>
+      <summary>Refund deductions <ChevronDown /></summary>
       <div className="payroll-detail-body">
         <h5>Rejected refund deductions</h5><p className="payroll-help">The full order price is deducted in the month the refund is rejected, once per employee and order.</p>
         {!payroll.deductions.length ? <p className="payroll-empty">No rejected-refund deductions this month.</p> : <div className="payroll-table-wrap"><table><thead><tr><th>Order / Request</th><th>Rejected on</th><th>Reason</th><th>Deduction</th></tr></thead><tbody>{payroll.deductions.map(deduction => <tr key={deduction.request_id}><td>{deduction.order_id}<small>Request #{deduction.request_id}</small></td><td>{timestamp(deduction.deducted_at)}</td><td>{deduction.reason || '—'}{deduction.review_note && <small>{deduction.review_note}</small>}</td><td className="payroll-deduction">−{formatPrice(deduction.amount)}</td></tr>)}</tbody></table></div>}
-        <h5>Bot check-ins</h5><p className="payroll-help">Lateness uses the time the check-in reached the server, not the manager’s approval time. Pending and approved late check-ins count above; rejected check-ins remain visible below.</p>
-        {!payroll.attendance.length ? <p className="payroll-empty">No bot check-ins this month.</p> : <div className="payroll-table-wrap"><table><thead><tr><th>Scheduled start</th><th>Bot check-in</th><th>Arrival</th><th>Review</th></tr></thead><tbody>{payroll.attendance.map(checkin => <tr key={checkin.request_id}><td>{timestamp(checkin.scheduled_start)}</td><td>{timestamp(checkin.requested_at)}<small>Request #{checkin.request_id}</small></td><td className={Number(checkin.late_minutes) > 0 ? 'payroll-late' : ''}>{checkin.late_minutes === null ? 'Schedule unavailable' : Number(checkin.late_minutes) > 0 ? `${checkin.late_minutes} min late` : 'On time'}</td><td><span className={`payroll-review ${checkin.status}`}>{checkin.status}</span></td></tr>)}</tbody></table></div>}
       </div>
     </details>
   </article>;
@@ -97,7 +94,7 @@ export default function EmployeePayroll({ refreshKey }) {
     return () => controller.abort();
   }, [load, refreshKey]);
   return <section className="employee-payroll" aria-label="Monthly salaries">
-    <div className="payroll-section-header"><div><h3><Banknote /> Monthly salaries</h3><p>Salary, refund deductions, and attendance for each employee.</p></div><div className="payroll-month-controls"><label>Salary month<input type="month" value={month} min="2000-01" max="9998-12" onChange={event => { if (event.target.value) setMonth(event.target.value); }} disabled={loading} /></label><button className="payroll-secondary" onClick={() => load()} disabled={loading}><RefreshCw /> Refresh</button></div></div>
+    <div className="payroll-section-header"><div><h3><Banknote /> Monthly salaries</h3><p>Manage salaries and payments. Amounts marked paid are included in Sales costs on the payment date.</p></div><div className="payroll-month-controls"><label>Salary month<input type="month" value={month} min="2000-01" max="9998-12" onChange={event => { if (event.target.value) setMonth(event.target.value); }} disabled={loading} /></label><button className="payroll-secondary" onClick={() => load()} disabled={loading}><RefreshCw /> Refresh</button></div></div>
     {error && <p className="employee-error" role="alert">{error}</p>}
     {loading && <LoadingState label="Loading salaries..." />}
     {!loading && !rows.length && !error && <p className="payroll-empty">Add an employee to start tracking their salary.</p>}

@@ -4,7 +4,7 @@ import { useMemo, useState, useEffect } from 'react';
 import api from '/src/api.js';
 import './Stock.css';
 import { useCurrency } from "../../global.jsx";
-import { TrendingUp, TriangleAlert, ShieldAlert, ClipboardList, BookOpen, Warehouse } from 'lucide-react';
+import { TrendingUp, TriangleAlert, ShieldAlert, ClipboardList, BookOpen, Warehouse, History } from 'lucide-react';
 
 import StockInventory from '../../components/stock/stockInventory/StockInventory.jsx';
 import RecipesLinking from '../../components/stock/recipesLinking/RecipesLinking.jsx';
@@ -129,7 +129,6 @@ function Stock() {
                 {error && <div className="error-message">{error}</div>}
                 <div className="head-area">
                     <h2 className="PageName">Inventory Stock</h2>
-                    <Link className="stock-history-link" to="/stock/history">Stock History</Link>
                 </div>
                 <div className='stockAlerts'>
                     <div className='alert valueAlert'>
@@ -168,6 +167,7 @@ function Stock() {
                             {btn.icon}{btn.label}
                         </button>
                     ))}
+                    <Link to="/stock/history"><History />Stock History</Link>
                 </div>
 
                 {(activeID === "btn1") && (

@@ -28,3 +28,13 @@ test('expense-only dates reduce business result, without increasing units sold',
   assert.equal(rows.reduce((sum, row) => sum + row.profit, 0), -15);
   assert.equal(rows.reduce((sum, row) => sum + row.units, 0), 2);
 });
+
+test('paid payroll reduces costs and result on the payment date without changing sales or units',async()=>{
+ const {normalizePayrollCosts,generateLineChartData}=await import('./analytics.js');
+ const rows=normalizePayrollCosts([{user_id:7,employee_name:'Cashier',salary_month:'2026-08-01',amount_paid:'550.25',paid_at:'2026-09-02 12:00:00'}]);
+ assert.equal(filterTransactionsByTimeframe(rows,'custom',new Date(),'2026-08-01','2026-08-31').length,0);
+ const filtered=filterTransactionsByTimeframe(rows,'custom',new Date(),'2026-09-01','2026-09-30');
+ assert.equal(filtered[0].totalCost,550.25);assert.equal(filtered[0].totalProfit,-550.25);
+ const chart=generateLineChartData(filtered,'custom',[],new Date(),'2026-09-01','2026-09-30');
+ assert.equal(chart.reduce((sum,row)=>sum+row.cost,0),550.25);assert.equal(chart.reduce((sum,row)=>sum+row.profit,0),-550.25);assert.equal(chart.reduce((sum,row)=>sum+row.units,0),0);
+});

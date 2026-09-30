@@ -4,7 +4,7 @@ import { useCurrency } from '../../global.jsx';
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import api from "../../api.js";
 import "./Sales.css";
-import { normalizeSales, formatExportTimestamp } from "./utils/analytics";
+import { normalizeSales, normalizePayrollCosts, formatExportTimestamp } from "./utils/analytics";
 import { filterTransactionsByTimeframe, getProductMetrics, generateLineChartData, getCategorySummaries } from "./utils/analytics";
 import { Navbar } from "./components/Navbar";
 import { TimeframeSelector } from "./components/TimeframeSelector";
@@ -21,6 +21,7 @@ export default function Sales() {
 	const [products, setProducts] = useState([]);
 	const [transactions, setTransactions] = useState([]);
 	const [expenses, setExpenses] = useState([]);
+    const [payroll,setPayroll]=useState([]);
 	const [lastUpdated, setLastUpdated] = useState(new Date());
 	const [loading, setLoading] = useState(true);
 	const [refreshing, setRefreshing] = useState(false);
@@ -33,13 +34,14 @@ export default function Sales() {
 			const now = new Date();
             const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
             const through = timeframe === 'custom' && customEndDate ? customEndDate : today;
-            const [history, summary, expenseResponse] = await Promise.all([api.get("/api/history", { signal }), api.get("/api/products/summary", { signal }), api.get('/api/expenses', { params: { through }, signal })]);
+            const [history, summary, expenseResponse, payrollResponse] = await Promise.all([api.get("/api/history", { signal }), api.get("/api/products/summary", { signal }), api.get('/api/expenses', { params: { through }, signal }), api.get('/api/employees/payroll-costs', {signal})]);
 			if (signal?.aborted) return;
 			const data = normalizeSales(history.data, summary.data);
 			setProducts(data.products);
 			setTransactions(data.transactions);
             setExpenses(expenseResponse.data.map(row => ({ ...row, timestamp: `${row.expense_date}T00:00:00`, totalRevenue: 0, totalCost: Number(row.amount), totalProfit: -Number(row.amount), quantity: 0 })));
-			setSkipped(data.skipped);
+			setPayroll(normalizePayrollCosts(payrollResponse.data));
+            setSkipped(data.skipped);
 			setHasLoaded(true);
 			setLastUpdated(new Date());
 			setError("");
@@ -73,6 +75,8 @@ export default function Sales() {
 		lastUpdated
 	]);
     const filteredExpenses = useMemo(() => filterTransactionsByTimeframe(expenses, timeframe, lastUpdated, customStartDate || undefined, customEndDate || undefined), [expenses, timeframe, lastUpdated, customStartDate, customEndDate]);
+    const filteredPayroll=useMemo(()=>filterTransactionsByTimeframe(payroll,timeframe,lastUpdated,customStartDate||undefined,customEndDate||undefined),[payroll,timeframe,lastUpdated,customStartDate,customEndDate]);
+    const payrollCost=filteredPayroll.reduce((cents,row)=>cents+Math.round(row.totalCost*100),0)/100;
     const businessExpenses = filteredExpenses.reduce((cents, row) => cents + Math.round(row.totalCost * 100), 0) / 100;
     const missingCosts = filteredTransactions.filter(tx => tx.totalCost === null).length;
     const noRecipeCosts = filteredTransactions.filter(tx => tx.costSource === 'no_recipe').length;
@@ -95,10 +99,11 @@ export default function Sales() {
 	const mostProfitable = useMemo(() => productMetrics.find((m) => m.isMostProfitable) || null, [productMetrics]);
 	// Line Chart Data
 	const lineChartData = useMemo(() => {
-		return generateLineChartData([...filteredTransactions, ...filteredExpenses], timeframe, products, lastUpdated, customStartDate || undefined, customEndDate || undefined);
+		return generateLineChartData([...filteredTransactions, ...filteredExpenses, ...filteredPayroll], timeframe, products, lastUpdated, customStartDate || undefined, customEndDate || undefined);
 	}, [
 		filteredTransactions,
         filteredExpenses,
+        filteredPayroll,
         lastUpdated,
 		timeframe,
 		products,
@@ -140,7 +145,8 @@ export default function Sales() {
             tx.costSource
 		]);
         for (const row of filteredExpenses) rows.push([`expense-${row.occurrence_id}`, row.description, row.category, '', '', '', 0, row.totalCost === null ? '' : toDisplayAmount(row.totalCost), toDisplayAmount(-row.totalCost), row.expense_date, 'Business expense', row.recurring ? 'Repeating bill' : 'One-time bill']);
-        rows.push(['SUMMARY', 'Totals after business expenses', '', '', '', '', toDisplayAmount(totalRevenue), missingCosts ? '' : toDisplayAmount(totalCost + businessExpenses), missingCosts ? '' : toDisplayAmount(totalProfit - businessExpenses), '', '', missingCosts ? 'Historical order costs unavailable' : 'Complete']);
+        for(const row of filteredPayroll) rows.push([row.id,row.description,'Payroll','','','',0,toDisplayAmount(row.totalCost),toDisplayAmount(row.totalProfit),formatExportTimestamp(row.timestamp),'Salary payment',`Salary month: ${row.salaryMonth}`]);
+        rows.push(['SUMMARY', 'Totals after expenses and paid payroll', '', '', '', '', toDisplayAmount(totalRevenue), missingCosts ? '' : toDisplayAmount(totalCost + businessExpenses + payrollCost), missingCosts ? '' : toDisplayAmount(totalProfit - businessExpenses - payrollCost), '', '', missingCosts ? 'Historical order costs unavailable' : 'Complete']);
 		const escape = (value) => "\"" + String(value).replace(/^[=+@-]/, "'$&").replaceAll("\"", "\"\"") + "\"";
 		const csv = [headers, ...rows].map((row) => row.map(escape).join(",")).join("\r\n");
 		const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8;" }));
@@ -167,7 +173,7 @@ export default function Sales() {
         <TimeframeSelector selectedTimeframe={timeframe} onSelectTimeframe={setTimeframe} customStartDate={customStartDate} onStartDateChange={setCustomStartDate} customEndDate={customEndDate} onEndDateChange={setCustomEndDate} />
 
         {	/* Top KPI Metric Cards */}
-        <KPICards businessExpenses={businessExpenses} missingCosts={missingCosts} totalRevenue={totalRevenue} totalCost={totalCost} totalProfit={totalProfit} profitMargin={profitMargin} totalUnitsSold={totalUnitsSold} avgOrderValue={avgOrderValue} mostSold={mostSold} mostProfitable={mostProfitable} timeframe={timeframe} metricView={metricView} />
+        <KPICards payrollCost={payrollCost} businessExpenses={businessExpenses} missingCosts={missingCosts} totalRevenue={totalRevenue} totalCost={totalCost} totalProfit={totalProfit} profitMargin={profitMargin} totalUnitsSold={totalUnitsSold} avgOrderValue={avgOrderValue} mostSold={mostSold} mostProfitable={mostProfitable} timeframe={timeframe} metricView={metricView} />
 
         {	/* Interactive Charts Section (Line Charts + Pie Charts Grid) */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
