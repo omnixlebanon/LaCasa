@@ -53,7 +53,7 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
         </div>
       </div>
 
-      <div className="sales-chart-metric">
+      {chartMode === "financials" && <div className="sales-chart-metric">
         <select aria-label="Chart metric" value={metricView} onChange={(event) => {
           onMetricViewChange(event.target.value);
           setChartMode("financials");
@@ -61,9 +61,9 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
           <option value="all">All metrics</option>
           <option value="sales">Sales</option>
           <option value="cost">Cost</option>
-          <option value="profit">Result after expenses</option>
+          <option value="profit">Profit</option>
         </select>
-      </div>
+      </div>}
 
       {	/* Product Filter Chips for Product Breakdown Mode */}
       {chartMode === "products" && <div className="sales-breakdown-filters">
@@ -120,11 +120,11 @@ export const LineChartsSection = ({ data, products, metricView = "all", onMetric
 		borderRadius: "12px",
 		boxShadow: "0 8px 24px rgba(24, 57, 40, 0.07)",
 		fontSize: "12px"
-	}} formatter={(value, name) => [formatCurrency(Number(value)), name === "revenue" ? "Sales Revenue" : name === "cost" ? "Total Cost" : "Result After Expenses"]} />
+	}} formatter={(value, name) => [formatCurrency(Number(value)), name === "revenue" ? "Sales Revenue" : name === "cost" ? "Total Cost" : "Profit"]} />
               <Legend verticalAlign="top" align="right" wrapperStyle={{
 		paddingBottom: "10px",
 		fontSize: "12px"
-	}} formatter={(value) => value === "revenue" ? "Sales Revenue" : value === "cost" ? "Total Cost" : "Result After Expenses"} />
+	}} formatter={(value) => value === "revenue" ? "Sales Revenue" : value === "cost" ? "Total Cost" : "Profit"} />
               {showRevenue && <Area type="monotone" dataKey="revenue" stroke="#5185C5" strokeWidth={2.5} fillOpacity={1} fill="url(#colorRevenue)" />}
               {showCost && <Area type="monotone" dataKey="cost" stroke="#D5A34B" strokeWidth={2.5} fillOpacity={1} fill="url(#colorCost)" />}
               {showProfit && <Area type="monotone" dataKey="profit" stroke="#46A28F" strokeWidth={2.5} fillOpacity={1} fill="url(#colorProfit)" />}
