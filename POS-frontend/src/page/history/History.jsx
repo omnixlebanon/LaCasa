@@ -29,7 +29,7 @@ function OrderHistory() {
     const [refundError,setRefundError]=useState(''),[refundBusy,setRefundBusy]=useState(false),[refundMessage,setRefundMessage]=useState('');
     const { formatPrice } = useCurrency();
     const { user } = useAuth();
-    const isManager = user?.accessLevel === 'admin' || /manager|owner|supervisor/i.test(user?.position || '');
+    const isManager = ['admin','owner','manager'].includes(user?.accessLevel);
     const fetchData = async () => {
         setLoading(true);
         setLoadError('');

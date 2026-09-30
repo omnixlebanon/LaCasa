@@ -1,3 +1,4 @@
+import {management,canManage,allowedNewRoles} from '../../utils/accessPolicy.js';
 import LoadingState from '../../components/LoadingState.jsx';
 import { useCallback, useEffect, useState } from 'react';
 import { Pencil, Plus, Trash2, Users } from 'lucide-react';
@@ -10,13 +11,17 @@ const emptyEmployee = { name: '', email: '', password: '', position: '', accessL
 
 export default function EmployeeManagement() {
   const { user } = useAuth();
-  const isAdmin = user?.accessLevel === 'admin';
+  const isAdmin = management(user?.accessLevel);
+
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [employeeForm, setEmployeeForm] = useState(emptyEmployee);
   const [editingId, setEditingId] = useState(null);
   const [error, setError] = useState('');
+  const [saving,setSaving]=useState(false),[message,setMessage]=useState('');
+  const editing=employees.find(employee=>employee.user_id===editingId);
+  const roleChoices=[...new Set([...allowedNewRoles(user?.accessLevel),...(editing?[editing.access_level]:[])])];
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -37,15 +42,16 @@ export default function EmployeeManagement() {
 
   const saveEmployee = async (event) => {
     event.preventDefault();
+    if(saving)return;setSaving(true);setMessage('');
     try {
       if (editingId) await api.patch(`/api/employees/${editingId}`, employeeForm);
       else await api.post('/api/employees', employeeForm);
       setEmployeeForm(emptyEmployee);
       setEditingId(null);
-      await loadData();
+      await loadData();setMessage('Employee saved on this device. Check Sync for confirmation.');
     } catch (requestError) {
       setError(requestError.response?.data?.error || 'Could not save employee.');
-    }
+    } finally {setSaving(false);}
   };
 
   const editEmployee = (employee) => {
@@ -64,9 +70,10 @@ export default function EmployeeManagement() {
       <div className="PageTitle"><Users /><h2 className="PageName">Employee Management</h2></div>
     </div>
     <EmployeeNavigation />
+    {message&&<p role="status">{message}</p>}
     {error && <p className="employee-error" role="alert">{error}</p>}
 
-    {isAdmin && <section className="employee-admin-grid">
+    {<section className="employee-admin-grid">
       <form className="employee-panel employee-form" onSubmit={saveEmployee}>
         <h3>{editingId ? 'Edit employee' : 'Add employee'}</h3>
         <input aria-label="Name" placeholder="Full name" value={employeeForm.name} onChange={e => setEmployeeForm({ ...employeeForm, name: e.target.value })} required />
@@ -74,11 +81,11 @@ export default function EmployeeManagement() {
         <input aria-label="Password" type="password" placeholder={editingId ? 'New password (optional)' : 'Password'} value={employeeForm.password} onChange={e => setEmployeeForm({ ...employeeForm, password: e.target.value })} required={!editingId} />
         <input aria-label="Position" placeholder="Position (e.g. Cashier)" value={employeeForm.position} onChange={e => setEmployeeForm({ ...employeeForm, position: e.target.value })} required />
         <select aria-label="Access level" value={employeeForm.accessLevel} onChange={e => setEmployeeForm({ ...employeeForm, accessLevel: e.target.value })}>
-          <option value="employee">Employee</option><option value="admin">Admin</option>
+          {roleChoices.map(role=><option key={role} value={role}>{role.charAt(0).toUpperCase()+role.slice(1)}</option>)}
         </select>
         <div className="employee-form-actions">
           {editingId && <button type="button" onClick={() => { setEditingId(null); setEmployeeForm(emptyEmployee); }}>Cancel</button>}
-          <button className="add-btn" type="submit"><Plus />{editingId ? 'Save employee' : 'Add employee'}</button>
+          <button className="add-btn" type="submit" disabled={saving}><Plus />{editingId ? 'Save employee' : 'Add employee'}</button>
         </div>
       </form>
 
@@ -87,7 +94,7 @@ export default function EmployeeManagement() {
     {isAdmin && <section className="employee-panel employee-list">
       <h3>Employees</h3>
       {loading || loadError ? <LoadingState label="Loading employees..." error={loadError} onRetry={loadData} /> : <div className="employee-table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Position</th><th>Access</th><th>Joined</th><th>Actions</th></tr></thead>
-        <tbody>{employees.map(employee => <tr key={employee.user_id}><td data-label="Name">{employee.user_name}</td><td data-label="Email">{employee.user_email}</td><td data-label="Position">{employee.user_position}</td><td data-label="Access"><span className={`access-badge ${employee.access_level}`}>{employee.access_level}</span></td><td data-label="Joined">{new Date(employee.created_at).toLocaleDateString()}</td><td data-label="Actions"><button className="icon-button edit" onClick={() => editEmployee(employee)} aria-label={`Edit ${employee.user_name}`}><Pencil /></button><button className="icon-button delete" onClick={() => deleteEmployee(employee.user_id)} aria-label={`Delete ${employee.user_name}`}><Trash2 /></button></td></tr>)}</tbody>
+        <tbody>{employees.map(employee => <tr key={employee.user_id}><td data-label="Name">{employee.user_name}</td><td data-label="Email">{employee.user_email}</td><td data-label="Position">{employee.user_position}</td><td data-label="Access"><span className={`access-badge ${employee.access_level}`}>{employee.access_level}</span></td><td data-label="Joined">{new Date(employee.created_at).toLocaleDateString()}</td><td data-label="Actions">{canManage(user?.accessLevel,employee.access_level)?<><button className="icon-button edit" onClick={() => editEmployee(employee)} aria-label={`Edit ${employee.user_name}`}><Pencil /></button><button className="icon-button delete" onClick={() => deleteEmployee(employee.user_id)} aria-label={`Delete ${employee.user_name}`}><Trash2 /></button></>:<span>Protected account</span>}</td></tr>)}</tbody>
       </table>{!employees.length && <p>No employees found.</p>}</div>}
     </section>}
 

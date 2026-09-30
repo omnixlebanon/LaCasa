@@ -1,31 +1,46 @@
 const sql = require('../config/dialect');
 const express = require('express');
 const db = require('../config/database');
-const { requireAdmin } = require('../middleware/auth');
+const { requireManagement } = require('../middleware/auth');
 const { getPayroll } = require('../services/payrollService');
 const { salaryMonth, salaryAmount } = require('../services/payrollRules');
 
 const router = express.Router();
 
-router.get('/employees/payroll-costs', requireAdmin, async (req,res)=>{
+router.get('/employees/position-salaries', requireManagement, async(req,res)=>{
+ try{const [rows]=await db.execute('SELECT * FROM position_salary_defaults ORDER BY position_key,effective_month DESC');res.json(rows);}catch(error){res.status(500).json({error:error.message});}
+});
+router.put('/employees/position-salaries', requireManagement, async(req,res)=>{
+ try{
+  const position=req.body?.position;
+  if(typeof position!=='string'||!position.trim()||position.trim().length>50)throw Object.assign(Error('Enter a position of up to 50 characters.'),{status:400});
+  const {start}=salaryMonth(req.body.month),amount=salaryAmount(req.body.amount);
+  await db.execute(`INSERT INTO position_salary_defaults (position_key,position_name,effective_month,monthly_salary) VALUES (?,?,?,?)
+   ${sql('ON DUPLICATE KEY UPDATE position_name=VALUES(position_name),monthly_salary=VALUES(monthly_salary)','ON CONFLICT (position_key,effective_month) DO UPDATE SET position_name=EXCLUDED.position_name,monthly_salary=EXCLUDED.monthly_salary')}`,[position.trim().toLowerCase(),position.trim(),start,amount]);
+  res.json({success:true});
+ }catch(error){res.status(error.status||500).json({error:error.message});}
+});
+
+router.get('/employees/payroll-costs', requireManagement, async (req,res)=>{
   try { res.json(await require('../services/payrollCostService').getPaidPayrollCosts(db)); }
   catch(error){res.status(500).json({error:error.message});}
 });
 
-router.get('/employees/payroll', requireAdmin, async (req, res) => {
+router.get('/employees/payroll', requireManagement, async (req, res) => {
   try { res.json(await getPayroll(req.query.month)); }
   catch (error) { res.status(error.status || 500).json({ error: error.message }); }
 });
 
-router.put('/employees/:id/salary', requireAdmin, async (req, res) => {
+router.put('/employees/:id/salary', requireManagement, async (req, res) => {
   let connection;
   try {
     const { start } = salaryMonth(req.body?.month);
     const amount = salaryAmount(req.body?.amount);
     connection = await db.getConnection();
     await connection.beginTransaction();
-    const [[employee]] = await connection.execute('SELECT user_id FROM users WHERE user_id = ? FOR UPDATE', [req.params.id]);
+    const [[employee]] = await connection.execute('SELECT user_id,access_level FROM users WHERE user_id = ? FOR UPDATE', [req.params.id]);
     if (!employee) throw Object.assign(new Error('Employee not found.'), { status: 404 });
+    if(!require('../services/accessPolicy').salaryEligible(employee.access_level))throw Object.assign(Error('Admin and Owner accounts do not receive salaries.'),{status:403});
     await connection.execute(`INSERT INTO employee_salary_rates (user_id, effective_month, monthly_salary, updated_by) VALUES (?, ?, ?, ?)
       ${sql(`ON DUPLICATE KEY UPDATE monthly_salary = VALUES(monthly_salary), updated_by = VALUES(updated_by)`, `ON CONFLICT (user_id, effective_month) DO UPDATE SET monthly_salary = EXCLUDED.monthly_salary, updated_by = EXCLUDED.updated_by, updated_at = CURRENT_TIMESTAMP`)}`, [employee.user_id, start, amount, req.user.user_id]);
     await connection.commit();
@@ -36,7 +51,7 @@ router.put('/employees/:id/salary', requireAdmin, async (req, res) => {
   } finally { connection?.release(); }
 });
 
-router.put('/employees/:id/payroll-payment', requireAdmin, async (req, res) => {
+router.put('/employees/:id/payroll-payment', requireManagement, async (req, res) => {
   let connection;
   try {
     const { start } = salaryMonth(req.body?.month);
@@ -44,8 +59,9 @@ router.put('/employees/:id/payroll-payment', requireAdmin, async (req, res) => {
     if (!['paid', 'unpaid'].includes(status)) throw Object.assign(new Error('Choose paid or unpaid.'), { status: 400 });
     connection = await db.getConnection();
     await connection.beginTransaction();
-    const [[employee]] = await connection.execute('SELECT user_id FROM users WHERE user_id = ? FOR UPDATE', [req.params.id]);
+    const [[employee]] = await connection.execute('SELECT user_id,access_level FROM users WHERE user_id = ? FOR UPDATE', [req.params.id]);
     if (!employee) throw Object.assign(new Error('Employee not found.'), { status: 404 });
+    if(!require('../services/accessPolicy').salaryEligible(employee.access_level))throw Object.assign(Error('Admin and Owner accounts do not receive salaries.'),{status:403});
     const [payroll] = await getPayroll(req.body.month, employee.user_id, connection);
     if (status === 'paid' && (payroll.baseSalary === null || payroll.unpricedRefunds.length)) {
       throw Object.assign(new Error('Set a salary and resolve any refunds with missing order amounts before marking paid.'), { status: 409 });

@@ -1,3 +1,4 @@
+import {management,salaryEligible,canManage,assertChange} from '../utils/accessPolicy.js';
 import {normalizePaymentDetails} from '../utils/cashPayment.js';
 export const keyOf = (url, params={}) => {const u=new URL(url,'https://local');for(const [k,v]of Object.entries(params||{}))if(v!==undefined&&v!==null)u.searchParams.set(k,v);u.searchParams.sort();return u.pathname+u.search;};
 const pathOf = key => key.split('?')[0].split('/').map(decodeURIComponent).join('/');
@@ -116,7 +117,21 @@ export function applyLocal(state,op) {
    rows=rows.filter(r=>!same(r.expense_id,row.expense_id));const params=new URL(key,'https://local').searchParams;const from=params.get('from')||(params.get('month')?params.get('month')+'-01':'2000-01-01');const to=params.get('through')||(params.get('month')?new Date(Date.UTC(Number(params.get('month').slice(0,4)),Number(params.get('month').slice(5,7)),0)).toISOString().slice(0,10):'9999-01-01');
    for(const occurrence of expenseOccurrences(row,from,to))rows.push(occurrence);return rows;
   });
+ } else if(path==='/api/employees/position-salaries'){
+  if(!management(JSON.parse(localStorage.getItem('auth_user'))?.accessLevel))throw Error('Manager access required.');
+  if(typeof data.position!=='string'||!data.position.trim()||data.position.trim().length>50||!/^\d{4}-(0[1-9]|1[0-2])$/.test(data.month)||!/^\d{1,10}(\.\d{1,2})?$/.test(String(data.amount)))throw Error('Enter a valid position, month and salary.');
+  const entry={position_key:data.position.trim().toLowerCase(),position_name:data.position.trim(),effective_month:data.month+'-01',monthly_salary:Number(data.amount)};
+  if(!state.cache[path])state.cache[path]={data:[]};
+  each(state,path,rows=>[...rows.filter(row=>!(row.position_key===entry.position_key&&row.effective_month===entry.effective_month)),entry]);
+  each(state,'/api/employees/payroll',rows=>rows.map(row=>{
+   if(row.salarySource==='individual'||row.position?.trim().toLowerCase()!==entry.position_key||row.month<data.month)return row;
+   const chosen=(cached(state,path)||[]).filter(rate=>rate.position_key===entry.position_key&&rate.effective_month.slice(0,7)<=row.month).sort((a,b)=>b.effective_month.localeCompare(a.effective_month))[0];
+   if(!chosen)return row;const base=Number(chosen.monthly_salary),net=Math.round((base-Number(row.deductionsTotal||0))*100)/100,payable=Math.max(0,net),paid=Number(row.amountPaid||0);
+   return {...row,baseSalary:base,salarySource:'position',positionSalaryMonth:chosen.effective_month,netSalary:net,payableAmount:payable,paymentDifference:payable-paid,paymentStatus:row.paymentStatus==='unpaid'?'unpaid':paid===payable?'paid':'adjustment_required',pending_sync:true};
+  }));
  } else if(/^\/api\/employees\/[^/]+\/(salary|payroll-payment)$/.test(path)){
+  const salaryUser=(cached(state,'/api/employees')||[]).find(row=>same(row.user_id,parts[3]));
+  if(salaryUser&&!salaryEligible(salaryUser.access_level))throw Error('Admin and Owner accounts do not receive salaries.');
   let paymentFound=false;
   each(state,'/api/employees/payroll',rows=>rows.map(r=>{
    if(!same(r.userId,parts[3])||r.month.slice(0,7)!==data.month.slice(0,7))return r;
@@ -136,11 +151,23 @@ export function applyLocal(state,op) {
    }
    const paid=parts[4]==='payroll-payment'?(data.status==='paid'?payable:0):Number(r.amountPaid||0);
    const wasPaid=parts[4]==='payroll-payment'?data.status==='paid':r.paymentStatus!=='unpaid';
-   return {...r,paidAt:parts[4]==='payroll-payment'?(data.status==='paid'?op.createdAt:null):r.paidAt,baseSalary:salary,netSalary:net,payableAmount:payable,amountPaid:paid,paymentDifference:payable===null?null:payable-paid,paymentStatus:wasPaid?(paid===payable?'paid':'adjustment_required'):'unpaid',pending_sync:true};
+   return {...r,salarySource:parts[4]==='salary'?'individual':r.salarySource,paidAt:parts[4]==='payroll-payment'?(data.status==='paid'?op.createdAt:null):r.paidAt,baseSalary:salary,netSalary:net,payableAmount:payable,amountPaid:paid,paymentDifference:payable===null?null:payable-paid,paymentStatus:wasPaid?(paid===payable?'paid':'adjustment_required'):'unpaid',pending_sync:true};
   }));
   if(parts[4]==='payroll-payment'&&!paymentFound)throw Error('Download this salary month before recording a payment offline.');
  } else if(path.startsWith('/api/employees')){
+  const actor=JSON.parse(localStorage.getItem('auth_user'));
+  const old=(cached(state,'/api/employees')||[]).find(row=>same(row.user_id,parts[3]));
+  if(method!=='post'&&!old)throw Error('Employee not found on this device.');
+  if(method==='delete'){
+   if(!canManage(actor.accessLevel,old.access_level)||same(actor.id,parts[3]))throw Error('You cannot delete this account.');
+  }else{
+   const next=data.accessLevel||old?.access_level||'employee';assertChange(actor.accessLevel,old?.access_level,next,method==='post');
+   if(old&&same(actor.id,parts[3])&&next!==old.access_level)throw Error('You cannot change your own access level.');
+   if(next==='owner'&&(cached(state,'/api/employees')||[]).some(row=>row.access_level==='owner'&&!same(row.user_id,parts[3])))throw Error('Only one Owner account is allowed.');
+   data.accessLevel=next;
+  }
   each(state,'/api/employees',rows=>{if(method==='delete')return rows.filter(r=>!same(r.user_id,parts[3]));const old=rows.find(r=>same(r.user_id,parts[3]))||{};return upsert(rows,'user_id',method==='post'?id:parts[3],{...old,user_name:data.name,user_email:data.email,user_position:data.position,access_level:data.accessLevel,telegram_id:data.telegramId,created_at:old.created_at||op.createdAt});});
+  if(method==='delete'||!salaryEligible(data.accessLevel))each(state,'/api/employees/payroll',rows=>rows.filter(row=>!same(row.userId,parts[3])));
  } else if(path.startsWith('/api/shifts')||path.startsWith('/api/recurring-shifts')){
   const recurring=parts[2]==='recurring-shifts';
   if(recurring&&method==='post')each(state,'/api/recurring-shifts',rows=>[...rows,{recurrence_id:id,user_id:data.userId,user_name:(cached(state,'/api/employees')||[]).find(u=>same(u.user_id,data.userId))?.user_name,starts_on:data.date,start_time:data.startTime,end_time:data.endTime,weekdays:data.weekdays,notes:data.notes}]);
@@ -154,7 +181,7 @@ export function applyLocal(state,op) {
   });
  } else if(path.startsWith('/api/history/')&&path.endsWith('/refund')){
   const user=JSON.parse(localStorage.getItem('auth_user'));
-  if(user?.accessLevel!=='admin'&&!/manager|owner|supervisor/i.test(user?.position||''))throw Error('Manager access required to refund orders.');
+  if(!management(user?.accessLevel))throw Error('Manager access required to refund orders.');
   const order=(cached(state,'/api/history')||[]).find(o=>same(o.order_id,parts[3]));
   if(!order)throw Error('Order not found on this device.');
   if(order.status==='refunded')throw Error('This order has already been refunded.');
@@ -201,6 +228,8 @@ export function readLocal(state,key){
   let rows=copy(cached(state,path));if(!rows)throw Error('Connect once to download this page for offline use.');
   if(params.get('scope')==='pos')rows=rows.filter(r=>!Number(r.pos_hidden)&&!Number(r.category_hidden));return rows;
  }
+ if(path==='/api/employees'){const role=JSON.parse(localStorage.getItem('auth_user'))?.accessLevel;return management(role)?copy((cached(state,path)||[]).filter(row=>role==='admin'||row.access_level!=='admin')):[];}
+ if(path==='/api/employees/payroll'&&state.cache[key]){const protectedIds=new Set((cached(state,'/api/employees')||[]).filter(row=>!salaryEligible(row.access_level)).map(row=>String(row.user_id)));return copy(state.cache[key].data.filter(row=>!protectedIds.has(String(row.userId))));}
  if(state.cache[key])return copy(state.cache[key].data);
  const candidates=Object.entries(state.cache).filter(([k])=>pathOf(k)===path);
  if(path==='/api/shifts'){

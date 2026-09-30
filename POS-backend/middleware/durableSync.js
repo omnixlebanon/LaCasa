@@ -19,7 +19,7 @@ module.exports = async function durableSync(req, res, next) {
   if(req.user) {
    const [[account]] = await raw.query('SELECT user_id, access_level FROM users WHERE user_id = ?', [req.user.user_id]);
    if(!account) {await raw.rollback();raw.release();return res.status(401).json({error:'Account no longer exists. Pending changes remain on this device.'});}
-   req.user.access_level=req.user.access_level==='admin'&&account.access_level==='admin'?'admin':'employee';
+   req.user.access_level=account.access_level;
   }
   const fingerprint=crypto.createHash('sha256').update(JSON.stringify([req.method,req.originalUrl,req.body||{}])).digest('hex');
   if(operation) {

@@ -7,9 +7,10 @@ async function getPayroll(month, userId = null, connection = db) {
   const scope = userId === null ? '' : 'AND r.user_id = ?';
   const periodParams = userId === null ? [start, end] : [start, end, userId];
   const [employees] = await connection.execute(`SELECT u.user_id, u.user_name, u.user_position,
-    (SELECT monthly_salary FROM employee_salary_rates sr WHERE sr.user_id = u.user_id AND sr.effective_month <= ?
-      ORDER BY sr.effective_month DESC LIMIT 1) AS monthly_salary
-    FROM users u ${userId === null ? '' : 'WHERE u.user_id = ?'} ORDER BY u.user_name`, userId === null ? [start] : [start, userId]);
+    (SELECT monthly_salary FROM employee_salary_rates sr WHERE sr.user_id=u.user_id AND sr.effective_month<=? ORDER BY sr.effective_month DESC LIMIT 1) AS personal_salary,
+    (SELECT monthly_salary FROM position_salary_defaults ps WHERE ps.position_key=LOWER(TRIM(u.user_position)) AND ps.effective_month<=? ORDER BY ps.effective_month DESC LIMIT 1) AS position_salary,
+    (SELECT effective_month FROM position_salary_defaults ps WHERE ps.position_key=LOWER(TRIM(u.user_position)) AND ps.effective_month<=? ORDER BY ps.effective_month DESC LIMIT 1) AS position_salary_month
+    FROM users u WHERE u.access_level IN ('employee','manager') ${userId===null?'':'AND u.user_id = ?'} ORDER BY u.user_name`,userId===null?[start,start,start]:[start,start,start,userId]);
   const [deductions] = await connection.execute(`SELECT d.user_id, d.request_id, d.order_id, d.amount, d.deducted_at,
     ${sql("JSON_UNQUOTE(JSON_EXTRACT(r.payload, '$.reason'))", "(r.payload ->> 'reason')")} AS reason, r.review_note
     FROM salary_deductions d JOIN workflow_requests r ON r.request_id = d.request_id
@@ -38,7 +39,7 @@ async function getPayroll(month, userId = null, connection = db) {
     AND COALESCE(r.reviewed_at, r.created_at) >= ? AND COALESCE(r.reviewed_at, r.created_at) < ? ${scope}
     AND NOT EXISTS (SELECT 1 FROM salary_deductions d WHERE d.user_id = r.user_id
       AND d.order_id = ${sql("JSON_UNQUOTE(JSON_EXTRACT(r.payload, '$.orderId'))", "(r.payload ->> 'orderId')")})`, periodParams);
-  const [payments] = await connection.execute(`SELECT p.*, u.user_name AS paid_by_name FROM employee_payroll_payments p
+  const [payments] = await connection.execute(`SELECT p.*, CASE WHEN u.access_level = 'admin' THEN NULL ELSE u.user_name END AS paid_by_name FROM employee_payroll_payments p
     LEFT JOIN users u ON u.user_id = p.paid_by WHERE p.salary_month = ? ${userId === null ? '' : 'AND p.user_id = ?'}`, userId === null ? [start] : [start, userId]);
   return employees.map(employee => {
     const employeeDeductions = deductions.filter(d => d.user_id === employee.user_id);
@@ -48,7 +49,9 @@ async function getPayroll(month, userId = null, connection = db) {
     const payment = payments.find(p => p.user_id === employee.user_id);
     return {
       userId: employee.user_id, name: employee.user_name, position: employee.user_position, month,
-      ...payrollTotals(employee.monthly_salary, employeeDeductions, payment),
+      ...payrollTotals(employee.personal_salary ?? employee.position_salary, employeeDeductions, payment),
+      salarySource:employee.personal_salary!==null?'individual':employee.position_salary!==null?'position':'unset',
+      positionSalaryMonth:employee.position_salary_month || null,
       paidBy: payment?.paid_by_name || null,
       deductions: employeeDeductions, attendance: checkins,
       lateCount: lateCheckins.length,

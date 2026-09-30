@@ -1,13 +1,12 @@
 const sql = require('../config/dialect');
 const express = require('express');
-const bcrypt = require('bcrypt');
 const db = require('../config/database');
-const { requireAdmin } = require('../middleware/auth');
+const { requireManagement } = require('../middleware/auth');
 const { databaseToday, listShifts } = require('../services/schedulingService');
 const { shiftInput, weekdays, validDate, badRequest } = require('../services/schedulingRules');
 
 const router = express.Router();
-const accessLevels = new Set(['admin', 'employee']);
+const {management}=require('../services/accessPolicy');
 // An occurrence created offline is addressed by its repeating rule and date
 // until the server materializes its permanent shift ID.
 async function resolveShiftId(value) {
@@ -19,94 +18,39 @@ async function resolveShiftId(value) {
   return shift.shift_id;
 }
 
-router.get('/employees', requireAdmin, async (req, res) => {
-  try {
-    const [rows] = await db.execute(`
-      SELECT user_id, user_name, user_email, user_position, access_level, telegram_id, created_at
-      FROM users ORDER BY user_name
-    `);
-    res.json(rows);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+router.get('/employees', async(req,res)=>{
+ try{
+  // Employees may create colleagues, but do not receive the management directory.
+  if(!management(req.user.access_level))return res.json([]);
+  const [rows]=await db.execute(`SELECT user_id,user_name,user_email,user_position,access_level,created_at FROM users ${req.user.access_level==='admin'?'':"WHERE access_level <> 'admin'"} ORDER BY user_name`);
+  res.json(rows);
+ }catch(error){res.status(500).json({error:error.message});}
 });
-
-router.post('/employees', requireAdmin, async (req, res) => {
-  const { name, email, password, position, accessLevel = 'employee', telegramId = null } = req.body;
-  if (![name, email, password, position].every(value => typeof value === 'string' && value.trim())) {
-    return res.status(400).json({ error: 'Name, email, password, and position are required.' });
-  }
-  if (!accessLevels.has(accessLevel)) return res.status(400).json({ error: 'Invalid access level.' });
-  const normalizedTelegramId = telegramId === null || telegramId === '' ? null : String(telegramId).trim();
-  if (normalizedTelegramId && !/^\d+$/.test(normalizedTelegramId)) return res.status(400).json({ error: 'Telegram ID must contain digits only.' });
-  try {
-    const passwordHash = await bcrypt.hash(password, 12);
-    const [result] = await db.execute(
-      `INSERT INTO users (user_name, user_email, user_password_hash, user_position, access_level, telegram_id)
-       VALUES (?, ?, ?, ?, ?, ?)`,
-      [name.trim(), email.trim().toLowerCase(), passwordHash, position.trim(), accessLevel, normalizedTelegramId]
-    );
-    res.status(201).json({ user_id: result.insertId });
-  } catch (error) {
-    res.status(error.code === 'ER_DUP_ENTRY' ? 409 : 500).json({ error: error.code === 'ER_DUP_ENTRY' ? 'Name or email already exists.' : error.message });
-  }
-});
-
-router.patch('/employees/:id', requireAdmin, async (req, res) => {
-  const { name, email, password, position, accessLevel, telegramId } = req.body;
-  if (accessLevel && !accessLevels.has(accessLevel)) return res.status(400).json({ error: 'Invalid access level.' });
-  try {
-    const fields = [];
-    const values = [];
-    for (const [column, value] of [['user_name', name], ['user_email', email], ['user_position', position], ['access_level', accessLevel]]) {
-      if (typeof value === 'string' && value.trim()) {
-        fields.push(`${column} = ?`);
-        values.push(column === 'user_email' ? value.trim().toLowerCase() : value.trim());
-      }
-    }
-    if (telegramId !== undefined) {
-      const normalizedTelegramId = telegramId === null || telegramId === '' ? null : String(telegramId).trim();
-      if (normalizedTelegramId && !/^\d+$/.test(normalizedTelegramId)) return res.status(400).json({ error: 'Telegram ID must contain digits only.' });
-      fields.push('telegram_id = ?');
-      values.push(normalizedTelegramId);
-    }
-    if (password) {
-      fields.push('user_password_hash = ?');
-      values.push(await bcrypt.hash(password, 12));
-    }
-    if (!fields.length) return res.status(400).json({ error: 'No changes supplied.' });
-    values.push(req.params.id);
-    const [result] = await db.execute(`UPDATE users SET ${fields.join(', ')} WHERE user_id = ?`, values);
-    if (!result.affectedRows) return res.status(404).json({ error: 'Employee not found.' });
-    res.json({ success: true });
-  } catch (error) {
-    res.status(error.code === 'ER_DUP_ENTRY' ? 409 : 500).json({ error: error.code === 'ER_DUP_ENTRY' ? 'Name or email already exists.' : error.message });
-  }
-});
-
-router.delete('/employees/:id', requireAdmin, async (req, res) => {
-  if (Number(req.params.id) === Number(req.user.user_id)) return res.status(400).json({ error: 'You cannot delete your own account.' });
-  try {
-    const [result] = await db.execute('DELETE FROM users WHERE user_id = ?', [req.params.id]);
-    if (!result.affectedRows) return res.status(404).json({ error: 'Employee not found.' });
-    res.json({ success: true });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-});
+async function accountWrite(req,res,kind){
+ let connection;
+ try{
+  connection=await db.getConnection();await connection.beginTransaction();
+  const service=require('../services/employeeAccountService');
+  const result=kind==='delete'?await service.deleteAccount(connection,req.user,req.params.id):await service.saveAccount(connection,req.user,kind==='create'?null:req.params.id,req.body);
+  await connection.commit();res.status(kind==='create'?201:200).json(result);
+ }catch(error){if(connection)await connection.rollback();res.status(error.code==='ER_DUP_ENTRY'?409:error.status||500).json({error:error.code==='ER_DUP_ENTRY'?'Name, email or Owner account already exists.':error.message});}finally{connection?.release();}
+}
+router.post('/employees',(req,res)=>accountWrite(req,res,'create'));
+router.patch('/employees/:id',(req,res)=>accountWrite(req,res,'edit'));
+router.delete('/employees/:id',(req,res)=>accountWrite(req,res,'delete'));
 
 router.get('/shifts', async (req, res) => {
   try {
     const today = await databaseToday();
     const from = req.query.from || `${today.slice(0, 7)}-01`;
     const to = req.query.to || new Date(Date.UTC(Number(today.slice(0, 4)), Number(today.slice(5, 7)), 0)).toISOString().slice(0, 10);
-    res.json(await listShifts(from, to, req.user.access_level === 'admin' ? null : req.user.user_id));
+    res.json(await listShifts(from, to, management(req.user.access_level) ? null : req.user.user_id,req.user.access_level==='admin'));
   } catch (error) {
     res.status(error.status || 500).json({ error: error.message });
   }
 });
 
-router.post('/shifts', requireAdmin, async (req, res) => {
+router.post('/shifts', requireManagement, async (req, res) => {
   try {
     const { userId, date, startTime, endTime, notes } = shiftInput(req.body);
     const [result] = await db.execute(
@@ -119,7 +63,7 @@ router.post('/shifts', requireAdmin, async (req, res) => {
   }
 });
 
-router.patch('/shifts/:id', requireAdmin, async (req, res) => {
+router.patch('/shifts/:id', requireManagement, async (req, res) => {
   let connection;
   try {
     const input = shiftInput(req.body);
@@ -150,7 +94,7 @@ router.patch('/shifts/:id', requireAdmin, async (req, res) => {
   } finally { connection?.release(); }
 });
 
-router.delete('/shifts/:id', requireAdmin, async (req, res) => {
+router.delete('/shifts/:id', requireManagement, async (req, res) => {
   let connection;
   try {
     req.params.id = await resolveShiftId(req.params.id);
@@ -170,7 +114,7 @@ router.delete('/shifts/:id', requireAdmin, async (req, res) => {
   } finally { connection?.release(); }
 });
 
-router.post('/recurring-shifts', requireAdmin, async (req, res) => {
+router.post('/recurring-shifts', requireManagement, async (req, res) => {
   try {
     const shift = shiftInput(req.body);
     const days = weekdays(req.body.weekdays);
@@ -182,14 +126,14 @@ router.post('/recurring-shifts', requireAdmin, async (req, res) => {
 
 router.get('/recurring-shifts', async (req, res) => {
   try {
-    const isAdmin = req.user.access_level === 'admin';
+    const isAdmin = management(req.user.access_level);
     const [rows] = await db.execute(`SELECT r.*, u.user_name FROM recurring_shifts r JOIN users u ON u.user_id = r.user_id
-      WHERE (r.stopped_from IS NULL OR r.stopped_from > CURRENT_DATE) ${isAdmin ? '' : 'AND r.user_id = ?'} ORDER BY u.user_name, r.start_time`, isAdmin ? [] : [req.user.user_id]);
+      WHERE (r.stopped_from IS NULL OR r.stopped_from > CURRENT_DATE) ${isAdmin ? '' : 'AND r.user_id = ?'} ${req.user.access_level==='admin'?'':"AND u.access_level <> 'admin'"} ORDER BY u.user_name, r.start_time`, isAdmin ? [] : [req.user.user_id]);
     res.json(rows);
   } catch (error) { res.status(500).json({ error: error.message }); }
 });
 
-router.patch('/recurring-shifts/:id/stop', requireAdmin, async (req, res) => {
+router.patch('/recurring-shifts/:id/stop', requireManagement, async (req, res) => {
   let connection;
   try {
     const from = req.body?.from;

@@ -19,9 +19,10 @@ const server=http.createServer(async(req,res)=>{
  try{
   const path=new URL(req.url,'http://local').pathname;
   if(path.startsWith('/test-modules/')){
-   const name=path.split('/').at(-1);if(!['transport.js','storage.js','model.js','cashPayment.js','axios.js'].includes(name)){res.statusCode=404;return res.end();}
-   let source=await readFile(name==='axios.js'?join(root,'node_modules/axios/dist/esm/axios.js'):join(root,name==='cashPayment.js'?'src/utils':'src/offline',name),'utf8');
+   const name=path.split('/').at(-1);if(!['transport.js','storage.js','model.js','cashPayment.js','accessPolicy.js','axios.js'].includes(name)){res.statusCode=404;return res.end();}
+   let source=await readFile(name==='axios.js'?join(root,'node_modules/axios/dist/esm/axios.js'):join(root,['cashPayment.js','accessPolicy.js'].includes(name)?'src/utils':'src/offline',name),'utf8');
    if(name==='model.js')source=source.replace('../utils/cashPayment.js','./cashPayment.js');
+   source=source.replace('../utils/accessPolicy.js','./accessPolicy.js');
    if(name==='transport.js')source=source.replace("from 'axios'","from './axios.js'");
    res.setHeader('Content-Type','text/javascript');return res.end(source);
   }
@@ -149,6 +150,7 @@ try{
   assert.equal(await evaluate("!!document.querySelector('.employee-payroll')"),false,'salary controls are separate from employee management');
   await evaluate("document.querySelector('.employee-page-nav a[href$=\"/employees/payroll\"]').click()");
   await until(()=>evaluate("!!document.querySelector('.employee-payroll')"),'separate payroll page');
+  assert.equal(await evaluate("!!document.querySelector('.position-salary-form')"),true,'position defaults form');
   await command('Page.navigate',{url:`http://127.0.0.1:${server.address().port}/POS/sales`});
   await until(()=>evaluate("!!document.querySelector('.sales-kpi-grid')"),'sales with payroll');
   assert.equal(await evaluate("!!document.querySelector('.sales-cost-chart')"),false);

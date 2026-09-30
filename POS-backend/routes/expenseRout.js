@@ -1,10 +1,10 @@
 const express = require('express');
 const db = require('../config/database');
-const { requireAdmin } = require('../middleware/auth');
+const { requireManagement } = require('../middleware/auth');
 const { expenseInput, expenseMonth, expenseId } = require('../services/expenseRules');
 const { validDate, recurrenceInput, expandExpenses } = require('../services/expenseRecurrence');
 const router = express.Router();
-router.use(requireAdmin);
+router.use(requireManagement);
 function fail(res, error) {
   if (!error.status) console.error('Expense request failed:', error);
   const missing = ['42P01', 'ER_NO_SUCH_TABLE'].includes(error.code);

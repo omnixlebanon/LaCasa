@@ -7,7 +7,7 @@ import './DiscardExpiredStock.css';
 
 export default function DiscardExpiredStock({ onRemoved }) {
     const { user } = useAuth();
-    const canRemove = user?.accessLevel === 'admin' || /manager|owner|supervisor/i.test(user?.position || '');
+    const canRemove = ['admin','owner','manager'].includes(user?.accessLevel);
     const dialogRef = useRef(null);
     const [batches, setBatches] = useState([]);
     const [phase, setPhase] = useState('');

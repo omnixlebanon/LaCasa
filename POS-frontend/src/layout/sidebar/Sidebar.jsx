@@ -21,7 +21,7 @@ function Sidebar() {
     catch { /* The toggle still works when browser storage is unavailable. */ }
   }, [isPinned]);
   const { user, logout } = useAuth()
-  const isAdmin = user?.accessLevel === 'admin';
+  const isAdmin = ['admin','owner','manager'].includes(user?.accessLevel);
   const handleLogout = async () => {
     try {
       await logout();           
@@ -92,7 +92,7 @@ function Sidebar() {
             <LayoutList />
             <p className='navTxt'>Menu Management</p>
           </NavLink>}
-          {isAdmin && <NavLink to='/employees' title='Employee Management'>
+          {<NavLink to='/employees' title='Employee Management'>
             <User />
             <p className='navTxt'>Employee Management</p>
           </NavLink>}

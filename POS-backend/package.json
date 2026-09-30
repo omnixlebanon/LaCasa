@@ -17,7 +17,8 @@
     "migrate:menu-groups": "node scripts/migrate-menu-groups.js",
     "migrate:menu-order": "node scripts/migrate-menu-order.js",
     "migrate:offline": "node scripts/migrate-offline.js",
-    "migrate:stock-history": "node scripts/migrate-stock-history.js"
+    "migrate:stock-history": "node scripts/migrate-stock-history.js",
+    "migrate:access-roles": "node scripts/migrate-access-roles.js"
   },
   "keywords": [],
   "author": "",

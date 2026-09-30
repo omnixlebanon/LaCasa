@@ -35,3 +35,10 @@
 .employee-page-nav a { display:flex; align-items:center; gap:8px; flex-shrink:0; padding:14px 12px; border-bottom:2px solid transparent; border-radius:8px 8px 0 0; color:var(--font-color); font-size:14px; font-weight:600; text-decoration:none; }
 .employee-page-nav a.active { color:var(--main-color); background:var(--main-soft); border-bottom-color:var(--main-color); }
 .employee-page-nav a:hover { color:var(--main-color); background:var(--hover-bg); }
+
+.position-salaries { margin-bottom:24px; }.position-salaries > p { margin:10px 0 18px; color:var(--font-color); line-height:1.5; }
+.position-salary-form { display:flex; flex-wrap:wrap; align-items:end; gap:12px; }.position-salary-form label { display:flex; flex:1; min-width:170px; flex-direction:column; gap:7px; font-size:14px; }.position-salary-form input { width:100%; min-height:44px; padding:10px; border:1px solid var(--border-color); border-radius:9px; font-size:16px; }
+.position-salary-list { margin-top:20px; }.position-salary-list article { display:flex; align-items:center; gap:14px; padding:14px 0; border-bottom:1px solid var(--border-color); }.position-salary-list article > div { flex:1; min-width:0; overflow-wrap:anywhere; }.position-salary-list small { display:block; margin-top:5px; color:var(--font-color); }
+@media(max-width:480px){.position-salary-form label { flex-basis:100%; }.position-salary-form button { width:100%; }}
+
+.access-badge.owner { background:var(--main-soft);color:var(--main-color); }.access-badge.manager { background:#fff3d9;color:#876319; }

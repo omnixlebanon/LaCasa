@@ -7,7 +7,7 @@ async function databaseToday(connection = db) {
   return row.today;
 }
 
-async function listShifts(from, to, userId = null) {
+async function listShifts(from, to, userId = null, showAdmin = true) {
   dateRange(from, to);
   const connection = await db.getConnection();
   try {
@@ -32,7 +32,7 @@ async function listShifts(from, to, userId = null) {
       s.recurrence_id, r.weekdays, r.month_days, r.starts_on, r.stopped_from, u.user_name, u.user_position
       FROM shifts s JOIN users u ON u.user_id = s.user_id
       LEFT JOIN recurring_shifts r ON r.recurrence_id = s.recurrence_id
-      WHERE s.shift_date BETWEEN ? AND ? AND s.cancelled_at IS NULL
+      WHERE s.shift_date BETWEEN ? AND ? AND s.cancelled_at IS NULL ${showAdmin?'':"AND u.access_level <> 'admin'"}
       ${userId === null ? '' : 'AND s.user_id = ?'} ORDER BY s.shift_date, s.start_time, s.shift_id`,
     userId === null ? [from, to] : [from, to, userId]);
     await connection.commit();

@@ -22,17 +22,8 @@ const requireAdmin = (req, res, next) => {
   next();
 };
 
-const requireManager = async (req, res, next) => {
-  try {
-    const [rows] = await db.execute('SELECT user_position, access_level FROM users WHERE user_id = ?', [req.user?.user_id]);
-    const user = rows[0];
-    if (!user || (user.access_level !== 'admin' && !/manager|owner|supervisor/i.test(user.user_position))) {
-      return res.status(403).json({ success: false, message: 'Manager access required' });
-    }
-    next();
-  } catch (error) {
-    next(error);
-  }
+const requireManager = (req,res,next) => {
+ if(!require('../services/accessPolicy').management(req.user?.access_level))return res.status(403).json({error:'Manager access required.'});
+ next();
 };
-
-module.exports = { verifyToken, requireAdmin, requireManager };
+module.exports = { verifyToken, requireAdmin, requireManager, requireManagement:requireManager };

@@ -55,16 +55,16 @@ const router = createBrowserRouter([
         element: <Tables />
       }, 
       {
-        element: <ProtectedRoute allowedAccess={['admin']} />,
+        element: <ProtectedRoute allowedAccess={['admin','owner','manager']} />,
         children: [
           { path: "sales", element: <Sales /> },
           { path: "expenses", element: <Navigate to="/sales" replace /> },
           { path: "product_management", element: <ProductManag /> },
           { path: "menu_management", element: <MenuManag /> },
-          { path: "employees", element: <EmployeeManagement /> },
           { path: "employees/payroll", element: <PayrollPage /> }
         ]
       },
+      { path: "employees", element: <EmployeeManagement /> },
       {
         path: "history",
         element: <OrderHistory />

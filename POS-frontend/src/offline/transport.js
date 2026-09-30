@@ -1,3 +1,4 @@
+import {management} from '../utils/accessPolicy.js';
 import axios from 'axios';
 import { accountId, load, change, announceSnapshot } from './storage.js';
 import { keyOf, readLocal, applyLocal, remap } from './model.js';
@@ -69,8 +70,9 @@ async function downloadSnapshot(owner) {
   const to=new Date(Date.UTC(year,offset+1,0)).toISOString().slice(0,10);
   urls.push(`/api/shifts?from=${from}&to=${to}`);
  }
- if(user.accessLevel==='admin')urls.push('/api/employees','/api/employees/payroll-costs',`/api/expenses?through=${year+1}-12-31`,`/api/employees/payroll?month=${month}`);
- if(user.accessLevel==='admin'||/manager|owner|supervisor/i.test(user.position||''))urls.push('/api/stock/expired-batches');
+ urls.push('/api/employees');
+ if(management(user.accessLevel))urls.push('/api/employees/position-salaries','/api/employees/payroll-costs',`/api/expenses?through=${year+1}-12-31`,`/api/employees/payroll?month=${month}`);
+ if(management(user.accessLevel))urls.push('/api/stock/expired-batches');
  const previous=await load(owner);
  urls.push(...Object.keys(previous.cache).filter(key=>/^\/api\/(shifts|expenses|employees\/payroll)\?/.test(key)));
  for(let attempt=0;attempt<3;attempt++){
@@ -272,7 +274,7 @@ async function offlineAdapterImpl(config){
   const saved=[...state.queue,...state.archive].find(existing=>existing.id===op.id);
   if(saved)return saved.serverResponse||{success:true,offline:true};
   const user=JSON.parse(localStorage.getItem('auth_user'));
-  if(user.accessLevel!=='admin'&&/^\/api\/(products|employees|expenses|shifts|recurring-shifts)/.test(url))throw Error('Administrator access required.');
+  if(!management(user.accessLevel)&&/^\/api\/(products|employees|expenses|shifts|recurring-shifts)/.test(url)&&!(url==='/api/employees'&&method==='post'))throw Error('Manager access required.');
   op.data=remap(op.data,state.idMap);op.url=op.url.split('/').map(segment=>encodeURIComponent(remap(decodeURIComponent(segment),state.idMap,'shift_id'))).join('/');
   const result=applyLocal(state,{...op,url:decodeURI(op.url)});state.queue.push(op);return result;
  },owner);}catch(error){throw httpError('Could not save on this device: '+(error?.message||'Storage is unavailable.'));}

@@ -391,3 +391,26 @@ test('WHISH checkout persists the payment type and syncs without a payment API',
  };
  navigator.onLine=true;await syncPending();assert.equal(checkoutCount,1);assert.equal((await load()).queue.length,0);
 });
+
+test('offline account roles enforce owner protection and role assignment',async()=>{
+ await change(state=>{state.cache['/api/employees'].data=[{user_id:9,access_level:'owner',user_name:'Owner'},{user_id:10,access_level:'admin',user_name:'Admin'},{user_id:11,access_level:'employee',user_name:'Employee'}];});
+ const auth=JSON.parse(localStorage.getItem('auth_user'));const role=value=>localStorage.setItem('auth_user',JSON.stringify({...auth,accessLevel:value}));
+ role('manager');
+ assert.equal(readLocal(await load(),'/api/employees').some(r=>r.access_level==='admin'),false);
+ await assert.rejects(write('/api/employees/9',{name:'Changed'},'patch'),/cannot change/);
+ await assert.rejects(write('/api/employees',{name:'New',accessLevel:'manager'}),/Only the Owner/);
+ role('owner');await write('/api/employees',{name:'New manager',accessLevel:'manager'});
+ role('admin');await assert.rejects(write('/api/employees',{name:'Second owner',accessLevel:'owner'}),/Only one Owner/);
+ role('employee');await write('/api/employees',{name:'New employee',accessLevel:'employee'});assert.deepEqual(readLocal(await load(),'/api/employees'),[]);
+ await assert.rejects(write('/api/employees',{name:'Admin',accessLevel:'admin'}),/cannot assign/);
+});
+test('position defaults update eligible offline payroll while preserving overrides and paid amounts',async()=>{
+ await change(state=>{
+  state.cache['/api/employees/payroll?month=2026-09']={data:[{userId:7,position:'Cashier',month:'2026-09',salarySource:'position',baseSalary:500,deductionsTotal:0,amountPaid:500,paymentStatus:'paid'},{userId:8,position:'Cashier',month:'2026-09',salarySource:'individual',baseSalary:700}]};
+  state.cache['/api/employees/payroll?month=2026-08']={data:[{userId:7,position:'Cashier',month:'2026-08',salarySource:'position',baseSalary:500}]};
+ });
+ await write('/api/employees/position-salaries',{position:'Cashier',month:'2026-09',amount:600},'put');
+ const state=await load();const rows=state.cache['/api/employees/payroll?month=2026-09'].data;
+ assert.equal(rows[0].baseSalary,600);assert.equal(rows[0].amountPaid,500);assert.equal(rows[0].paymentStatus,'adjustment_required');assert.equal(rows[1].baseSalary,700);
+ assert.equal(state.cache['/api/employees/payroll?month=2026-08'].data[0].baseSalary,500);
+});

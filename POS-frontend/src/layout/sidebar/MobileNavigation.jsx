@@ -13,15 +13,15 @@ export default function MobileNavigation() {
   const links = [
     { to: '/', label: 'POS', Icon: ShoppingCart },
     { to: '/tables', label: 'Tables', Icon: LayoutGrid },
-    ...(user?.accessLevel === 'admin' ? [{ to: '/sales', label: 'Sales', Icon: LayoutDashboard }] : []),
+    ...(['admin','owner','manager'].includes(user?.accessLevel) ? [{ to: '/sales', label: 'Sales', Icon: LayoutDashboard }] : []),
     { to: '/history', label: 'History', Icon: History },
     { to: '/stock', label: 'Stock', Icon: Package },
     { to: '/shifts', label: 'Shifts', Icon: CalendarDays },
-    ...(user?.accessLevel === 'admin' ? [
+    ...(['admin','owner','manager'].includes(user?.accessLevel) ? [
       { to: '/product_management', label: 'Products', Icon: ClipboardList },
       { to: '/menu_management', label: 'Menu management', Icon: LayoutList },
-      { to: '/employees', label: 'Employees', Icon: Users },
     ] : []),
+    { to: '/employees', label: 'Employees', Icon: Users },
   ];
   const primary = links.slice(0, 4);
   const handleLogout = async () => {

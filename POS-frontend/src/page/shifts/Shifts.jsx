@@ -15,7 +15,7 @@ const timeLabel = value => String(value || '').slice(0, 5);
 export default function Shifts() {
     const isMobile = useMobile();
   const { user } = useAuth();
-  const isAdmin = user?.accessLevel === 'admin';
+  const isAdmin = ['admin','owner','manager'].includes(user?.accessLevel);
   const canEdit = isAdmin;
   const currentUserId = user?.id ?? user?.user_id;
   const [month, setMonth] = useState(() => new Date(new Date().getFullYear(), new Date().getMonth(), 1));

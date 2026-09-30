@@ -48,7 +48,7 @@ function SalaryCard({ payroll, reload, disabled }) {
     <header className="payroll-card-header"><div><h4>{payroll.name}</h4><p>{payroll.position}</p></div><span className={`payroll-status ${payroll.paymentStatus}`}>{statusLabels[payroll.paymentStatus]}</span></header>
     {error && <p className="employee-error" role="alert">{error}</p>}
     <div className="payroll-metrics">
-      <div><span>Monthly salary</span><strong>{payroll.baseSalary === null ? 'Not set' : formatPrice(payroll.baseSalary)}</strong><button className="payroll-edit" disabled={locked} onClick={() => { setSalary(payroll.baseSalary ?? ''); setEditing(!editing); }}><Pencil />{payroll.baseSalary === null ? 'Set salary' : 'Edit salary'}</button></div>
+      <div><span>Monthly salary</span><small>{payroll.salarySource==='position'?'Position default':payroll.salarySource==='individual'?'Individual salary':'No salary set'}</small><strong>{payroll.baseSalary === null ? 'Not set' : formatPrice(payroll.baseSalary)}</strong><button className="payroll-edit" disabled={locked} onClick={() => { setSalary(payroll.baseSalary ?? ''); setEditing(!editing); }}><Pencil />{payroll.baseSalary === null ? 'Set salary' : 'Edit salary'}</button></div>
       <div><span>Rejected refunds</span><strong className={payroll.deductionsTotal > 0 ? 'payroll-deduction' : ''}>{payroll.deductionsTotal > 0 ? '−' : ''}{formatPrice(payroll.deductionsTotal)}</strong><small>{payroll.deductions.length} {payroll.deductions.length === 1 ? 'order' : 'orders'} deducted</small></div>
       <div><span>Net salary</span><strong className="payroll-net">{payroll.netSalary === null ? '—' : formatPrice(payroll.netSalary)}</strong><small>Salary after refund deductions</small></div>
     </div>
