@@ -791,3 +791,5 @@
 #sales-dashboard .sales-cost-legend small { display:block; color:var(--font-color); margin-top:3px; }
 #sales-dashboard .sales-cost-empty { padding:36px 12px; text-align:center; color:var(--font-color); }
 @media(max-width:640px){#sales-dashboard .sales-cost-chart-body { grid-template-columns:minmax(0,1fr); gap:0; }#sales-dashboard .sales-cost-canvas { height:240px; }}
+
+#sales-dashboard .sales-cost-chart-body { grid-template-columns:minmax(0,1fr); gap:0; }

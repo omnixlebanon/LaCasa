@@ -1,8 +1,9 @@
+import CostPieChart from './CostPieChart.jsx';
 import { useCurrency } from '../../../global.jsx';
 import React, { useState } from "react";
 import { formatNumber, PRODUCT_COLORS } from "../utils/analytics";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
-export const PieChartsSection = ({ productMetrics, categorySummaries }) => {
+export const PieChartsSection = ({ productMetrics, categorySummaries, ingredientCost, expenses, payrollCost, missingCosts }) => {
   const { formatPrice: formatCurrency, currencyLabel } = useCurrency();
 	const [activeTab, setActiveTab] = useState("units");
 	// Filter out zero values
@@ -38,7 +39,7 @@ export const PieChartsSection = ({ productMetrics, categorySummaries }) => {
         <div>
           <div className="flex items-center space-x-2">
             
-            <h2 className="text-base font-bold text-slate-900">Product Share Pie Charts</h2>
+            <h2 className="text-base font-bold text-slate-900">Sales &amp; Cost Breakdown</h2>
           </div>
         </div>
 
@@ -56,12 +57,13 @@ export const PieChartsSection = ({ productMetrics, categorySummaries }) => {
             
             <span>Categories</span>
           </button>
+          <button onClick={() => setActiveTab("costs")} aria-pressed={activeTab === "costs"} className={`sales-chart-tab${activeTab === "costs" ? " is-active" : ""}`}><span>Total Cost by Expense</span></button>
         </div>
       </div>
 
       {activeTab === 'profit' && productMetrics.some(m => m.missingCost) && <p role="status">Profit share is unavailable because historical checkout costs are missing.</p>}
       {	/* Pie Chart */}
-      <div className="w-full">
+      {activeTab === "costs" ? <CostPieChart ingredientCost={ingredientCost} expenses={expenses} payrollCost={payrollCost} missingCosts={missingCosts} /> : <div className="w-full">
         {	/* Chart Canvas */}
         <div className="sales-pie-canvas h-72 w-full flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
@@ -111,7 +113,7 @@ export const PieChartsSection = ({ productMetrics, categorySummaries }) => {
           </ResponsiveContainer>
         </div>
 
-      </div>
+      </div>}
     </div>;
 };
 
