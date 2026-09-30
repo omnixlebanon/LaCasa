@@ -181,7 +181,7 @@ export default function Sales() {
           <LineChartsSection missingCosts={missingCosts} key={products.map((p) => p.id).join(",")} data={lineChartData} products={products} timeframe={timeframe} metricView={metricView} onMetricViewChange={setMetricView} />
 
           {	/* Pie & Donut Charts */}
-          <PieChartsSection productMetrics={productMetrics} categorySummaries={categorySummaries} ingredientCost={totalCost} expenses={filteredExpenses} payrollCost={payrollCost} missingCosts={missingCosts} />
+          <PieChartsSection transactions={filteredTransactions} productMetrics={productMetrics} categorySummaries={categorySummaries} ingredientCost={totalCost} expenses={filteredExpenses} payrollCost={payrollCost} missingCosts={missingCosts} />
         </div>
 
         <ProductRankingTable metrics={productMetrics} metricView={metricView} />

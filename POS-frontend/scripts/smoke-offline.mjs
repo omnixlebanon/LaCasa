@@ -98,7 +98,7 @@ try{
  await until(()=>evaluate("!!document.querySelector('.cash-payment-dialog[open]')"),'reopened payment');
 
  await evaluate("document.querySelectorAll('.payment-methods button')[1].click()");
- assert.equal(await evaluate("document.querySelector('.confirm-cash-payment').disabled"),true,'WHISH cannot submit');
+ assert.equal(await evaluate("document.querySelector('.confirm-cash-payment').disabled"),false,'WHISH can be recorded without cash details');
  await evaluate("document.querySelectorAll('.payment-methods button')[0].click()");
  await evaluate("(() => {const input=document.querySelector('#cash-currency');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'LBP');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
  await evaluate("(() => {const input=document.querySelector('#cash-received');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'1000000');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
@@ -156,6 +156,28 @@ try{
   await until(()=>evaluate("!!document.querySelector('.sales-cost-chart')"),'cost pie tab');
   assert.match(await evaluate("document.querySelector('.sales-cost-chart').textContent"),/Total Cost by Expense/);
   assert.equal(await evaluate("Array.from(document.querySelectorAll('.sales-alert-type')).some(el=>['Payroll Paid','Total Expenses','Saved Order Costs','Result After Expenses'].includes(el.textContent))"),false);
+  await evaluate("Array.from(document.querySelectorAll('.sales-chart-tab')).find(el=>el.textContent.trim()==='Cash / WHISH').click()");
+  await until(()=>evaluate("!!document.querySelector('.sales-payment-chart')"),'payment pie');
+  assert.match(await evaluate("document.querySelector('.sales-payment-chart').textContent"),/Cash/);
+  await command('Page.navigate',{url:`http://127.0.0.1:${server.address().port}/POS/`});
+  await until(()=>evaluate("!!document.querySelector('.product-card-btn')"),'new WHISH order');
+  await evaluate("document.querySelector('.mobile-order-context button').click()");
+  await until(async()=>(await state()).drafts.orders.length===1,'WHISH draft');
+  await command('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
+  await evaluate("document.querySelector('.product-card-btn').click()");
+  await until(async()=>(await state()).drafts.orders[0]?.items.length===1,'WHISH item');
+  await evaluate("document.querySelectorAll('.mobile-order-tabs button')[1].click()");
+  await evaluate("document.querySelector('.check-in-btn').click()");
+  await until(()=>evaluate("!!document.querySelector('.cash-payment-dialog[open]')"),'WHISH payment dialog');
+  await evaluate("document.querySelectorAll('.payment-methods button')[1].click()");
+  await evaluate("document.querySelector('.confirm-cash-payment').click()");
+  await until(async()=>(await state()).drafts.orders.length===0,'WHISH saved offline');
+  await command('Page.reload');await until(()=>evaluate("!!document.querySelector('.product-card-btn')"),'WHISH offline reload');
+  assert.equal((await state()).cache['/api/history'].data.at(-1).details.payment.method,'whish');
+  await command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
+  await until(async()=>(await state()).queue.length===0,'WHISH sync');
+  assert.equal(checkouts,2);assert.equal(history.at(-1).details.payment.method,'whish');
+
  }
  console.log('PASS: mobile layout, offline reopening, durable cart, shared open order, offline checkout, reconnect and one sale only.');
 }catch(error){await diagnose?.().catch(()=>{});throw error;}

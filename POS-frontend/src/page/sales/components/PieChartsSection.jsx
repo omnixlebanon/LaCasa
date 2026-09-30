@@ -1,10 +1,11 @@
+import PaymentPieChart from './PaymentPieChart.jsx';
 import CostPieChart from './CostPieChart.jsx';
 import { useCurrency } from '../../../global.jsx';
 import React, { useState } from "react";
 import { formatNumber, PRODUCT_COLORS } from "../utils/analytics";
 import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
-export const PieChartsSection = ({ productMetrics, categorySummaries, ingredientCost, expenses, payrollCost, missingCosts }) => {
-  const { formatPrice: formatCurrency, currencyLabel } = useCurrency();
+export const PieChartsSection = ({ productMetrics, categorySummaries, ingredientCost, expenses, payrollCost, missingCosts, transactions }) => {
+  const { formatPrice: formatCurrency } = useCurrency();
 	const [activeTab, setActiveTab] = useState("units");
 	// Filter out zero values
 	const activeProducts = productMetrics.filter((m) => m.totalRevenue > 0);
@@ -17,15 +18,6 @@ export const PieChartsSection = ({ productMetrics, categorySummaries, ingredient
 		isHighlight: m.isMostSold,
 		margin: m.profitMargin
 	}));
-	// 2. Profit Share Pie Data (For Most Profitable Product breakdown)
-	const profitPieData = (productMetrics.some(m => m.missingCost) ? [] : activeProducts).map((m, idx) => ({
-		name: m.product.name,
-		value: m.totalProfit,
-		rawCurrency: m.totalProfit,
-		color: PRODUCT_COLORS[idx % PRODUCT_COLORS.length],
-		isHighlight: m.isMostProfitable,
-		margin: m.profitMargin
-	})).filter((entry) => entry.value > 0);
 	// 3. Category Share Donut Data
 	const categoryPieData = categorySummaries.map((c) => ({
 		name: c.category,
@@ -49,21 +41,20 @@ export const PieChartsSection = ({ productMetrics, categorySummaries, ingredient
             
             <span>Most Sold (Units)</span>
           </button>
-          <button onClick={() => setActiveTab("profit")} className={`sales-chart-tab${activeTab === "profit" ? " is-active" : ""}`}>
+          <button onClick={() => setActiveTab("payments")} className={`sales-chart-tab${activeTab === "payments" ? " is-active" : ""}`}>
             
-            <span>Most Profitable ({currencyLabel})</span>
+            <span>Cash / WHISH</span>
           </button>
           <button onClick={() => setActiveTab("categories")} className={`sales-chart-tab${activeTab === "categories" ? " is-active" : ""}`}>
             
             <span>Categories</span>
           </button>
-          <button onClick={() => setActiveTab("costs")} aria-pressed={activeTab === "costs"} className={`sales-chart-tab${activeTab === "costs" ? " is-active" : ""}`}><span>Total Cost by Expense</span></button>
+          <button onClick={() => setActiveTab("costs")} aria-pressed={activeTab === "costs"} className={`sales-chart-tab${activeTab === "payments" ? <PaymentPieChart transactions={transactions} /> : activeTab === "costs" ? " is-active" : ""}`}><span>Total Cost by Expense</span></button>
         </div>
       </div>
 
-      {activeTab === 'profit' && productMetrics.some(m => m.missingCost) && <p role="status">Profit share is unavailable because historical checkout costs are missing.</p>}
       {	/* Pie Chart */}
-      {activeTab === "costs" ? <CostPieChart ingredientCost={ingredientCost} expenses={expenses} payrollCost={payrollCost} missingCosts={missingCosts} /> : <div className="w-full">
+      {activeTab === "payments" ? <PaymentPieChart transactions={transactions} /> : activeTab === "costs" ? <CostPieChart ingredientCost={ingredientCost} expenses={expenses} payrollCost={payrollCost} missingCosts={missingCosts} /> : <div className="w-full">
         {	/* Chart Canvas */}
         <div className="sales-pie-canvas h-72 w-full flex items-center justify-center">
           <ResponsiveContainer width="100%" height="100%">
@@ -77,20 +68,6 @@ export const PieChartsSection = ({ productMetrics, categorySummaries, ingredient
 		borderRadius: "12px",
 		fontSize: "12px"
 	}} formatter={(value, name, item) => [`${formatNumber(Number(value))} units (${formatCurrency(item.payload.rawCurrency)})`, item.payload.name]} />
-                <Legend verticalAlign="bottom" height={36} wrapperStyle={{
-		fontSize: "11px",
-		paddingTop: "10px"
-	}} />
-              </PieChart> : activeTab === "profit" ? <PieChart>
-                <Pie data={profitPieData} cx="50%" cy="50%" outerRadius={100} innerRadius={50} paddingAngle={3} dataKey="value" label={({ percent }) => percent > .05 ? `${(percent * 100).toFixed(0)}%` : ""}>
-                  {profitPieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} stroke={entry.isHighlight ? "#34485E" : "#ffffff"} strokeWidth={entry.isHighlight ? 3 : 1} />)}
-                </Pie>
-                <Tooltip contentStyle={{
-		backgroundColor: "#ffffff",
-		borderColor: "#dfe7e2",
-		borderRadius: "12px",
-		fontSize: "12px"
-	}} formatter={(value, name, item) => [`${formatCurrency(Number(value))} estimated gross profit (${item.payload.margin}% margin)`, item.payload.name]} />
                 <Legend verticalAlign="bottom" height={36} wrapperStyle={{
 		fontSize: "11px",
 		paddingTop: "10px"

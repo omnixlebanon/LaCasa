@@ -249,7 +249,7 @@ function Order() {
         if(!current||JSON.stringify(current)!==paymentOrder.order){setPaymentError('This order changed. Cancel and reopen payment to use the latest total.');return;}
         checkoutLock.current=true;setIsProcessing(true);setPaymentError('');
         try{
-            await api.post('/api/checkout',{...paymentOrder.payload,details:{...paymentOrder.payload.details,payment_method:'Cash',payment}});
+            await api.post('/api/checkout',{...paymentOrder.payload,details:{...paymentOrder.payload.details,payment_method:payment.method==='whish'?'WHISH Money':'Cash',payment}});
             setPaymentOrder(null);
             await removeOrder(paymentOrder.id);
         }catch(error){setPaymentError(error.response?.data?.error||error.message||'Could not save payment.');}

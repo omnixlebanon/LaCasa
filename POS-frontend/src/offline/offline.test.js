@@ -378,3 +378,16 @@ test('paid payroll updates sales costs offline once, preserves paid amount after
  assert.equal((await load()).cache['/api/employees/payroll-costs'].data.length,0);
  await assert.rejects(write('/api/employees/7/payroll-payment',{month:'2026-08',status:'paid',expectedAmount:550},'put'),/Download this salary month/);
 });
+
+test('WHISH checkout persists the payment type and syncs without a payment API',async()=>{
+ await write('/api/checkout',{totalAmount:5,details:{items:[{product_id:1,qty:1,price:5}],payment:{method:'whish'}}});
+ let state=await load();const payment=state.cache['/api/history'].data[0].details;
+ assert.equal(payment.payment_method,'WHISH Money');assert.deepEqual(payment.payment,{method:'whish',total_usd:5});
+ assert.equal(state.queue.length,1);assert.equal(state.queue[0].data.details.payment.method,'whish');
+ let checkoutCount=0;
+ network.defaults.adapter=async config=>{
+  if(config.method==='post'){assert.equal(config.url,'/api/checkout');const data=JSON.parse(config.data);assert.equal(data.details.payment.method,'whish');checkoutCount++;return {data:{success:true,orderId:'whish-sale'},status:201,headers:headers(11),config};}
+  return {data:[],status:200,headers:headers(11),config};
+ };
+ navigator.onLine=true;await syncPending();assert.equal(checkoutCount,1);assert.equal((await load()).queue.length,0);
+});

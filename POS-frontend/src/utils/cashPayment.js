@@ -15,6 +15,12 @@ export function calculateCashPayment(total,rate,currency,received){
 export function normalizePaymentDetails(total, details) {
  if (!Object.prototype.hasOwnProperty.call(details, 'payment')) return details; // Older queued sales have no payment snapshot.
  const payment = details.payment;
+ if(payment?.method==='whish'){
+  const cents=Math.round(Number(total)*100);
+  if(!Number.isSafeInteger(cents)||cents<=0)throw Error('The order total is invalid.');
+  return {...details,payment_method:'WHISH Money',payment:{method:'whish',total_usd:cents/100}};
+ }
+
  if (!payment || payment.method !== 'cash' || typeof payment.amount_received !== 'number' || typeof payment.exchange_rate !== 'number') throw Error('Invalid cash payment.');
  return {...details, payment_method: 'Cash', payment: calculateCashPayment(total, payment.exchange_rate, payment.currency, payment.amount_received)};
 }

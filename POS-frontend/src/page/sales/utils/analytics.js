@@ -86,7 +86,7 @@ export function normalizeSales(history, summary) {
    const snapshot = details.cost_snapshot_version === 1 && typeof item.unit_cost === 'number' && Number.isFinite(item.unit_cost) && item.unit_cost >= 0 && typeof item.total_cost === 'number' && Number.isFinite(item.total_cost) && item.total_cost >= 0;
    const unitCost = snapshot ? item.unit_cost : null;
    const revenue=quantity*price*revenueFactor, cost=snapshot ? item.total_cost : null;
-   transactions.push({id:String(order.order_id)+'-'+index,orderId:String(order.order_id),productId:id,productName:item.product_name||product.name,category:product.category,quantity,unitPrice:price,unitCost,totalRevenue:revenue,totalCost:cost,totalProfit:cost === null ? null : revenue-cost,costSource:snapshot ? item.cost_source : 'unavailable',timestamp,customerRegion:details.channel||'In store'});
+   transactions.push({id:String(order.order_id)+'-'+index,orderId:String(order.order_id),paymentMethod:details?.payment?.method||details?.payment_method||order.payment_method||'',productId:id,productName:item.product_name||product.name,category:product.category,quantity,unitPrice:price,unitCost,totalRevenue:revenue,totalCost:cost,totalProfit:cost === null ? null : revenue-cost,costSource:snapshot ? item.cost_source : 'unavailable',timestamp,customerRegion:details.channel||'In store'});
   });
  }
  transactions.sort((a,b)=>new Date(b.timestamp)-new Date(a.timestamp));
@@ -106,4 +106,15 @@ export function getCostCategories(ingredientCost, expenses, payrollCost) {
  add('Payroll',payrollCost);
  const names=['Ingredients','Utilities','Rent','Payroll','Furniture','Equipment','Maintenance','Other'];
  return names.filter(name=>totals.has(name)).map(name=>({name,value:totals.get(name)/100,color:PRODUCT_COLORS[names.indexOf(name)]}));
+}
+
+export function getPaymentBreakdown(transactions){
+ const totals=new Map();
+ for(const tx of transactions){
+  const method=String(tx.paymentMethod||'').trim().toLowerCase();
+  const name=method==='cash'?'Cash':['whish','wish','whish money','wish money'].includes(method)?'WHISH Money':'Unrecorded / other';
+  const amount=Number(tx.totalRevenue);
+  if(Number.isFinite(amount)&&amount>0)totals.set(name,(totals.get(name)||0)+amount);
+ }
+ return ['Cash','WHISH Money','Unrecorded / other'].filter(name=>totals.has(name)).map((name)=>({name,value:Math.round(totals.get(name)*100)/100,color:{Cash:'#46A28F','WHISH Money':'#9278BD','Unrecorded / other':'#D5A34B'}[name]})).filter(row=>row.value>0);
 }

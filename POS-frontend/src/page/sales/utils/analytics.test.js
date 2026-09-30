@@ -48,3 +48,12 @@ test('cost chart groups utilities and includes ingredients and payroll once',asy
  assert.equal(rows.reduce((sum,row)=>sum+Math.round(row.value*100),0),21030);
  assert.deepEqual(getCostCategories(0,[],0),[]);
 });
+
+test('payment breakdown respects discounts, excludes refunds, and keeps unknown methods separate',async()=>{
+ const {normalizeSales,getPaymentBreakdown}=await import('./analytics.js');
+ const sale=(id,method,status='completed')=>({order_id:id,order_date:'2026-09-30T12:00:00',status,details:{payment:{method},discount:2,items:[{product_id:1,qty:1,price:5},{product_id:2,qty:1,price:5}]}});
+ const {transactions}=normalizeSales([sale('cash','cash'),sale('whish','whish'),sale('old',undefined),sale('refunded','whish','refunded')],[]);
+ const rows=getPaymentBreakdown(transactions);
+ assert.deepEqual(rows.map(row=>[row.name,row.value]),[['Cash',8],['WHISH Money',8],['Unrecorded / other',8]]);
+ assert.deepEqual(getPaymentBreakdown([]),[]);
+});

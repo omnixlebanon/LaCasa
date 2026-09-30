@@ -68,7 +68,7 @@ export default function Expenses({ onChanged }) {
     <div className="head-area"><div className="PageTitle"><Receipt /><h2>Business Expenses</h2></div>
       <div className="expenses-controls"><label>Expense records month<input aria-label="Expense month" type="month" min="2000-01" max="9998-12" value={month} disabled={busy || loading} onChange={e => { if (e.target.value) setMonth(e.target.value); }} /></label><button type="button" disabled={busy || loading} onClick={() => load()}><RefreshCw size={18} /> Refresh</button></div>
     </div>
-    <p className="expenses-hint">Manage bills and purchases below. Total Expenses at the top follows the Sales date filter; this list shows the selected expense records month. Sales deducts these bills on their scheduled dates. Repeating bills appear automatically, including in future months; they are scheduled expenses, not payment confirmations.</p>
+
     {message && <p className="expenses-message" role="status">{message}</p>}
     {error && <p className="error-message" role="alert">{error}</p>}
     <form className="expenses-form" onSubmit={save}>
