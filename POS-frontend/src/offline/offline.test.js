@@ -334,3 +334,15 @@ test('sync progress tracks completed requests and stops on failure',async()=>{
  };
  navigator.onLine=true;await syncPending();assert.equal(transport.syncProgress.active,false);assert.equal(transport.syncProgress.done,1);assert.equal((await load()).queue.length,1);
 });
+
+test('cash payment survives encrypted offline storage and rejects insufficient cash',async()=>{
+ const payload={totalAmount:5,customerName:'Cash test',details:{items:[{product_id:1,qty:1,price:5}],payment:{method:'cash',currency:'USD',amount_received:12.3,exchange_rate:89500}}};
+ await offlineAdapter({url:'/api/checkout',method:'post',data:payload});
+ const saved=await load();
+ assert.equal(saved.queue[0].data.details.payment.change_usd,5);
+ assert.equal(saved.queue[0].data.details.payment.change_lbp,205850);
+ assert.deepEqual(saved.cache['/api/history'].data[0].details.payment,saved.queue[0].data.details.payment);
+ payload.details.payment.amount_received=1;
+ await assert.rejects(()=>offlineAdapter({url:'/api/checkout',method:'post',data:payload}),/less than/);
+ assert.equal((await load()).queue.length,1);
+});

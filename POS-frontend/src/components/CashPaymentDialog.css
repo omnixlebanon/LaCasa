@@ -1,0 +1,8 @@
+.cash-payment-dialog {margin:auto;width:min(460px,calc(100vw - 24px));max-height:calc(100dvh - 24px);overflow:auto;padding:24px;border:0;border-radius:18px;color:var(--text-color);box-shadow:0 20px 60px #0003;}
+.cash-payment-dialog::backdrop {background:#10271b99;}
+.cash-payment-dialog header,.cash-payment-dialog footer {display:flex;align-items:center;justify-content:space-between;gap:12px;}
+.cash-payment-dialog h2 {font-size:22px;}.cash-payment-dialog button {min-height:44px;padding:10px 14px;border:1px solid var(--border-color);border-radius:9px;background:white;cursor:pointer;}
+.cash-payment-dialog button:disabled {opacity:.5;cursor:default;}.payment-total {display:flex;flex-direction:column;gap:7px;padding:18px 0;}.payment-total strong {font-size:30px;}.payment-total small {color:var(--font-color);}
+.payment-methods {display:flex;gap:10px;margin-bottom:18px;}.payment-methods button {flex:1;display:flex;justify-content:center;align-items:center;gap:8px;}.payment-methods button[aria-pressed=true] {border-color:var(--main-color);background:var(--main-soft);color:var(--main-color);}
+.cash-payment-dialog label {display:block;margin:12px 0 6px;}.cash-payment-dialog input,.cash-payment-dialog select {width:100%;min-height:46px;padding:10px;border:1px solid var(--border-color);border-radius:9px;font-size:16px;}
+.payment-change {margin-top:16px;padding:16px;border-radius:12px;background:var(--main-soft);}.payment-change p {margin:8px 0;}.payment-change small {display:block;line-height:1.5;}.payment-error {color:var(--danger-color);margin:12px 0;}.cash-payment-dialog footer {justify-content:flex-end;margin-top:20px;}.cash-payment-dialog .confirm-cash-payment {background:var(--main-color);color:white;}

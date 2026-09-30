@@ -1,3 +1,4 @@
+import CashPaymentDialog from '../../components/CashPaymentDialog.jsx';
 import useDrafts, { editDrafts } from '../../offline/useDrafts.js';
 import LoadingState from '../../components/LoadingState.jsx';
 import './Order.css';
@@ -21,6 +22,8 @@ function Order() {
 
     const [optionsOpen, setOptionsOpen] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
+    const [paymentOrder,setPaymentOrder]=useState(null),[paymentError,setPaymentError]=useState('');
+    const checkoutLock=useRef(false);
     const [optionOpen, setOptionOpen] = useState("");
     const { formatPrice, rate } = useCurrency();
 
@@ -214,8 +217,6 @@ function Order() {
             alert("Cannot check in an empty order.");
             return;
         }
-        setIsProcessing(true);
-
         const payload = {
             totalAmount: parseFloat(totalPrice),
             customerName: activeOrder.label,
@@ -239,23 +240,27 @@ function Order() {
             }
         };
 
-        try {
-            await api.post('/api/checkout', payload);
-            await removeOrder(activeOrder.id);
-
-        } catch (error) {
-            console.error("Checkout system error:", error);
-            const errorMessage = error.response?.data?.error || error.message || "Server transaction failed.";
-            alert(`Error: ${errorMessage}`);
-        } finally {
-            setIsProcessing(false);
-        }
+        setPaymentError('');
+        setPaymentOrder({payload,order:JSON.stringify(activeOrder),id:activeOrder.id,rate});
+    };
+    const confirmPayment=async payment=>{
+        if(checkoutLock.current||!paymentOrder)return;
+        const current=orders.find(order=>order.id===paymentOrder.id);
+        if(!current||JSON.stringify(current)!==paymentOrder.order){setPaymentError('This order changed. Cancel and reopen payment to use the latest total.');return;}
+        checkoutLock.current=true;setIsProcessing(true);setPaymentError('');
+        try{
+            await api.post('/api/checkout',{...paymentOrder.payload,details:{...paymentOrder.payload.details,payment_method:'Cash',payment}});
+            setPaymentOrder(null);
+            await removeOrder(paymentOrder.id);
+        }catch(error){setPaymentError(error.response?.data?.error||error.message||'Could not save payment.');}
+        finally{checkoutLock.current=false;setIsProcessing(false);}
     };
 
     if (!draftsReady || loading || loadError) return <LoadingState page label="Loading POS products..." error={loadError} onRetry={fetchData} />;
 
     return (
         <>
+            {paymentOrder&&<CashPaymentDialog total={paymentOrder.payload.totalAmount} rate={paymentOrder.rate} busy={isProcessing} error={paymentError} onCancel={()=>{if(!isProcessing)setPaymentOrder(null);}} onConfirm={confirmPayment}/>}
             <OrderOptions
                 optionsOpen={optionsOpen}
                 setOptionsOpen={setOptionsOpen}

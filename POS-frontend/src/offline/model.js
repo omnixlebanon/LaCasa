@@ -1,3 +1,4 @@
+import {normalizePaymentDetails} from '../utils/cashPayment.js';
 export const keyOf = (url, params={}) => {const u=new URL(url,'https://local');for(const [k,v]of Object.entries(params||{}))if(v!==undefined&&v!==null)u.searchParams.set(k,v);u.searchParams.sort();return u.pathname+u.search;};
 const pathOf = key => key.split('?')[0].split('/').map(decodeURIComponent).join('/');
 const copy = value => structuredClone(value);
@@ -36,6 +37,7 @@ export function applyLocal(state,op) {
  if(path.startsWith('/api/open-orders/')){
   each(state,'/api/open-orders',rows=>method==='delete'?rows.filter(order=>order.checkoutOperationId!==parts[3]):upsert(rows,'checkoutOperationId',parts[3],copy(data.order)));
  } else if(path==='/api/checkout'){
+  data.details=normalizePaymentDetails(data.totalAmount,data.details||{});
   if(!Array.isArray(data.details?.items)||!data.details.items.length||!Number.isFinite(Number(data.totalAmount))||Number(data.totalAmount)<=0)throw Error('A sale needs items and a positive total.');
   const ingredients=cached(state,'/api/items')||[],recipes=cached(state,'/api/stock/recipe')||[];
   data.details.offline_recipe_snapshot=data.details.offline_recipe_snapshot||data.details.items.map(sold=>({product_id:sold.product_id,ingredients:recipes.filter(r=>same(r.product_id,sold.product_id)).map(r=>({item_id:r.item_id,qty:Number(r.qty),item_cost:Number(ingredients.find(i=>same(i.item_id,r.item_id))?.item_cost||0)}))}));

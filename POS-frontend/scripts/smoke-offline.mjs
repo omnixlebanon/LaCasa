@@ -19,8 +19,9 @@ const server=http.createServer(async(req,res)=>{
  try{
   const path=new URL(req.url,'http://local').pathname;
   if(path.startsWith('/test-modules/')){
-   const name=path.split('/').at(-1);if(!['transport.js','storage.js','model.js','axios.js'].includes(name)){res.statusCode=404;return res.end();}
-   let source=await readFile(name==='axios.js'?join(root,'node_modules/axios/dist/esm/axios.js'):join(root,'src/offline',name),'utf8');
+   const name=path.split('/').at(-1);if(!['transport.js','storage.js','model.js','cashPayment.js','axios.js'].includes(name)){res.statusCode=404;return res.end();}
+   let source=await readFile(name==='axios.js'?join(root,'node_modules/axios/dist/esm/axios.js'):join(root,name==='cashPayment.js'?'src/utils':'src/offline',name),'utf8');
+   if(name==='model.js')source=source.replace('../utils/cashPayment.js','./cashPayment.js');
    if(name==='transport.js')source=source.replace("from 'axios'","from './axios.js'");
    res.setHeader('Content-Type','text/javascript');return res.end(source);
   }
@@ -88,12 +89,34 @@ try{
  const boxes=await evaluate("(() => {const a=document.querySelector('.offline-indicator').getBoundingClientRect(),b=document.querySelector('.check-in-btn').getBoundingClientRect();return {overlap:a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top};})()");
  assert.equal(boxes.overlap,false,'sync button overlaps checkout');
  await evaluate("document.querySelector('.check-in-btn').click()");
+ await until(()=>evaluate("!!document.querySelector('.cash-payment-dialog[open]')"),'payment dialog');
+ assert.equal((await state()).drafts.orders.length,1,'opening payment keeps the order');
+ await evaluate("document.querySelector('[aria-label=\"Cancel payment\"]').click()");
+ assert.equal((await state()).drafts.orders.length,1,'cancelling payment keeps the order');
+ await evaluate("document.querySelector('.check-in-btn').click()");
+ await until(()=>evaluate("!!document.querySelector('.cash-payment-dialog[open]')"),'reopened payment');
+
+ await evaluate("document.querySelectorAll('.payment-methods button')[1].click()");
+ assert.equal(await evaluate("document.querySelector('.confirm-cash-payment').disabled"),true,'WHISH cannot submit');
+ await evaluate("document.querySelectorAll('.payment-methods button')[0].click()");
+ await evaluate("(() => {const input=document.querySelector('#cash-currency');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'LBP');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+ await evaluate("(() => {const input=document.querySelector('#cash-received');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'1000000');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+ await until(()=>evaluate("!!document.querySelector('.payment-change')"),'lira change');
+ assert.match(await evaluate("document.querySelector('.payment-change').textContent"),/105,000/);
+ assert.doesNotMatch(await evaluate("document.querySelector('.payment-change').textContent"),/US dollars/);
+ await evaluate("(() => {const input=document.querySelector('#cash-currency');Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype,'value').set.call(input,'USD');input.dispatchEvent(new Event('change',{bubbles:true}));})()");
+
+ await evaluate("(() => {const input=document.querySelector('#cash-received');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'17.3');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
+ await until(()=>evaluate("!document.querySelector('.confirm-cash-payment').disabled"),'cash ready');
+ assert.match(await evaluate("document.querySelector('.payment-change').textContent"),/\$5.00/);
+ await evaluate("document.querySelector('.confirm-cash-payment').click()");
+
  await until(async()=>{const s=await state();return s.drafts.orders.length===0&&s.queue.some(op=>op.url==='/api/checkout');},'durable offline checkout');
  await command('Page.reload');await until(()=>evaluate("!!document.querySelector('.product-card-btn')"),'second offline reload');
  assert.equal((await state()).cache['/api/history'].data.length,1,'offline sale lost on reload');
  await command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
  await until(async()=>(await state()).queue.length===0,'reconnect synchronization');
- assert.equal(checkouts,1);assert.equal(history.length,1);assert.equal(shared.length,0);
+ assert.equal(checkouts,1);assert.equal(history[0].details.payment.amount_received,17.3);assert.equal(history[0].details.payment.change_usd,5);assert.equal(history[0].details.payment.change_lbp,205850);assert.equal(history.length,1);assert.equal(shared.length,0);
  if(fullDay){
   await evaluate(`import('/test-modules/transport.js').then(m=>{window.dayTransport=m;m.network.defaults.baseURL=location.origin;})`);
   await command('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});

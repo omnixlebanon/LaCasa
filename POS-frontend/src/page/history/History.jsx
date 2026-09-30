@@ -247,7 +247,7 @@ function OrderHistory() {
                                                 </button>
                                             </td>
                                             {isMobile && <td data-label="Total">{formatPrice(Number(item.total_amount) || 0)}</td>}
-                                            <td data-label="Payment">{item.payment_method || 'N/A'}</td>
+                                            <td data-label="Payment">{getOrderDetails(item).payment_method || item.payment_method || 'N/A'}</td>
                                             <td data-label="Status / details">
                                                 {item.status?.toLowerCase() === 'refunded' ?
                                                         (statusFilter === 'refunded'

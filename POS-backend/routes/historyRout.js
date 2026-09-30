@@ -23,9 +23,12 @@ router.get('/history/:orderId/evidence', async (req, res) => {
 });
 router.post('/checkout', async (req, res) => {
   try {
-    const { totalAmount, customerName, details } = req.body;
+    const { totalAmount, customerName } = req.body;
+    let details = req.body.details || {};
+    try { details = require('../services/cashPayment').normalizePaymentDetails(totalAmount, details); }
+    catch (error) { return res.status(400).json({success: false, error: error.message}); }
 
-    if (typeof totalAmount !== 'number' || totalAmount <= 0) {
+    if (typeof totalAmount !== 'number' || !Number.isFinite(totalAmount) || totalAmount <= 0) {
       return res.status(400).json({ success: false, error: "Invalid order amount." });
     }
     const recordedAt = req.get('X-Operation-Id') ? req.get('X-Offline-Created-At') : null;
