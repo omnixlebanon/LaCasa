@@ -1,5 +1,4 @@
 import PayrollPage from './page/employeeManagement/PayrollPage.jsx';
-import StockHistory from './page/stock/StockHistory.jsx';
 import { createBrowserRouter, RouterProvider, Outlet, Navigate } from 'react-router-dom';
 import './App.css'
 import RequestActivity from './components/RequestActivity.jsx';
@@ -70,7 +69,7 @@ const router = createBrowserRouter([
         path: "history",
         element: <OrderHistory />
       }, 
-      { path: "stock/history", element: <StockHistory /> },
+      { path: "stock/history", element: <Stock initialTab="btn4" /> },
       {
         path: "stock",
         element: <Stock />

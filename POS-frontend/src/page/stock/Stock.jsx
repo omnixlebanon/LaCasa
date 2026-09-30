@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import StockHistory from './StockHistory.jsx';
 import LoadingState from '../../components/LoadingState.jsx';
 import { useMemo, useState, useEffect } from 'react';
 import api from '/src/api.js';
@@ -11,7 +11,7 @@ import RecipesLinking from '../../components/stock/recipesLinking/RecipesLinking
 import BulkChange from '../../components/stock/bulkChange/BulkChange.jsx';
 import DiscardExpiredStock from '../../components/stock/DiscardExpiredStock.jsx';
 
-function Stock() {
+function Stock({initialTab = "btn1"}) {
     const [categories, setCategories] = useState([]);
     const [items, setItems] = useState([]);
     const [productSummary, setProductSummary] = useState([]);
@@ -114,11 +114,12 @@ function Stock() {
         }
     };
 
-    const [activeID, setActiveID] = useState("btn1");
+    const [activeID, setActiveID] = useState(initialTab);
     const buttons = [
         { id: 'btn1', label: 'Stock Inventory', icon: <ClipboardList /> },
         { id: 'btn2', label: 'Recipes Linking', icon: <BookOpen /> },
         { id: 'btn3', label: 'Bulk Change', icon: <Warehouse /> },
+        { id: 'btn4', label: 'Stock History', icon: <History /> },
     ];
 
     if (loading || error) return <LoadingState page label="Loading inventory..." error={error} onRetry={fetchData} />;
@@ -160,6 +161,7 @@ function Stock() {
                 <div className="stock-page-nav">
                     {buttons.map((btn) => (
                         <button 
+                            aria-pressed={activeID === btn.id}
                             key={btn.id} 
                             className={activeID === btn.id ? 'active' : ''}
                             onClick={() => setActiveID(btn.id)}
@@ -167,8 +169,9 @@ function Stock() {
                             {btn.icon}{btn.label}
                         </button>
                     ))}
-                    <Link to="/stock/history"><History />Stock History</Link>
                 </div>
+
+                {activeID === "btn4" && <StockHistory />}
 
                 {(activeID === "btn1") && (
                     <StockInventory 

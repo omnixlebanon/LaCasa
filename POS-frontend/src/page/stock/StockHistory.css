@@ -1,5 +1,4 @@
 .stock-history-page { min-width:0; }
-.stock-history-back { display:inline-flex; align-items:center; gap:8px; min-height:44px; color:var(--main-color); text-decoration:none; font-weight:600; }
 .stock-history-heading { display:flex; align-items:center; gap:10px; margin:12px 0; }
 .stock-history-heading h2 { font-size:24px; }
 .stock-history-intro { color:var(--font-color); line-height:1.6; max-width:760px; }

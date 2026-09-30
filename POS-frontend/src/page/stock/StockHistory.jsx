@@ -1,6 +1,5 @@
 import {useEffect,useMemo,useState} from 'react';
-import {Link} from 'react-router-dom';
-import {ArrowLeft,PackagePlus,Search} from 'lucide-react';
+import {PackagePlus,Search} from 'lucide-react';
 import api from '../../api.js';
 import {useCurrency} from '../../global.jsx';
 import LoadingState from '../../components/LoadingState.jsx';
@@ -18,8 +17,7 @@ export default function StockHistory(){
   const date=day(row.purchased_at);
   return text.includes(search.trim().toLowerCase())&&(!from||date>=from)&&(!to||date<=to);
  }).sort((a,b)=>new Date(b.purchased_at)-new Date(a.purchased_at)),[rows,search,from,to]);
- return <main className="main-area stock-history-page">
-  <Link to="/stock" className="stock-history-back"><ArrowLeft size={18}/>Back to Stock</Link>
+ return <section className="stock-history-page" aria-label="Stock History">
   <div className="stock-history-heading"><PackagePlus/><h2>Stock History</h2></div>
   <p className="stock-history-intro">Purchased stock, with the quantity and ingredient cost recorded when it was added. Tracking starts with new stock additions; older purchases are not included.</p>
   {loading||error?<LoadingState label="Loading stock purchases..." error={error} onRetry={refresh}/>:<>
@@ -30,5 +28,5 @@ export default function StockHistory(){
     <td data-label="Ingredient"><strong>{row.item_name}</strong><small>{row.category||'Uncategorized'}</small></td><td data-label="Supplier">{row.supplier_name||'Not recorded'}</td><td data-label="Quantity bought">{Number(row.quantity).toLocaleString()} {row.uom}</td><td data-label="Unit cost">{formatPrice(Number(row.unit_cost))} / {row.uom}</td><td data-label="Total cost"><strong>{formatPrice(Number(row.total_cost))}</strong></td>
    </tr>)}</tbody></table></div>}
   </>}
- </main>;
+ </section>;
 }
