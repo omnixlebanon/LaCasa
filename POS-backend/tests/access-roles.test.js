@@ -1,8 +1,9 @@
 const test=require('node:test');const assert=require('node:assert/strict');const {PGlite}=require('@electric-sql/pglite');const {wrap}=require('../config/postgres');
 const {assertChange,canManage,management,salaryEligible}=require('../services/accessPolicy');
-test('access rules protect owners/admins and only owners grant manager',()=>{
+test('access rules protect owners/admins and owners and admins grant manager',()=>{
  for(const actor of ['admin','owner','manager','employee'])assert.doesNotThrow(()=>assertChange(actor,null,'employee',true));
- for(const actor of ['admin','manager','employee'])assert.throws(()=>assertChange(actor,null,'manager',true),/Only the Owner/);
+ for(const actor of ['manager','employee'])assert.throws(()=>assertChange(actor,null,'manager',true),/Only an Owner or Admin/);
+ assert.doesNotThrow(()=>assertChange('admin',null,'manager',true));
  assert.doesNotThrow(()=>assertChange('owner',null,'manager',true));
  for(const actor of ['owner','manager','employee'])for(const target of ['owner','admin']){assert.equal(canManage(actor,target),false);assert.throws(()=>assertChange(actor,target,target));}
  assert.equal(canManage('manager','manager'),false);assert.equal(canManage('owner','manager'),true);
@@ -20,7 +21,8 @@ test('database enforces a single owner and account service blocks unauthorized e
   await saveAccount(db,{user_id:1,access_level:'admin'},2,{name:'Protected owner'});
   await assert.rejects(saveAccount(db,{user_id:1,access_level:'admin'},4,{accessLevel:'owner'}),/Only one Owner/);
   await assert.rejects(db.execute("INSERT INTO users(user_name,access_level) VALUES ('Second','owner')"),/unique/);
-  await assert.rejects(saveAccount(db,{user_id:1,access_level:'admin'},4,{accessLevel:'manager'}),/Only the Owner/);
+  await saveAccount(db,{user_id:1,access_level:'admin'},4,{accessLevel:'manager'});
+  await saveAccount(db,{user_id:1,access_level:'admin'},4,{accessLevel:'employee'});
   await saveAccount(db,{user_id:2,access_level:'owner'},4,{accessLevel:'manager'});
   assert.equal((await db.execute('SELECT access_level FROM users WHERE user_id = 4'))[0][0].access_level,'manager');
  }finally{await engine.close();}

@@ -14,7 +14,7 @@ test('employee APIs hide admins and enforce owner/manager and salary protections
   assert.equal((await request(2,'/employees/2','PATCH',{name:'Changed'})).status,403);
   assert.equal((await request(3,'/employees/2','DELETE')).status,403);
   assert.equal((await request(1,'/employees/4','PATCH',{accessLevel:'owner'})).status,409);
-  assert.equal((await request(1,'/employees/4','PATCH',{accessLevel:'manager'})).status,403);
+  assert.equal((await request(1,'/employees/4','PATCH',{accessLevel:'manager'})).status,200);
   assert.equal((await request(2,'/employees/4','PATCH',{accessLevel:'manager'})).status,200);
   assert.equal((await request(1,'/employees/2/salary','PUT',{month:'2026-09',amount:100})).status,403);
   assert.equal((await request(1,'/employees/1/payroll-payment','PUT',{month:'2026-09',status:'paid',expectedAmount:100})).status,403);

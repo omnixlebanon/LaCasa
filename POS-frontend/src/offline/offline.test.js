@@ -398,9 +398,9 @@ test('offline account roles enforce owner protection and role assignment',async(
  role('manager');
  assert.equal(readLocal(await load(),'/api/employees').some(r=>r.access_level==='admin'),false);
  await assert.rejects(write('/api/employees/9',{name:'Changed'},'patch'),/cannot change/);
- await assert.rejects(write('/api/employees',{name:'New',accessLevel:'manager'}),/Only the Owner/);
+ await assert.rejects(write('/api/employees',{name:'New',accessLevel:'manager'}),/Only an Owner or Admin/);
  role('owner');await write('/api/employees',{name:'New manager',accessLevel:'manager'});
- role('admin');await assert.rejects(write('/api/employees',{name:'Second owner',accessLevel:'owner'}),/Only one Owner/);
+ role('admin');await write('/api/employees',{name:'Admin-created manager',accessLevel:'manager'});await assert.rejects(write('/api/employees',{name:'Second owner',accessLevel:'owner'}),/Only one Owner/);
  role('employee');await write('/api/employees',{name:'New employee',accessLevel:'employee'});assert.deepEqual(readLocal(await load(),'/api/employees'),[]);
  await assert.rejects(write('/api/employees',{name:'Admin',accessLevel:'admin'}),/cannot assign/);
 });
