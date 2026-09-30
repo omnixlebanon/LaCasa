@@ -151,7 +151,8 @@ try{
   await until(()=>evaluate("!!document.querySelector('.employee-payroll')"),'separate payroll page');
   await command('Page.navigate',{url:`http://127.0.0.1:${server.address().port}/POS/sales`});
   await until(()=>evaluate("!!document.querySelector('.sales-kpi-grid')"),'sales with payroll');
-  assert.match(await evaluate("Array.from(document.querySelectorAll('.sales-alert')).find(el=>el.querySelector('.sales-alert-type')?.textContent==='Payroll Paid')?.textContent||''"),/600/);
+  assert.match(await evaluate("document.querySelector('.sales-cost-chart')?.textContent||''"),/Costs by Category/);
+  assert.equal(await evaluate("Array.from(document.querySelectorAll('.sales-alert-type')).some(el=>['Payroll Paid','Total Expenses','Saved Order Costs','Result After Expenses'].includes(el.textContent))"),false);
  }
  console.log('PASS: mobile layout, offline reopening, durable cart, shared open order, offline checkout, reconnect and one sale only.');
 }catch(error){await diagnose?.().catch(()=>{});throw error;}

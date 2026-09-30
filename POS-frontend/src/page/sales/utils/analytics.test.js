@@ -38,3 +38,13 @@ test('paid payroll reduces costs and result on the payment date without changing
  const chart=generateLineChartData(filtered,'custom',[],new Date(),'2026-09-01','2026-09-30');
  assert.equal(chart.reduce((sum,row)=>sum+row.cost,0),550.25);assert.equal(chart.reduce((sum,row)=>sum+row.profit,0),-550.25);assert.equal(chart.reduce((sum,row)=>sum+row.units,0),0);
 });
+
+test('cost chart groups utilities and includes ingredients and payroll once',async()=>{
+ const {getCostCategories}=await import('./analytics.js');
+ const rows=getCostCategories(15,[{category:'water',totalCost:10.1},{category:'electricity',totalCost:20.2},{category:'internet',totalCost:5},{category:'rent',totalCost:100}],60);
+ assert.equal(rows.find(row=>row.name==='Utilities').value,35.3);
+ assert.equal(rows.find(row=>row.name==='Ingredients').value,15);
+ assert.equal(rows.find(row=>row.name==='Payroll').value,60);
+ assert.equal(rows.reduce((sum,row)=>sum+Math.round(row.value*100),0),21030);
+ assert.deepEqual(getCostCategories(0,[],0),[]);
+});

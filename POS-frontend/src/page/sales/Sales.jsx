@@ -1,3 +1,4 @@
+import CostPieChart from './components/CostPieChart.jsx';
 import Expenses from '../expenses/Expenses.jsx';
 import LoadingState from '../../components/LoadingState.jsx';
 import { useCurrency } from '../../global.jsx';
@@ -183,6 +184,8 @@ export default function Sales() {
           {	/* Pie & Donut Charts */}
           <PieChartsSection productMetrics={productMetrics} categorySummaries={categorySummaries} />
         </div>
+
+        <CostPieChart ingredientCost={totalCost} expenses={filteredExpenses} payrollCost={payrollCost} missingCosts={missingCosts} />
 
         <ProductRankingTable metrics={productMetrics} metricView={metricView} />
         <Expenses onChanged={() => fetchSales()} />

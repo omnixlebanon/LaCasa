@@ -1,4 +1,3 @@
-import {Link} from 'react-router-dom';
 import { useCurrency } from '../../../global.jsx';
 import { DollarSign, TrendingUp, ShoppingBag, Crown, Receipt } from 'lucide-react';
 import { formatNumber } from '../utils/analytics';
@@ -25,10 +24,6 @@ export const KPICards = ({ totalRevenue, totalCost, totalProfit, profitMargin, t
             description: <>Profit margin: <strong>{missingCosts ? 'Unavailable' : `${profitMargin}%`}</strong></>,
             detail: missingCosts ? 'Historical costs missing' : `ROI: ${totalCost > 0 ? Math.round(totalProfit / totalCost * 100) : 0}%`,
         },
-        { title: 'Saved Order Costs', tone: 'cost', icon: Receipt, value: missingCosts ? 'Unavailable' : formatCurrency(totalCost), description: 'Ingredient costs saved at checkout', detail: `${formatNumber(totalUnitsSold)} units sold` },
-        { title: 'Payroll Paid', tone: 'cost', icon: Receipt, value: formatCurrency(payrollCost), description: 'Recorded salary payments in this period', detail: 'Counted when marked paid' },
-        { title: 'Total Expenses', tone: 'yellow', icon: Receipt, value: formatCurrency(businessExpenses + payrollCost), description: 'Business expenses and paid payroll', detail: period },
-        { title: 'Result After Expenses', metric: 'profit', tone: totalProfit - businessExpenses - payrollCost < 0 ? 'red' : 'green', icon: TrendingUp, value: missingCosts ? 'Unavailable' : formatCurrency(totalProfit - businessExpenses - payrollCost), description: 'Sales minus order costs, business expenses and paid payroll', detail: 'Payroll counted on its payment date' },
         {
             title: 'Most Sold Product', tone: 'yellow', icon: ShoppingBag,
             value: mostSold ? `${formatNumber(mostSold.unitsSold)} units` : '—',
@@ -56,8 +51,6 @@ export const KPICards = ({ totalRevenue, totalCost, totalProfit, profitMargin, t
                 {product && <p className="sales-alert-product">{product}</p>}
                 <p className="sales-alert-description">{description}</p>
                 {detail && <p className="sales-alert-detail">{detail}</p>}
-                {title === 'Payroll Paid' && <Link to="/employees/payroll" className="sales-expenses-link">Manage payroll</Link>}
-                {title === 'Total Expenses' && <a href="#sales-expenses" className="sales-expenses-link">View business expenses</a>}
             </article>
         ))}
     </div>;

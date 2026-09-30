@@ -96,3 +96,14 @@ export function normalizeSales(history, summary) {
 export function normalizePayrollCosts(rows) {
  return rows.map(row=>({id:`payroll-${row.user_id}-${String(row.salary_month).slice(0,7)}`,description:`Salary: ${row.employee_name}`,salaryMonth:String(row.salary_month).slice(0,7),timestamp:String(row.paid_at).replace(' ','T'),totalRevenue:0,totalCost:Number(row.amount_paid),totalProfit:-Number(row.amount_paid),quantity:0,pending_sync:row.pending_sync}));
 }
+
+export function getCostCategories(ingredientCost, expenses, payrollCost) {
+ const categories={water:'Utilities',electricity:'Utilities',internet:'Utilities',rent:'Rent',furniture:'Furniture',equipment:'Equipment',maintenance:'Maintenance',other:'Other'};
+ const totals=new Map();
+ const add=(name,value)=>{const cents=Math.round(Number(value)*100);if(Number.isFinite(cents)&&cents>0)totals.set(name,(totals.get(name)||0)+cents);};
+ add('Ingredients',ingredientCost);
+ for(const expense of expenses)add(categories[expense.category]||'Other',expense.totalCost);
+ add('Payroll',payrollCost);
+ const names=['Ingredients','Utilities','Rent','Payroll','Furniture','Equipment','Maintenance','Other'];
+ return names.filter(name=>totals.has(name)).map(name=>({name,value:totals.get(name)/100,color:PRODUCT_COLORS[names.indexOf(name)]}));
+}
