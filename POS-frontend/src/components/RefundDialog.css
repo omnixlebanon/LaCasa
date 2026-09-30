@@ -1,0 +1,52 @@
+.refund-dialog {
+    width: min(520px, calc(100vw - 32px));
+    max-height: calc(100dvh - 32px);
+    margin: auto;
+    padding: 0;
+    border: 1px solid var(--border-color);
+    border-radius: 20px;
+    background: #fff;
+    color: var(--text-color);
+    box-shadow: 0 24px 80px #10271b33;
+    overflow-y: auto;
+}
+.refund-dialog::backdrop { background: #10271b99; }
+.refund-dialog-header { display: flex; align-items: center; gap: 12px; padding: 24px; border-bottom: 1px solid var(--border-color); }
+.refund-dialog-icon { display: grid; place-items: center; flex: 0 0 44px; height: 44px; border-radius: 13px; background: var(--danger-soft); color: var(--danger-color); }
+.refund-dialog-header > div { flex: 1; min-width: 0; }
+.refund-dialog-header h2 { margin: 0; font-size: 21px; font-weight: 700; }
+.refund-dialog-header p { margin: 4px 0 0; font-size: 13px; color: var(--font-color); overflow-wrap: anywhere; }
+.refund-dialog button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 44px; font: inherit; font-weight: 600; border-radius: 10px; cursor: pointer; }
+.refund-dialog-close { flex: 0 0 44px; padding: 0; border: 1px solid var(--border-color); background: white; color: var(--font-color); }
+.refund-dialog-body { padding: 24px; }
+.refund-dialog-amount { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 16px; padding: 16px; margin-bottom: 22px; border: 1px solid var(--border-color); border-radius: 12px; background: var(--sec-bg); }
+.refund-dialog-amount span { font-size: 14px; color: var(--font-color); }
+.refund-dialog-amount strong { font-size: 24px; overflow-wrap: anywhere; }
+.refund-reason-label { display: block; margin-bottom: 8px; font-size: 14px; font-weight: 600; }
+.refund-dialog textarea { display: block; width: 100%; min-height: 96px; padding: 12px 14px; border: 1px solid var(--border-color); border-radius: 10px; font: inherit; font-size: 16px; line-height: 1.5; color: var(--text-color); background: white; resize: vertical; }
+.refund-dialog textarea::placeholder { color: var(--font-color); }
+.refund-stock-options { min-width: 0; margin: 22px 0 0; padding: 0; border: 0; }
+.refund-stock-options legend { margin-bottom: 10px; padding: 0; font-size: 14px; font-weight: 600; }
+.refund-stock-options label { display: flex; align-items: flex-start; gap: 12px; padding: 14px; border: 1px solid var(--border-color); border-radius: 12px; cursor: pointer; }
+.refund-stock-options label + label { margin-top: 10px; }
+.refund-stock-options label:has(input:checked) { border-color: var(--main-color); background: var(--main-soft); }
+.refund-stock-options input { appearance: auto; width: 18px; height: 18px; min-height: 0; margin: 2px 0 0; flex: 0 0 18px; accent-color: var(--main-color); }
+.refund-stock-options strong { display: block; font-size: 14px; line-height: 1.4; }
+.refund-stock-options small { display: block; margin-top: 4px; font-size: 13px; line-height: 1.5; color: var(--font-color); }
+.refund-dialog-error { margin: 16px 0 0; padding: 12px; border-radius: 10px; background: var(--danger-soft); color: var(--danger-color); font-size: 14px; line-height: 1.5; }
+.refund-dialog-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 16px 24px; border-top: 1px solid var(--border-color); }
+.refund-dialog-footer button { padding: 11px 18px; }
+.refund-dialog-cancel { border: 1px solid var(--border-color); background: white; color: var(--text-color); }
+.refund-dialog-confirm { border: 1px solid var(--danger-color); background: var(--danger-color); color: white; }
+.refund-dialog button:hover:not(:disabled) { filter: brightness(.96); }
+.refund-dialog :is(button, textarea, input):focus-visible { outline: 3px solid var(--main-border); outline-offset: 3px; }
+.refund-dialog button:disabled, .refund-stock-options:disabled { opacity: .6; cursor: wait; }
+.refund-dialog-spinner { animation: refund-spin 1s linear infinite; }
+@keyframes refund-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .refund-dialog-spinner { animation: none; } }
+@media (max-width: 480px) {
+    .refund-dialog { width: calc(100vw - 24px); max-height: calc(100dvh - 24px); border-radius: 16px; }
+    .refund-dialog-header, .refund-dialog-body { padding: 18px; }
+    .refund-dialog-footer { padding: 14px 18px; }
+    .refund-dialog-footer button { flex: 1; padding-inline: 10px; }
+}

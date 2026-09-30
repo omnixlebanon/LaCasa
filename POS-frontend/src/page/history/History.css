@@ -67,8 +67,3 @@
 .refund-telegram-step code { padding: .75rem; border: 1px solid var(--main-border); border-radius: var(--radius-sm); color: var(--main-color); background: var(--main-soft); font-weight: 700; }
 .refund-telegram-step button { align-self: flex-end; padding: .625rem 1rem; border: 1px solid var(--main-color); border-radius: var(--radius-sm); background: var(--main-color); color: white; }
 .refund-telegram-step button:hover { background: var(--main-color-hover); }
-
-.refund-stock-choice { display:grid; gap:14px; padding:14px; border:1px solid var(--border-color); border-radius:8px; }
-.refund-stock-choice label { display:flex; align-items:flex-start; gap:10px; padding:8px 0; cursor:pointer; }
-.refund-stock-choice input { width:20px; height:20px; flex-shrink:0; }
-.refund-stock-choice small { display:block; margin-top:5px; line-height:1.4; }

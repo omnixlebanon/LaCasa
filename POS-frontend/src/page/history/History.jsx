@@ -1,3 +1,4 @@
+import RefundDialog from '../../components/RefundDialog.jsx';
 import LoadingState from '../../components/LoadingState.jsx';
 import useMobile from '../../hooks/useMobile.js';
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -157,16 +158,7 @@ function OrderHistory() {
                     </div>
                 </div>
             )}
-            {refundOpen&&<div className="editPopup" role="dialog" aria-modal="true" aria-labelledby="refund-title"><form className="editPopup-container" onSubmit={submitRefund}><div className="editPopup-head"><h3 id="refund-title">Refund order #{refundOpen.order_id}</h3><button type="button" disabled={refundBusy} aria-label="Cancel refund" onClick={()=>setRefundOpen(null)}><X/></button></div><div className="input-area">
-                <p>Refund the full order amount: <strong>{formatPrice(Number(refundOpen.total_amount))}</strong>.</p>
-                <label>Reason for refund<textarea name="reason" required maxLength={500}/></label>
-                <fieldset className="refund-stock-choice"><legend>Return ingredients to stock?</legend>
-                    <label><input type="radio" name="stock" value="keep" required/> <span><strong>No, keep stock unchanged</strong><small>The ingredients were used or cannot be reused.</small></span></label>
-                    <label><input type="radio" name="stock" value="return" required/> <span><strong>Yes, restore ingredient quantities</strong><small>Use only when the ingredients were not used and are still available.</small></span></label>
-                </fieldset>
-                {refundError&&<p role="alert">{refundError}</p>}
-                <div className="edit-submit-container"><button type="button" disabled={refundBusy} onClick={()=>setRefundOpen(null)}>Cancel</button><button type="submit" disabled={refundBusy}>{refundBusy?'Saving...':'Confirm refund'}</button></div>
-            </div></form></div>}
+            {refundOpen && <RefundDialog order={refundOpen} amount={formatPrice(Number(refundOpen.total_amount))} busy={refundBusy} error={refundError} onCancel={() => setRefundOpen(null)} onSubmit={submitRefund} />}
             {refundMessage&&<p role="status">{refundMessage}</p>}
             <div className='main-area'>
                 <div className="head-area">
