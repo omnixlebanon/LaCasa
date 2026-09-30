@@ -63,7 +63,7 @@ export async function saveDraftEdit(fn){
 async function downloadSnapshot(owner) {
  const user=JSON.parse(localStorage.getItem('auth_user'));
  const month=new Date().toISOString().slice(0,7),year=Number(month.slice(0,4));
- const urls=['/api/products/groups','/api/products','/api/products/categories','/api/items','/api/stock/categories','/api/stock/recipe','/api/stock/summary','/api/products/summary','/api/seating/floors','/api/history','/api/recurring-shifts','/api/offline/batches','/api/open-orders'];
+ const urls=['/api/products/groups','/api/products','/api/products/categories','/api/items','/api/stock/categories','/api/stock/history','/api/stock/recipe','/api/stock/summary','/api/products/summary','/api/seating/floors','/api/history','/api/recurring-shifts','/api/offline/batches','/api/open-orders'];
  for(let offset=-1;offset<=12;offset++){
   const from=new Date(Date.UTC(year,offset,1)).toISOString().slice(0,10);
   const to=new Date(Date.UTC(year,offset+1,0)).toISOString().slice(0,10);

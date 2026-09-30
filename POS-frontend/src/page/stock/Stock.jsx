@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom';
 import LoadingState from '../../components/LoadingState.jsx';
 import { useMemo, useState, useEffect } from 'react';
 import api from '/src/api.js';
@@ -128,6 +129,7 @@ function Stock() {
                 {error && <div className="error-message">{error}</div>}
                 <div className="head-area">
                     <h2 className="PageName">Inventory Stock</h2>
+                    <Link className="stock-history-link" to="/stock/history">Stock History</Link>
                 </div>
                 <div className='stockAlerts'>
                     <div className='alert valueAlert'>

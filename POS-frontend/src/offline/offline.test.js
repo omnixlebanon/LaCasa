@@ -346,3 +346,16 @@ test('cash payment survives encrypted offline storage and rejects insufficient c
  await assert.rejects(()=>offlineAdapter({url:'/api/checkout',method:'post',data:payload}),/less than/);
  assert.equal((await load()).queue.length,1);
 });
+
+test('purchased stock keeps its original quantity and cost after use, edits and deletion',async()=>{
+ await offlineAdapter({url:'/api/stock/2/batch',method:'post',data:{batch_stock:20}});
+ let saved=await load();
+ const purchase=saved.cache['/api/stock/history'].data[0];
+ assert.equal(purchase.quantity,20);assert.equal(purchase.total_cost,2);
+ assert.equal(saved.queue[0].data.purchase_snapshot.unit_cost,0.1);
+ await offlineAdapter({url:'/api/checkout',method:'post',data:{totalAmount:5,details:{items:[{product_id:1,qty:1,price:5}]}}});
+ await offlineAdapter({url:'/api/stock/2/edit',method:'patch',data:{stock_name:'New milk',stock_cost:5}});
+ await offlineAdapter({url:'/api/stock/2/delete',method:'delete'});
+ saved=await load();
+ assert.deepEqual(saved.cache['/api/stock/history'].data[0],purchase);
+});

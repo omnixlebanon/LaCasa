@@ -7,6 +7,11 @@ const { saveStockItem } = require('../services/stockItemService');
 const { requireManager } = require('../middleware/auth');
 const { listExpiredBatches, discardExpiredBatches } = require('../services/expiredStockService');
 
+router.get('/stock/history', async (req,res) => {
+    try { const [rows]=await db.execute('SELECT * FROM stock_purchases ORDER BY purchased_at DESC, purchase_id DESC'); res.json(rows.map(row=>({...row,purchased_at:typeof row.purchased_at==='string'?row.purchased_at.replace(' ','T')+'Z':row.purchased_at}))); }
+    catch(error) { res.status(500).json({error:['42P01','ER_NO_SUCH_TABLE'].includes(error.code)?'Stock history is not set up yet. Run npm run migrate:stock-history in POS-backend.':error.message}); }
+});
+
 router.get('/stock/expired-batches', requireManager, async (req, res) => {
     try { res.json(await listExpiredBatches(db)); }
     catch (error) { res.status(500).json({ error: error.message }); }
@@ -187,9 +192,9 @@ router.delete('/stock/:id/delete', async (req, res) => {
 // CREATE A BATCH
 router.post('/stock/:id/batch', async (req, res) => {
     const { id } = req.params;
-    const batch_stock = parseFloat(req.body.batch_stock);
+    const batch_stock = Number(req.body.batch_stock);
 
-    if (isNaN(batch_stock) || batch_stock <= 0) {
+    if (!Number.isFinite(batch_stock) || batch_stock <= 0) {
         return res.status(400).json({ error: "Valid numeric stock quantity greater than 0 is required." });
     }
 
@@ -197,6 +202,7 @@ router.post('/stock/:id/batch', async (req, res) => {
 
     try {
         await connection.beginTransaction();
+        await require('../services/stockPurchaseService').recordPurchase(connection, id, batch_stock, req.body, req.get('X-Operation-Id') ? req.get('X-Offline-Created-At') : null);
         const insertBatchQuery = `
             INSERT INTO batches (item_id, batch_stock, batch_exDate)
             VALUES (?, ?, ${sql(`DATE_ADD(COALESCE(?, CURRENT_DATE), INTERVAL COALESCE((SELECT shelf_life FROM items WHERE item_id = ?), 0) DAY)`, `(COALESCE(?::date, CURRENT_DATE) + COALESCE((SELECT shelf_life FROM items WHERE item_id = ?), 0))`)})
@@ -220,7 +226,7 @@ router.post('/stock/:id/batch', async (req, res) => {
 
     } catch (err) {
         await connection.rollback();
-        return res.status(500).json({ error: "Failed to execute transaction: " + err.message });
+        return res.status(err.status || 500).json({ error: "Failed to execute transaction: " + err.message });
     } finally {
         connection.release();
     }

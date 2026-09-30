@@ -84,7 +84,16 @@ export function applyLocal(state,op) {
  } else if(path==='/api/items'||/^\/api\/stock\/[^/]+\/(edit|delete|batch)$/.test(path)){
   each(state,'/api/items',rows=>{if(method==='delete')return rows.filter(i=>!same(i.item_id,parts[3]));const itemId=path==='/api/items'?id:parts[3];const old=rows.find(i=>same(i.item_id,itemId))||{};const patch={};const fields={stock_name:'item_name',stock_category:'item_category',stock_uom:'uom',stock_limit:'safety_limit',stock_cost:'item_cost',stock_shelf_life:'shelf_life',stock_supplier:'supplier_name',stock_supplier_contact:'supplier_contact'};for(const [from,to]of Object.entries(fields))if(data[from]!==undefined)patch[to]=data[from];if(parts[4]==='batch')patch.stock=Number(old.stock||0)+Number(data.batch_stock);return upsert(rows,'item_id',itemId,{stock:0,item_cost:0,safety_limit:0,...old,...patch});});
   if(method==='delete')each(state,'/api/stock/recipe',rows=>rows.filter(r=>!same(r.item_id,parts[3])));
-  if(parts[4]==='batch'){const item=(cached(state,'/api/items')||[]).find(i=>same(i.item_id,parts[3]));item.stock-=Number(data.batch_stock);receiveStock(state,parts[3],Number(data.batch_stock),id,op.createdAt);}
+  if(parts[4]==='batch'){
+   const item=(cached(state,'/api/items')||[]).find(i=>same(i.item_id,parts[3]));
+   const quantity=Number(data.batch_stock);
+   if(!item||!Number.isFinite(quantity)||quantity<=0||Math.abs(quantity*100-Math.round(quantity*100))>0.00001)throw Error('Enter a positive stock quantity with at most two decimal places.');
+   data.purchase_snapshot=data.purchase_snapshot||{item_name:item.item_name,category:item.item_category||null,uom:item.uom,supplier_name:item.supplier_name||null,unit_cost:Number(item.item_cost||0)};
+   const snapshot=data.purchase_snapshot;
+   if(!state.cache['/api/stock/history'])state.cache['/api/stock/history']={data:[]};
+   each(state,'/api/stock/history',rows=>[{...snapshot,purchase_id:op.id,item_id:Number(parts[3]),quantity,total_cost:Math.round(quantity*snapshot.unit_cost*100)/100,purchased_at:op.createdAt,pending_sync:true},...rows]);
+   item.stock-=quantity;receiveStock(state,parts[3],quantity,id,op.createdAt);
+  }
   if(method==='delete')each(state,'/api/offline/batches',rows=>rows.filter(b=>!same(b.item_id,parts[3])));
  } else if(path.startsWith('/api/stock/categories')){
   const rows=cached(state,'/api/stock/categories')||[];const old=rows.find(c=>same(c.i_category_id,parts[4]));

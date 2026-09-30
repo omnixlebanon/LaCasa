@@ -213,3 +213,13 @@ CREATE TABLE IF NOT EXISTS offline_open_orders (order_key VARCHAR(36) PRIMARY KE
 ALTER TABLE offline_open_orders ENABLE ROW LEVEL SECURITY;
 CREATE TABLE IF NOT EXISTS offline_completed_orders (order_key VARCHAR(36) PRIMARY KEY, receipt TEXT NOT NULL);
 ALTER TABLE offline_completed_orders ENABLE ROW LEVEL SECURITY;
+
+CREATE TABLE IF NOT EXISTS stock_purchases (
+ purchase_id VARCHAR(64) PRIMARY KEY, item_id INTEGER NOT NULL,
+ item_name VARCHAR(120) NOT NULL, category VARCHAR(120), uom VARCHAR(30) NOT NULL,
+ supplier_name VARCHAR(120), quantity DECIMAL(14,2) NOT NULL,
+ unit_cost DECIMAL(16,4) NOT NULL, total_cost DECIMAL(18,2) NOT NULL,
+ purchased_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+ALTER TABLE stock_purchases ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON stock_purchases FROM anon, authenticated;

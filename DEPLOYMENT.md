@@ -149,3 +149,6 @@ Run `npm run migrate:menu-groups` in POS-backend for local MySQL and `npm run mi
 
 ### Telegram disabled
 Telegram chatbot UI, stock/shift approvals, employee Telegram links, and new Telegram refund requests are disabled. Backend workflow entry points return HTTP 410, and telegram-bot/bot.js exits without polling. Historical business records are retained. Deploy both apps; stop any separately hosted running bot worker as well.
+
+### Stock purchase history
+Before deploying stock history, run `npm run migrate:stock-history -- --supabase` from `POS-backend` for Supabase (omit `-- --supabase` for the configured local database). This adds `stock_purchases` without changing existing inventory. Stock batch additions record original quantity, ingredient unit cost, supplier and timestamp transactionally; refunds do not count as purchases. Historical purchases cannot be reconstructed from remaining stock. Deploy the backend before the frontend and reconnect each device to prepare its offline history cache.

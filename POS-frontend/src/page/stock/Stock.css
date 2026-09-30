@@ -150,3 +150,5 @@
     .stock-nav-action-btns { width: 100%; }
     .stock-nav-action-btns button { flex: 1; justify-content: center; }
 }
+
+.stock-history-link { display:inline-flex; align-items:center; min-height:44px; margin-left:auto; padding:10px 16px; border:1px solid var(--main-border); border-radius:10px; background:var(--main-soft); color:var(--main-color); font-weight:600; text-decoration:none; white-space:nowrap; }
