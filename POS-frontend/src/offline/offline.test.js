@@ -414,3 +414,8 @@ test('position defaults update eligible offline payroll while preserving overrid
  assert.equal(rows[0].baseSalary,600);assert.equal(rows[0].amountPaid,500);assert.equal(rows[0].paymentStatus,'adjustment_required');assert.equal(rows[1].baseSalary,700);
  assert.equal(state.cache['/api/employees/payroll?month=2026-08'].data[0].baseSalary,500);
 });
+
+test('checkout returns a receipt only after the saved sale is durable',async()=>{
+ const response=await write('/api/checkout',{totalAmount:5,customerName:'T1',details:{items:[{product_id:1,product_name:'Coffee',qty:1,price:5}],receipt_exchange_rate:89500,payment:{method:'whish'}}});
+ const sale=(await load()).cache['/api/history'].data[0];assert.deepEqual(response.data.receipt,sale);assert.equal(response.data.orderId,sale.order_id);
+});

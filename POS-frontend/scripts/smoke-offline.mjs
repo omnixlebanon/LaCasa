@@ -114,6 +114,19 @@ try{
  await evaluate("document.querySelector('.confirm-cash-payment').click()");
 
  await until(async()=>{const s=await state();return s.drafts.orders.length===0&&s.queue.some(op=>op.url==='/api/checkout');},'durable offline checkout');
+ await until(()=>evaluate("!!document.querySelector('.receipt-dialog[open]')"),'saved receipt preview');
+ assert.match(await evaluate("document.querySelector('.receipt-paper').textContent"),/Test coffee/);
+ assert.match(await evaluate("document.querySelector('.receipt-paper').textContent"),/205,850/);
+ await evaluate("window.print=()=>{window.receiptPrints=(window.receiptPrints||0)+1;};document.querySelector('.receipt-print-button').click()");
+ assert.equal(await evaluate('window.receiptPrints'),1);
+ assert.equal((await state()).queue.filter(op=>op.url==='/api/checkout').length,1,'printing must not create another sale');
+ await command('Emulation.setEmulatedMedia',{media:'print'});
+ assert.equal(await evaluate("getComputedStyle(document.querySelector('#root')).display"),'none');
+ assert.equal(await evaluate("getComputedStyle(document.querySelector('.receipt-toolbar')).display"),'none');
+ assert.notEqual(await evaluate("getComputedStyle(document.querySelector('.receipt-paper')).display"),'none');
+ await command('Emulation.setEmulatedMedia',{media:''});
+ await evaluate("document.querySelector('[aria-label=\"Close receipt\"]').click()");
+
  await command('Page.reload');await until(()=>evaluate("!!document.querySelector('.product-card-btn')"),'second offline reload');
  assert.equal((await state()).cache['/api/history'].data.length,1,'offline sale lost on reload');
  await command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
@@ -179,6 +192,13 @@ try{
   await command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
   await until(async()=>(await state()).queue.length===0,'WHISH sync');
   assert.equal(checkouts,2);assert.equal(history.at(-1).details.payment.method,'whish');
+  await command('Page.navigate',{url:`http://127.0.0.1:${server.address().port}/POS/history`});
+  await until(()=>evaluate("!!document.querySelector('.history-print-btn')"),'history receipt button');
+  await evaluate("document.querySelector('.history-print-btn').click()");
+  await until(()=>evaluate("!!document.querySelector('.receipt-dialog[open]')"),'reprint preview');
+  assert.match(await evaluate("document.querySelector('.receipt-paper').textContent"),/WHISH Money/);
+  assert.equal(checkouts,2,'reprinting must not create a sale');
+
 
  }
  console.log('PASS: mobile layout, offline reopening, durable cart, shared open order, offline checkout, reconnect and one sale only.');

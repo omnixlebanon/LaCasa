@@ -1,9 +1,10 @@
+import ReceiptDialog from '../../components/ReceiptDialog.jsx';
 import RefundDialog from '../../components/RefundDialog.jsx';
 import LoadingState from '../../components/LoadingState.jsx';
 import useMobile from '../../hooks/useMobile.js';
 import { useState, useEffect, useMemo, useRef } from 'react';
 import './History.css';
-import { History as HistoryIcon, X } from 'lucide-react';
+import { History as HistoryIcon, X, Printer } from 'lucide-react';
 import api, { apiAssetUrl } from '/src/api.js';
 import { useCurrency } from '../../global.jsx';
 import { useAuth } from '../../context/AuthContext.jsx';
@@ -16,6 +17,7 @@ function OrderHistory() {
     const [statusFilter, setStatusFilter] = useState('');
     const [history, setHistory] = useState([]);
     const [selectedOrder, setSelectedOrder] = useState(null);
+    const [receipt,setReceipt]=useState(null);
     const [selectedEvidence, setSelectedEvidence] = useState(null);
     const [evidenceError, setEvidenceError] = useState(false);
     const evidenceDialogRef = useRef(null);
@@ -119,6 +121,7 @@ function OrderHistory() {
 
     return (
         <>
+            {receipt&&<ReceiptDialog order={receipt} onClose={()=>setReceipt(null)}/>}
             <dialog className="refund-evidence-dialog" ref={evidenceDialogRef} aria-labelledby="refund-evidence-title" onClose={() => setSelectedEvidence(null)}>
                 <div className="refund-evidence-header">
                     <h3 id="refund-evidence-title">Refund evidence{selectedEvidence && ` — Order #${selectedEvidence.order_id || selectedEvidence.id}`}</h3>
@@ -237,6 +240,7 @@ function OrderHistory() {
                                                 >
                                                     View details
                                                 </button>
+                                                <button type="button" className="history-print-btn" onClick={()=>setReceipt(item)}><Printer size={16}/>Receipt</button>
                                             </td>
                                             {isMobile && <td data-label="Total">{formatPrice(Number(item.total_amount) || 0)}</td>}
                                             <td data-label="Payment">{getOrderDetails(item).payment_method || item.payment_method || 'N/A'}</td>

@@ -45,7 +45,9 @@ export function applyLocal(state,op) {
   const details=copy(data.details);details.offline_operation_id=op.id;
   details.items=details.items.map(sold=>{const recipe=details.offline_recipe_snapshot.find(r=>same(r.product_id,sold.product_id)).ingredients;const unit_cost=Math.round(recipe.reduce((sum,r)=>sum+r.qty*r.item_cost,0)*100)/100;return {...sold,unit_cost,total_cost:Math.round(unit_cost*sold.qty*100)/100,cost_source:recipe.length?'offline_checkout_recipe':'no_recipe'};});
   details.cost_snapshot_version=1;details.total_cost=details.items.reduce((sum,item)=>sum+Math.round(item.total_cost*100),0)/100;
-  each(state,'/api/history',rows=>[...rows,{internal_id:id,order_id:'offline-'+op.id,customer_name:data.customerName,total_amount:data.totalAmount,details,order_date:op.createdAt,status:'completed',pending_sync:true}]);
+  const sale={internal_id:id,order_id:'offline-'+op.id,customer_name:data.customerName,total_amount:data.totalAmount,details,order_date:op.createdAt,status:'completed',pending_sync:true};
+  each(state,'/api/history',rows=>[...rows,sale]);
+  response.receipt=copy(sale);response.orderId=sale.order_id;
   each(state,'/api/seating/floors',floors=>{for(const f of floors)for(const t of f.tables)if(same(t.t_id,details.table_id)||t.t_name===details.table_name)t.t_status='available';return floors;});
   for(const sold of details.items||[])for(const recipe of details.offline_recipe_snapshot.find(r=>same(r.product_id,sold.product_id)).ingredients)deductStock(state,recipe.item_id,Number(sold.qty)*Number(recipe.qty));
   if(state.drafts){state.drafts.orders=state.drafts.orders.filter(order=>order.checkoutOperationId!==op.id);if(!state.drafts.orders.some(order=>order.id===state.drafts.activeOrderId))state.drafts.activeOrderId=state.drafts.orders.at(-1)?.id||null;}

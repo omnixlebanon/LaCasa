@@ -1,3 +1,4 @@
+import ReceiptDialog from '../../components/ReceiptDialog.jsx';
 import CashPaymentDialog from '../../components/CashPaymentDialog.jsx';
 import useDrafts, { editDrafts } from '../../offline/useDrafts.js';
 import LoadingState from '../../components/LoadingState.jsx';
@@ -24,6 +25,7 @@ function Order() {
     const [isProcessing, setIsProcessing] = useState(false);
     const [paymentOrder,setPaymentOrder]=useState(null),[paymentError,setPaymentError]=useState('');
     const checkoutLock=useRef(false);
+    const [receipt,setReceipt]=useState(null);
     const [optionOpen, setOptionOpen] = useState("");
     const { formatPrice, rate } = useCurrency();
 
@@ -249,7 +251,9 @@ function Order() {
         if(!current||JSON.stringify(current)!==paymentOrder.order){setPaymentError('This order changed. Cancel and reopen payment to use the latest total.');return;}
         checkoutLock.current=true;setIsProcessing(true);setPaymentError('');
         try{
-            await api.post('/api/checkout',{...paymentOrder.payload,details:{...paymentOrder.payload.details,payment_method:payment.method==='whish'?'WHISH Money':'Cash',payment}});
+            const savedDetails={...paymentOrder.payload.details,receipt_exchange_rate:paymentOrder.rate,payment_method:payment.method==='whish'?'WHISH Money':'Cash',payment};
+            const result=await api.post('/api/checkout',{...paymentOrder.payload,details:savedDetails});
+            if(!savedDetails.no_print)setReceipt(result.data.receipt||{order_id:result.data.orderId,customer_name:paymentOrder.payload.customerName,total_amount:paymentOrder.payload.totalAmount,order_date:result.data.timestamp,details:savedDetails});
             setPaymentOrder(null);
             await removeOrder(paymentOrder.id);
         }catch(error){setPaymentError(error.response?.data?.error||error.message||'Could not save payment.');}
@@ -260,6 +264,7 @@ function Order() {
 
     return (
         <>
+            {receipt&&<ReceiptDialog order={receipt} onClose={()=>setReceipt(null)}/>}
             {paymentOrder&&<CashPaymentDialog total={paymentOrder.payload.totalAmount} rate={paymentOrder.rate} busy={isProcessing} error={paymentError} onCancel={()=>{if(!isProcessing)setPaymentOrder(null);}} onConfirm={confirmPayment}/>}
             <OrderOptions
                 optionsOpen={optionsOpen}
