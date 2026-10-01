@@ -202,6 +202,15 @@ try{
   await until(()=>evaluate("!!document.querySelector('.receipt-dialog[open]')"),'reprint preview');
   assert.match(await evaluate("document.querySelector('.receipt-paper').textContent"),/WHISH Money/);
   assert.equal(checkouts,2,'reprinting must not create a sale');
+  await evaluate("window.print=()=>{};document.querySelector('.receipt-print-button').click()");
+ const receiptPdf=await command('Page.printToPDF',{preferCSSPageSize:true,displayHeaderFooter:false});
+ const pdfText=Buffer.from(receiptPdf.data,'base64').toString('latin1');
+ const pageBox=pdfText.match(/\/MediaBox\s*\[\s*0\s+0\s+([\d.]+)\s+([\d.]+)/);
+ assert.ok(pageBox,'receipt PDF has page dimensions');
+ assert.ok(Math.abs(Number(pageBox[1])-80*72/25.4)<2,'receipt uses the 80 mm roll');
+ assert.ok(Number(pageBox[2])<200*72/25.4,'short receipt does not use a full-length page');
+ assert.equal((pdfText.match(/\/Type\s*\/Page\b/g)||[]).length,1,'short receipt fits one page');
+
 
 
  }
