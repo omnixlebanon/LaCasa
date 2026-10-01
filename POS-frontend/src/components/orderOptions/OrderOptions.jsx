@@ -26,7 +26,7 @@ function OrderOptions({ optionsOpen, setOptionsOpen, optionOpen, setOptionOpen, 
             <div className='editPopup-head'><p>Options</p><button type="button" className='close-btn' onClick={closeAll}><X /></button></div>
             <div className='option-btns'>
                 <button className={`option-btn ${activeOrder?.label && activeOrder?.tableName !== activeOrder?.label ? 'active-option' : ''}`} onClick={() => handleActiveOption('orderName')}>Order Name</button>
-                <button className={`option-btn ${activeOrder?.noPrint ? 'active-option' : ''}`} onClick={() => handleActiveOption('print')}>{activeOrder?.noPrint ? 'Printing Off' : "Don't Print"}</button>
+                <button className={`option-btn ${activeOrder?.noPrint ? 'active-option' : ''}`} onClick={() => handleActiveOption('print')}>{activeOrder?.noPrint ? 'Printing Off' : "Printing On"}</button>
                 <button className={`option-btn ${activeOrder?.kitchenNote ? 'active-option' : ''}`} onClick={() => handleActiveOption('kitchenNote')}>Kitchen Note</button>
                 <button className={`option-btn ${activeOrder?.discount ? 'active-option' : ''}`} onClick={() => handleActiveOption('discount')}>Discount</button>
                 <button className='option-btn' onClick={() => handleActiveOption('reset')}>Reset Order</button>
