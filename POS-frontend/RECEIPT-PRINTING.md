@@ -16,3 +16,5 @@ The launcher uses a separate Edge profile in Local AppData, so ordinary browser 
 Chromium implementation: https://chromium.googlesource.com/chromium/src/+/refs/heads/main/chrome/browser/ui/webui/print_preview/print_preview_handler.cc
 
 Edge launcher example: https://learn.microsoft.com/en-nz/answers/questions/2377892/kiosk-printing-in-edge-site-app
+
+If the right edge is clipped, reopen with `-Setup` and match the receipt paper selector AND the printer driver paper size to the physical roll (58 mm or 80 mm). Use 100% scale and turn off headers/footers. The receipt uses a 48 mm or 72 mm content width, with zero page margins, aligned to the left so a wider driver page cannot shift it off the roll. Print an existing receipt to verify before returning to silent mode.

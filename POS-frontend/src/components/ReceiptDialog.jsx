@@ -18,7 +18,7 @@ export default function ReceiptDialog({order,onClose,autoPrint=false}){
  },[autoPrint]);
  const receipt=receiptData(order),payment=receipt.payment;
  function print(){setError('');try{window.print();}catch{setError('Could not open printing. You can try again or reprint from Order History.');}}
- return createPortal(<dialog ref={dialog} className="receipt-dialog" aria-labelledby="receipt-title" style={{'--receipt-width':paper==='a4'?'180mm':paper==='58'?'48mm':'70mm'}} onCancel={event=>{event.preventDefault();onClose();}}>
+ return createPortal(<dialog ref={dialog} className="receipt-dialog" aria-labelledby="receipt-title" style={{'--receipt-width':paper==='a4'?'180mm':paper==='58'?'48mm':'72mm'}} onCancel={event=>{event.preventDefault();onClose();}}>
   <header className="receipt-controls"><h2 id="receipt-title">Receipt</h2><button type="button" onClick={onClose} aria-label="Close receipt"><X size={20}/></button></header>
   <div className="receipt-toolbar"><label>Paper size<select value={paper} onChange={event=>{setPaper(event.target.value);try{localStorage.setItem('receipt-paper',event.target.value);}catch{}}}><option value="80">80 mm receipt</option><option value="58">58 mm receipt</option><option value="a4">A4</option></select></label><button type="button" className="receipt-print-button" onClick={print}><Printer size={18}/>Print receipt</button></div>
   {error&&<p className="receipt-print-error" role="alert">{error}</p>}
