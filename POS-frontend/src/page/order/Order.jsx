@@ -264,7 +264,7 @@ function Order() {
 
     return (
         <>
-            {receipt&&<ReceiptDialog order={receipt} onClose={()=>setReceipt(null)}/>}
+            {receipt&&<ReceiptDialog autoPrint order={receipt} onClose={()=>setReceipt(null)}/>}
             {paymentOrder&&<CashPaymentDialog total={paymentOrder.payload.totalAmount} rate={paymentOrder.rate} busy={isProcessing} error={paymentError} onCancel={()=>{if(!isProcessing)setPaymentOrder(null);}} onConfirm={confirmPayment}/>}
             <OrderOptions
                 optionsOpen={optionsOpen}

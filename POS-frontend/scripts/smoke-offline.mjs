@@ -111,13 +111,15 @@ try{
  await evaluate("(() => {const input=document.querySelector('#cash-received');Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(input,'17.3');input.dispatchEvent(new Event('input',{bubbles:true}));})()");
  await until(()=>evaluate("!document.querySelector('.confirm-cash-payment').disabled"),'cash ready');
  assert.match(await evaluate("document.querySelector('.payment-change').textContent"),/\$5.00/);
+ await evaluate("window.print=()=>{window.receiptPrints=(window.receiptPrints||0)+1;};");
  await evaluate("document.querySelector('.confirm-cash-payment').click()");
 
  await until(async()=>{const s=await state();return s.drafts.orders.length===0&&s.queue.some(op=>op.url==='/api/checkout');},'durable offline checkout');
  await until(()=>evaluate("!!document.querySelector('.receipt-dialog[open]')"),'saved receipt preview');
  assert.match(await evaluate("document.querySelector('.receipt-paper').textContent"),/Test coffee/);
  assert.match(await evaluate("document.querySelector('.receipt-paper').textContent"),/205,850/);
- await evaluate("window.print=()=>{window.receiptPrints=(window.receiptPrints||0)+1;};document.querySelector('.receipt-print-button').click()");
+ await until(()=>evaluate('window.receiptPrints===1'),'automatic receipt print');
+ assert.doesNotMatch(await evaluate("document.querySelector('.receipt-paper').textContent"),/1 USD =/);
  assert.equal(await evaluate('window.receiptPrints'),1);
  assert.equal((await state()).queue.filter(op=>op.url==='/api/checkout').length,1,'printing must not create another sale');
  await command('Emulation.setEmulatedMedia',{media:'print'});
@@ -185,8 +187,10 @@ try{
   await evaluate("document.querySelector('.check-in-btn').click()");
   await until(()=>evaluate("!!document.querySelector('.cash-payment-dialog[open]')"),'WHISH payment dialog');
   await evaluate("document.querySelectorAll('.payment-methods button')[1].click()");
+  await evaluate("window.receiptPrints=0;window.print=()=>{window.receiptPrints++;window.dispatchEvent(new Event('afterprint'));};");
   await evaluate("document.querySelector('.confirm-cash-payment').click()");
   await until(async()=>(await state()).drafts.orders.length===0,'WHISH saved offline');
+  await until(()=>evaluate("window.receiptPrints===1&&!document.querySelector('.receipt-dialog[open]')"),'automatic print closes receipt');
   await command('Page.reload');await until(()=>evaluate("!!document.querySelector('.product-card-btn')"),'WHISH offline reload');
   assert.equal((await state()).cache['/api/history'].data.at(-1).details.payment.method,'whish');
   await command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
