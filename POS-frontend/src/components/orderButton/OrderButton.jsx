@@ -7,9 +7,9 @@ function OrderButton({ data, onClick }) {
     if (!product) return null;
 
     return (
-        <button className="product-card-btn" onClick={onClick}>
+        <button className="product-card-btn" onClick={onClick} title={product.product_name || 'Product Name'}>
             <div className="card-badge-container">
-                <span className="category-badge">
+                <span className="category-badge" title={product.product_category || 'CATEGORY'}>
                     {product.product_category?.toUpperCase() || "CATEGORY"}
                 </span>
             </div>

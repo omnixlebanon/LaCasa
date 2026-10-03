@@ -42,8 +42,8 @@ function ProductManag() {
     };
 
     // Fetch products
-    const fetchData = async () => {
-        setLoadingProducts(true);
+    const fetchData = async (quiet = false) => {
+        if (quiet !== true) setLoadingProducts(true);
         setProductError('');
         try {
             const res = await api.get('/api/products');
@@ -57,8 +57,8 @@ function ProductManag() {
     };
 
     // Fetch categories from the database table
-    const fetchCategories = async () => {
-        setLoadingCategories(true);
+    const fetchCategories = async (quiet = false) => {
+        if (quiet !== true) setLoadingCategories(true);
         setCategoryError('');
         try {
             const res = await api.get('/api/products/categories');
@@ -73,6 +73,17 @@ function ProductManag() {
             setLoadingCategories(false);
         }
     };
+
+    useEffect(() => {
+        fetchData();
+        fetchCategories();
+        const refresh = () => {
+            fetchData(true);
+            fetchCategories(true);
+        };
+        window.addEventListener('offline-snapshot', refresh);
+        return () => window.removeEventListener('offline-snapshot', refresh);
+    }, []);
 
     const sortedProducts = useMemo(() => {
         let result = [...products];
@@ -209,11 +220,13 @@ function ProductManag() {
                 <section className="category-visibility-panel" aria-label="Category POS and menu visibility">
                     <h3>Categories in POS & menu</h3><p>Hiding a category hides all its products. Showing it again keeps individually hidden products hidden.</p>
                     {visibilityError && <p role="alert">{visibilityError}</p>}
+                    {(loadingCategories || categoryError) && <LoadingState label="Loading categories..." error={categoryError} onRetry={() => fetchCategories()} />}
                     <div>{categoryRecords.map(category => <button type="button" key={category.p_category_id} disabled={visibilityBusy !== null} onClick={() => toggleCategoryVisibility(category)} aria-pressed={Number(category.pos_hidden) !== 1}>
                         <strong>{category.p_category_name}</strong><span>{visibilityBusy === category.p_category_id ? 'Saving...' : Number(category.pos_hidden) === 1 ? 'Hidden - show in POS' : 'Visible - hide from POS'}</span>
                     </button>)}</div>
                 </section>
-                {!sortedProducts.length && <p className="product-empty">No products match your filters.</p>}
+                {(loadingProducts || productError) && <LoadingState label="Loading products..." error={productError} onRetry={() => fetchData()} />}
+                {!loadingProducts && !productError && !sortedProducts.length && <p className="product-empty">No products match your filters.</p>}
                 <div className='display-area'>
                     {sortedProducts.map((product) => (
                         <ProductCard key={product.product_id} data={product} categories={categories} onProductEdit={fetchData} />

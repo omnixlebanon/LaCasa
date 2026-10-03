@@ -38,6 +38,9 @@
     border-radius: 20px;
     letter-spacing: 0.025em;
     max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
 }
@@ -47,7 +50,11 @@
     font-weight: 600;
     margin: 12px 0;
     line-height: 1.4;
-    overflow-wrap: anywhere;
+    width: 100%;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     flex-grow: 1;
     background: transparent;
 }
