@@ -107,6 +107,29 @@ test('rejected conflicts are removed with a reason instead of waiting for review
  assert.equal(count,2);assert.equal(state.queue.length,0);assert.equal(state.recovery.length,2);assert.match(state.recovery[0].skipReason,/First.*Another device changed this/);
 });
 
+test('two laptops changing the shared revision preserve pending work until reviewed',async()=>{
+ await write('/api/products',{product_name:'First laptop draft',product_category:'Hot',product_price:2});
+ await write('/api/products',{product_name:'Second draft',product_category:'Hot',product_price:3});
+ const original=(await load()).queue.map(op=>op.id);
+ let attempts=0,revision=25;
+ network.defaults.adapter=async config=>{
+  if(config.method==='get')return {data:config.url==='/api/offline/revision'?{}:fixture().cache[keyOf(config.url)]?.data||[],status:200,headers:headers(revision),config};
+  attempts++;
+  if(Number(config.headers['X-Base-Revision'])!==revision)throw new AxiosError('Conflict','ERR_BAD_REQUEST',config,null,{status:409,data:{code:'SYNC_CONFLICT',revision,error:'Another device changed the shared data.'},headers:headers(revision)});
+  return {data:{insertId:100+attempts},status:201,headers:headers(++revision),config};
+ };
+ navigator.onLine=true;await syncPending({manual:true});
+ await syncPending();await syncPending({manual:true});
+ let state=await load();
+ assert.equal(attempts,1);assert.deepEqual(state.queue.map(op=>op.id),original);
+ assert.equal(state.recovery.length,0);assert.ok(state.queue.every(op=>op.blocked));
+ await resolvePending();state=await load();
+ assert.equal(state.archive.length,1);assert.equal(state.queue.length,1);assert.equal(state.recovery.length,0);
+ await syncPending({manual:true});assert.equal((await load()).queue.length,1);
+ await resolvePending();state=await load();
+ assert.equal(state.queue.length,0);assert.equal(state.archive.length,2);assert.equal(state.recovery.length,0);
+});
+
 test('temporary product IDs are mapped before syncing dependent orders',async()=>{
  const created=await write('/api/products',{product_name:'New coffee',product_category:'Hot',product_price:2});
  await write('/api/checkout',{totalAmount:2,customerName:'Test',details:{items:[{product_id:created.data.insertId,qty:1,price:2}]}});

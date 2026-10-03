@@ -1,20 +1,20 @@
 ﻿import { useEffect, useState, useRef } from 'react';
 import { useAuth } from '../context/AuthContext.jsx';
 import { load, exportBackup, restoreBackup } from './storage.js';
-import { prepareOffline, syncPending, resolvePending, correctPending, latestSharedData, activePending, isWaitingOnHeld, leavePendingUnsynced, resumeHeld, dismissSyncNotices, connectionState, syncProgress } from './transport.js';
+import { prepareOffline, syncPending, resolvePending, correctPending, latestSharedData, activePending, needsConflictReview, isWaitingOnHeld, leavePendingUnsynced, resumeHeld, dismissSyncNotices, connectionState, syncProgress } from './transport.js';
 import './offline.css';
 function redact(value){if(Array.isArray(value))return value.map(redact);if(value&&typeof value==='object')return Object.fromEntries(Object.entries(value).map(([key,v])=>[key,/password|token|evidence/i.test(key)?'[private]':redact(v)]));return value;}
 function isChatbotRecord(record){return /^\/api\/(bot(?:\/|$)|management\/requests(?:\/|$)|history\/[^/]+\/refund-request(?:\/|$))/.test(record.url||'');}
 function syncMessage(message){if(/Telegram chatbot features are disabled/i.test(message||''))return '';return /products_product_name_key/i.test(message||'')?'A product with this name already exists on the server. Change the saved name or leave this request unsynced.':message;}
 function PendingChange({op,active,waiting,run}){
  const [editing,setEditing]=useState(false),[text,setText]=useState(''),[productName,setProductName]=useState(op.data.product_name||'');
- return <details><summary>{op.method.toUpperCase()} {op.url} — {op.deferred?'Left unsynced':waiting?'Waiting for a related unsynced request':op.blocked?'Will be checked and skipped on Sync now':'Waiting to sync'}</summary>
+ return <details><summary>{op.method.toUpperCase()} {op.url} — {op.deferred?'Left unsynced':waiting?'Waiting for a related unsynced request':op.blocked?(needsConflictReview(op)?'Review required: another device changed shared data':'Will be checked and skipped on Sync now'):'Waiting to sync'}</summary>
   <time>{new Date(op.createdAt).toLocaleString()}</time><pre>{JSON.stringify(redact(op.data),null,2)}</pre>
   {syncMessage(op.problem)&&<p role="alert">{syncMessage(op.problem)}</p>}
   {op.deferred&&<button onClick={()=>run(()=>resumeHeld(op.id))}>Review and retry later</button>}
   {active&&(op.blocked||op.problem)&&<>
    {op.blocked&&/^\/api\/products(?:\/-?\d+)?$/.test(op.url)&&typeof op.data.product_name==='string'&&<div><label>Saved product name<input aria-label="Saved product name" maxLength={120} value={productName} onChange={e=>setProductName(e.target.value)}/></label><button disabled={!productName.trim()||productName.trim()===op.data.product_name} onClick={()=>run(()=>correctPending({...op.data,product_name:productName.trim()}))}>Save new name and retry</button><p>The original request stays in your recovery backup.</p></div>}
-   <button onClick={()=>run(()=>syncPending({manual:true,resumeAuth:true}))}>Ignore failed requests and continue sync</button>
+   {!needsConflictReview(op)&&<button onClick={()=>run(()=>syncPending({manual:true,resumeAuth:true}))}>Ignore failed requests and continue sync</button>}
    <button onClick={()=>run(()=>leavePendingUnsynced(op.id))}>Leave unsynced</button>
    <button onClick={()=>run(async()=>{if(window.confirm('Apply this saved change against the latest shared data? Review the current shared values first: this may overwrite newer values.'))await resolvePending();})}>Reviewed — retry this change</button>
    <button onClick={()=>{setText(JSON.stringify(op.data,null,2));setEditing(!editing);}}>Correct saved fields</button>

@@ -142,7 +142,7 @@ export async function correctPending(data) {
    if(activePending(state)?.id!==op.id)throw Error('The pending queue changed. Reopen the review.');
    const original=activePending(state);
    state.recovery=state.recovery||[];state.recovery.push({...original,supersededAt:new Date().toISOString()});
-   state.queue[state.queue.findIndex(pending=>pending.id===original.id)]={...original,id:crypto.randomUUID(),data,blocked:false,problem:null,sentData:undefined,sentUrl:undefined,expectedRevision:undefined};
+   state.queue[state.queue.findIndex(pending=>pending.id===original.id)]={...original,id:crypto.randomUUID(),data,blocked:false,problem:null,sentData:undefined,sentUrl:undefined,expectedRevision:undefined,conflictCode:undefined,conflictRevision:undefined};
    Object.assign(state,snapshot);const drafts=state.drafts;delete state.drafts;
    for(const pending of state.queue){
     pending.data=remap(pending.data,state.idMap);
@@ -163,7 +163,11 @@ function referencesId(op,id){
  const values=value=>value&&typeof value==='object'?Object.values(value).some(values):String(value)===String(id);
  return op.url.split('/').some(part=>decodeURIComponent(part)===String(id))||values(op.data);
 }
+export function needsConflictReview(op){
+ return op.conflictCode==='SYNC_CONFLICT'||op.conflictRevision!=null;
+}
 function rejectedRequest(op,status,message,code){
+ if(code==='SYNC_CONFLICT'||needsConflictReview(op))return false;
  return duplicateProduct(op,code,message)||[400,404,409,410,422].includes(Number(status))||(op.blocked&&/Review this remaining change against the latest shared data/i.test(message||''));
 }
 async function skipDuplicateProduct(owner,op,reason=op.problem,code){
@@ -205,7 +209,7 @@ export async function syncPending({resumeAuth=false,manual=false}={}) {
    if(accountId()!==owner)return;
    const snapshot=await load(owner);const op=activePending(snapshot);if(syncProgress.stage==='sync')syncProgress={...syncProgress,total:Math.max(syncProgress.total,syncProgress.done+snapshot.queue.length)};if(!op){connectionState=snapshot.queue.length?'requests left unsynced':'online';announce();if(completed)await prepareOffline();if(manual&&snapshot.queue.length)await change(state=>{state.error='Requests are left unsynced. Open a saved request and choose Review and retry later to resume it.';},owner);return;}
    if(op.blocked&&rejectedRequest(op,op.status,op.problem)){try{await skipDuplicateProduct(owner,op);completed=true;syncProgress={...syncProgress,done:syncProgress.done+1};announce();continue;}catch(error){await change(state=>{state.error=error.response?.data?.error||error.message;},owner);return;}}
-   if(op.blocked&&manual&&Number(op.status)!==401){
+   if(op.blocked&&manual&&Number(op.status)!==401&&!needsConflictReview(op)){
     try{
      connectionState='checking saved request';announce();
      const receipt=await network.get('/api/offline/operations/'+op.id,{headers:{'X-Offline-Account-Id':owner.split(':')[0]}});
@@ -239,14 +243,14 @@ export async function syncPending({resumeAuth=false,manual=false}={}) {
     if(rejectedRequest(op,error.response?.status,error.response?.data?.error,error.response?.data?.code)){
      try{await skipDuplicateProduct(owner,op,error.response?.data?.error,error.response?.data?.code);completed=true;syncProgress={...syncProgress,done:syncProgress.done+1};announce();continue;}catch(refreshError){await change(state=>{state.error='Could not refresh the catalog. The rejected request is still saved. '+refreshError.message;},owner);return;}
     }
-    if(manual&&error.response&&Number(error.response.status)!==401){
+    if(manual&&error.response&&Number(error.response.status)!==401&&error.response.data?.code!=='SYNC_CONFLICT'){
      try{
       const receipt=await network.get('/api/offline/operations/'+op.id,{headers:{'X-Offline-Account-Id':owner.split(':')[0]}});
       if(receipt.data.applied===false){await skipDuplicateProduct(owner,op,error.response.data?.error||error.message);completed=true;syncProgress={...syncProgress,done:syncProgress.done+1};announce();continue;}
      }catch{/* Keep unconfirmed requests saved and display the failure below. */}
     }
     const status=error.response?.status;connectionState=status===401?'sign-in required':status===409?'conflict':status?'sync paused':'offline';
-    await change(s=>{s.error=error.response?.data?.error||error.message;if(activePending(s)?.id===op.id){activePending(s).blocked=!!status&&status!==503;activePending(s).problem=s.error;activePending(s).conflictRevision=error.response?.data?.revision;activePending(s).status=status;if(status===409)for(const later of s.queue.filter(pending=>pending.id!==op.id&&!pending.deferred)){later.blocked=true;later.status=409;later.problem='Review this remaining change against the latest shared data.';}}},owner);announce();return;
+    await change(s=>{s.error=error.response?.data?.error||error.message;if(activePending(s)?.id===op.id){activePending(s).blocked=!!status&&status!==503;activePending(s).problem=s.error;activePending(s).conflictRevision=error.response?.data?.revision;activePending(s).conflictCode=error.response?.data?.code;activePending(s).status=status;if(status===409)for(const later of s.queue.filter(pending=>pending.id!==op.id&&!pending.deferred)){later.blocked=true;later.status=409;later.conflictCode=error.response?.data?.code;later.conflictRevision=error.response?.data?.revision;later.problem='Review this remaining change against the latest shared data.';}}},owner);announce();return;
    }
   }
   } finally {syncProgress={...syncProgress,active:false};announce();}
@@ -254,7 +258,7 @@ export async function syncPending({resumeAuth=false,manual=false}={}) {
 }
 export async function resolvePending() {
  const revision=await network.get('/api/offline/revision');
- await change(s=>{const op=activePending(s);if(!op)return;op.expectedRevision=Number(revision.headers['x-sync-revision']);op.blocked=false;op.problem=null;s.error=null;});
+ await change(s=>{const op=activePending(s);if(!op)return;op.expectedRevision=Number(revision.headers['x-sync-revision']);op.blocked=false;op.problem=null;delete op.conflictCode;delete op.conflictRevision;s.error=null;});
  return syncPending();
 }
 async function offlineAdapterImpl(config){
