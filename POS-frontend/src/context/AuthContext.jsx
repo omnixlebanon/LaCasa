@@ -24,19 +24,20 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   useEffect(() => {
-    if (user) {
-      setLoading(false);
-      return;
-    }
     if (window.location.pathname === '/POS/login') {
       setLoading(false);
       
       return;
     }
     
+    let active = true;
+    let checking = false;
     const checkSession = async () => {
+      if (checking || !navigator.onLine) { if (active) setLoading(false); return; }
+      checking = true;
       try {
         const res = await api.get('/api/auth/me', { withCredentials: true });
+        if (!active) return;
         if (res.data.success) {
           setUser(res.data.user);
           localStorage.setItem('auth_user', JSON.stringify(res.data.user));
@@ -45,14 +46,27 @@ export const AuthProvider = ({ children }) => {
           localStorage.removeItem('auth_user');
         }
       } catch (err) {
-        setUser(null);
-        localStorage.removeItem('auth_user');
+        // A connection failure does not invalidate the account's offline data.
+        if (active && [401, 403, 404].includes(err.response?.status)) {
+          setUser(null);
+          localStorage.removeItem('auth_user');
+        }
       } finally {
-        setLoading(false);
+        checking = false;
+        if (active) setLoading(false);
       }
     };
-    checkSession();
-  }, [user]);
+    void checkSession();
+    window.addEventListener('online', checkSession);
+    window.addEventListener('focus', checkSession);
+    const timer = setInterval(checkSession, 60000);
+    return () => {
+      active = false;
+      clearInterval(timer);
+      window.removeEventListener('online', checkSession);
+      window.removeEventListener('focus', checkSession);
+    };
+  }, []);
 
   const login = async (username, password) => {
     try {

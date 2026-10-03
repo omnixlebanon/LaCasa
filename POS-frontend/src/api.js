@@ -28,6 +28,7 @@ api.interceptors.response.use(
       console.warn("Session expired or unauthorized. Redirecting to login...");
       
       localStorage.removeItem('token'); 
+      localStorage.removeItem('auth_user');
       window.location.href = '/POS/login'; 
     }
     return Promise.reject(error);

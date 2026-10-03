@@ -40,6 +40,26 @@ beforeEach(async()=>{
  network.defaults.adapter=async config=>({data:config.method==='get'?[]:{success:true},status:200,headers:headers(11),config});
 });
 const write=(url,data={},method='post')=>offlineAdapter({url,method,data});
+test('expired sync session clears cached login and preserves pending changes for that account',async()=>{
+ await write('/api/products',{product_name:'Saved before expiry',product_category:'Hot',product_price:2});
+ const owner=accountId();
+ const saved=(await load(owner)).queue[0];
+ localStorage.setItem('token','expired');
+ const previousLocation=window.location;
+ window.location={pathname:'/POS/',href:'/POS/'};
+ network.defaults.adapter=async config=>{throw new AxiosError('Request failed with status code 401','ERR_BAD_REQUEST',config,null,{status:401,data:{message:'Unauthorized: Invalid token'}});};
+ try{
+  navigator.onLine=true;await syncPending();
+  assert.equal(localStorage.getItem('auth_user'),null);
+  assert.equal(localStorage.getItem('token'),null);
+  assert.equal(window.location.href,'/POS/login');
+  const state=await load(owner);
+  assert.equal(state.queue.length,1);
+  assert.equal(state.queue[0].id,saved.id);
+  assert.equal(state.queue[0].status,401);
+  assert.equal(state.recovery.length,0);
+ }finally{window.location=previousLocation;}
+});
 test('occupied tables and open carts persist together; checkout commits once, retaining costs and releasing table',async()=>{
  await write('/api/seating/tables/1/status',{t_status:'occupied',open_order:true},'put');
  const state=await load();assert.equal(state.cache['/api/seating/floors'].data[0].tables[0].t_status,'occupied');

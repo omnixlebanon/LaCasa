@@ -3,6 +3,15 @@ import axios from 'axios';
 import { accountId, load, change, announceSnapshot } from './storage.js';
 import { keyOf, readLocal, applyLocal, remap } from './model.js';
 export const network = axios.create({baseURL:import.meta.env?.VITE_API_URL || (import.meta.env?.DEV?'http://localhost:8080':''),withCredentials:true,timeout:15000});
+network.interceptors.response.use(res=>res,error=>{
+ if(error.response?.status===401){
+  localStorage.removeItem('auth_user');
+  localStorage.removeItem('token');
+  // Sync uses this client directly, so its expired sessions must also close the app.
+  if(window.location && window.location.pathname!=='/POS/login')window.location.href='/POS/login';
+ }
+ return Promise.reject(error);
+});
 export let connectionState = 'online';
 export let syncProgress = {active:false,done:0,total:0,stage:'sync'};
 const announce=()=>window.dispatchEvent(new Event('offline-change'));
