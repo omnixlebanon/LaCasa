@@ -2,7 +2,7 @@ import MoneyInput from '../MoneyInput.jsx';
 import { useCurrency } from '../../global.jsx';
 import { X } from 'lucide-react';
 
-function OrderOptions({ optionsOpen, setOptionsOpen, optionOpen, setOptionOpen, activeOrder, handleActiveOption, handleSaveChanges }) {
+function OrderOptions({ optionsOpen, setOptionsOpen, optionOpen, setOptionOpen, activeOrder, tables = [], tableBusy = false, tableError = '', handleActiveOption, handleSaveChanges }) {
     const { currencyLabel } = useCurrency();
     const submitTextOption = (event, id, field) => {
         event.preventDefault();
@@ -26,6 +26,7 @@ function OrderOptions({ optionsOpen, setOptionsOpen, optionOpen, setOptionOpen, 
             <div className='editPopup-head'><p>Options</p><button type="button" className='close-btn' onClick={closeAll}><X /></button></div>
             <div className='option-btns'>
                 <button className={`option-btn ${activeOrder?.label && activeOrder?.tableName !== activeOrder?.label ? 'active-option' : ''}`} onClick={() => handleActiveOption('orderName')}>Order Name</button>
+                <button className={`option-btn ${activeOrder?.tableName ? 'active-option' : ''}`} onClick={() => handleActiveOption('table')}>{activeOrder?.tableName ? `Table: ${activeOrder.tableName}` : 'Add Table to Order'}</button>
                 <button className={`option-btn ${activeOrder?.noPrint ? 'active-option' : ''}`} onClick={() => handleActiveOption('print')}>{activeOrder?.noPrint ? 'Printing Off' : "Printing On"}</button>
                 <button className={`option-btn ${activeOrder?.discount ? 'active-option' : ''}`} onClick={() => handleActiveOption('discount')}>Discount</button>
                 <button className='option-btn' onClick={() => handleActiveOption('reset')}>Reset Order</button>
@@ -37,6 +38,14 @@ function OrderOptions({ optionsOpen, setOptionsOpen, optionOpen, setOptionOpen, 
             <div className='editPopup-head'><p>Order Name</p><button type="button" className='close-btn' onClick={() => setOptionOpen('')}><X /></button></div>
             <div className='input-area'><div className='label-input'><label htmlFor='orderName'>Order Name:</label><input name='name' id='orderName' defaultValue={activeOrder?.label || ''} required /></div>
             <div className='final-btn'><button type='button' className='cancel-btn' onClick={() => setOptionOpen('')}>Cancel</button><button className='save-btn' type='submit'>Save Changes</button></div></div>
+        </form></div>}
+
+        {optionOpen === 'table' && <div className='editPopup'><form className='editPopup-container' onSubmit={e => submitTextOption(e, 'table', 'table')}>
+            <div className='editPopup-head'><p>Add Table to Order</p><button type='button' className='close-btn' disabled={tableBusy} onClick={() => setOptionOpen('')}><X /></button></div>
+            <div className='input-area'><div className='label-input'><label htmlFor='orderTable'>Table number or name:</label><input name='table' id='orderTable' list='orderTableNames' placeholder='e.g. 2 or T2' defaultValue={activeOrder?.tableName || ''} required disabled={tableBusy} autoFocus /><datalist id='orderTableNames'>{tables.map(table => <option key={table.t_id} value={table.t_name} />)}</datalist></div>
+                {tableError && <p className='error-message' role='alert'>{tableError}</p>}
+                <div className='final-btn'><button type='button' className='cancel-btn' disabled={tableBusy} onClick={() => setOptionOpen('')}>Cancel</button><button className='save-btn' type='submit' disabled={tableBusy}>{tableBusy ? 'Saving…' : 'Save Table'}</button></div>
+            </div>
         </form></div>}
 
         {optionOpen === 'discount' && <div className='editPopup'><form className='editPopup-container' onSubmit={submitDiscount}>

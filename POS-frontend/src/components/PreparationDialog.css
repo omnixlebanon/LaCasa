@@ -2,5 +2,10 @@
 .preparation-slip th:first-child { width: 80%; }
 .preparation-slip small { white-space: pre-wrap; font-size: 12px; }
 @media print {
+    body:has(> .preparation-print) > :not(.preparation-print) { display: none !important; }
+    html:has(.preparation-print), body:has(> .preparation-print) { height: auto !important; min-height: 0 !important; margin: 0 !important; padding: 0 !important; background: white !important; overflow: visible !important; }
+    .preparation-print { display: block !important; width: var(--receipt-width); max-width: 100%; margin: 0; padding: 0; }
+    .preparation-slip { page: preparation; display: flow-root; }
     .preparation-slip + .preparation-slip { break-before: page; margin-top: 0; }
 }
+.preparation-print { display: none; }

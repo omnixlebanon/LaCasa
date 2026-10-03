@@ -30,6 +30,9 @@ function Order() {
     const [receipt,setReceipt]=useState(null);
     const [preparation, setPreparation] = useState(null);
     const [printChoice, setPrintChoice] = useState(false);
+    const [tables, setTables] = useState([]);
+    const [tableBusy, setTableBusy] = useState(false);
+    const [tableError, setTableError] = useState('');
     const [optionOpen, setOptionOpen] = useState("");
     const { formatPrice, rate } = useCurrency();
 
@@ -164,10 +167,34 @@ function Order() {
     const preparationItems = (activeOrder?.items || []).map(item => ({ ...item, product_category: item.product_category || products.find(product => product.product_id === item.product_id)?.product_category }));
     const pendingItems = pendingPreparation(preparationItems, activeOrder?.printedPreparation);
     const needsPreparation = !activeOrder?.preparationPrinted || pendingItems.length > 0;
-    const startPreparation = (all = true) => {
-        if (!activeOrder?.items.length) return;
+    const preparationLock = useRef(false);
+    const startPreparation = async (all = true) => {
+        if (!activeOrder?.items.length || preparationLock.current) return;
+        preparationLock.current = true;
+        setIsProcessing(true);
         setPrintChoice(false);
-        setPreparation({ id: activeOrder.id, items: all ? preparationItems : pendingItems, snapshot: preparationSnapshot(activeOrder.items) });
+        try {
+            let tableName = activeOrder.tableName || '';
+            let floorName = '';
+            if (activeOrder.tableId || tableName) {
+                const response = await api.get('/api/seating/floors');
+                const matches = table => activeOrder.tableId ? String(table.t_id) === String(activeOrder.tableId) : table.t_name === tableName;
+                const floor = response.data.find(floor => (floor.tables || []).some(matches));
+                const table = floor?.tables.find(matches);
+                if (!table) throw new Error('The assigned table was not found. Update the table in Order Options before printing.');
+                tableName = table.t_name;
+                floorName = floor.floor_name;
+            }
+            setPreparation({ id: activeOrder.id, items: all ? preparationItems : pendingItems, snapshot: preparationSnapshot(activeOrder.items), tableName, floorName });
+        } catch (error) {
+            alert(error.response?.data?.error || error.message || 'Could not prepare staff slips.');
+            closePreparation();
+        }
+    };
+    const closePreparation = () => {
+        setPreparation(null);
+        preparationLock.current = false;
+        setIsProcessing(false);
     };
     const confirmPreparation = async () => {
         await editDrafts(drafts => {
@@ -176,7 +203,7 @@ function Order() {
             order.printedPreparation = preparation.snapshot;
             order.preparationPrinted = true;
         });
-        setPreparation(null);
+        closePreparation();
     };
     const updateItemNote = (index, note) => setOrders(previous => previous.map(order => order.id === activeOrderId ? {
         ...order, items: order.items.map((item, itemIndex) => itemIndex === index ? { ...item, note } : item)
@@ -202,6 +229,12 @@ function Order() {
 
     const handleActiveOption = (id) => {
         if (!activeOrder) return alert('Select or create an order first.');
+        if (id === 'table') {
+            setTableError('');
+            setOptionOpen('table');
+            api.get('/api/seating/floors').then(response => setTables(response.data.flatMap(floor => floor.tables || []))).catch(error => setTableError(error.message || 'Could not load tables.'));
+            return;
+        }
         if (id === 'print') updateActiveOrder({ noPrint: !activeOrder.noPrint });
         else if (id === 'dineIn') updateActiveOrder({ orderType: activeOrder.orderType === 'dine-in' ? 'takeout' : 'dine-in' });
         else if (id === 'reset') {
@@ -212,7 +245,33 @@ function Order() {
         } else setOptionOpen(id);
     };
 
-    const handleSaveChanges = (id, values) => {
+    const handleSaveChanges = async (id, values) => {
+        if (id === 'table') {
+            if (tableBusy) return;
+            setTableBusy(true);
+            setTableError('');
+            try {
+                const entered = values.table.trim();
+                const name = /^\d+$/.test(entered) ? `T${Number(entered)}` : entered;
+                const response = await api.get('/api/seating/floors');
+                const table = response.data.flatMap(floor => floor.tables || []).find(table => table.t_name.toLowerCase() === name.toLowerCase());
+                if (!table) throw new Error('Table not found. Enter an existing table number or name.');
+                const previous = activeOrder;
+                await editDrafts(drafts => {
+                    const order = drafts.orders.find(order => order.id === previous.id);
+                    if (!order) throw new Error('This order was closed.');
+                    if (drafts.orders.some(other => other.id !== order.id && String(other.tableId) === String(table.t_id))) throw new Error('This table already has an order. Open it from Tables instead.');
+                    order.tableId = table.t_id;
+                    order.tableName = table.t_name;
+                    order.orderType = 'dine-in';
+                });
+                await api.put(`/api/seating/tables/${table.t_id}/status`, { t_status: 'occupied' });
+                if (previous.tableId && String(previous.tableId) !== String(table.t_id)) await releaseOrderTable(previous);
+            } catch (error) {
+                setTableError(error.response?.data?.error || error.message || 'Could not save table.');
+                return;
+            } finally { setTableBusy(false); }
+        }
         if (id === 'orderName') updateActiveOrder({ label: values.name.trim() });
         if (id === 'discount') updateActiveOrder({ discount: values.discount });
         setOptionOpen('');
@@ -296,7 +355,7 @@ function Order() {
 
     return (
         <>
-            {preparation && <PreparationDialog items={preparation.items} onClose={() => setPreparation(null)} onPrinted={confirmPreparation} />}
+            {preparation && <PreparationDialog items={preparation.items} tableName={preparation.tableName} floorName={preparation.floorName} onClose={closePreparation} onPrinted={confirmPreparation} />}
             {printChoice && <div className="editPopup"><div className="editPopup-container" role="dialog" aria-modal="true" aria-labelledby="print-choice-title">
                 <div className="editPopup-head"><p id="print-choice-title">Print order updates</p><button className="close-btn" aria-label="Cancel printing" onClick={() => setPrintChoice(false)}><X /></button></div>
                 <div className="input-area"><p>Print newly added quantities and changed notes, or the entire order?</p><div className="final-btn"><button className="cancel-btn" onClick={() => startPreparation(false)}>New items only</button><button className="save-btn" onClick={() => startPreparation(true)}>All items</button></div></div>
@@ -309,6 +368,9 @@ function Order() {
                 optionOpen={optionOpen}
                 setOptionOpen={setOptionOpen}
                 activeOrder={activeOrder}
+                tables={tables}
+                tableBusy={tableBusy}
+                tableError={tableError}
                 handleActiveOption={handleActiveOption}
                 handleSaveChanges={handleSaveChanges}
             />
@@ -319,7 +381,7 @@ function Order() {
                 </div>
                 <div className='order-area'>
                     <div className="mobile-order-context">
-                        <span>{activeOrder ? `Order: ${activeOrder.label}` : 'Create an order to start adding products'}</span>
+                        <span>{activeOrder ? `Order: ${activeOrder.label}${activeOrder.tableName ? ` · Table: ${activeOrder.tableName}` : ''}` : 'Create an order to start adding products'}</span>
                         <button onClick={addOrder}><Plus size={16} /> New order</button>
                     </div>
                     <div className="head-area">
@@ -377,7 +439,7 @@ function Order() {
                                             <X />
                                         </button>
                                         <Ticket className="order-icon" />
-                                        <span className="order-label">{order.label}</span>
+                                        <span className="order-label">{order.label}{order.tableName && order.label !== order.tableName ? ` · ${order.tableName}` : ''}</span>
                                     </div>
                                 ))}
                             <button className='new-order-btn' onClick={addOrder} aria-label="Create order">
