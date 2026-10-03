@@ -514,3 +514,24 @@
   .main-order-area .check-area { flex: auto; }
   .main-order-area .order-items-list { overflow: visible; flex: auto; }
 }
+.order-print-dialog { margin: auto; width: min(480px, calc(100vw - 24px)); max-height: calc(100dvh - 24px); overflow: auto; padding: 24px; border: 1px solid var(--border-color); border-radius: 20px; background: white; color: var(--text-color); box-shadow: 0 20px 60px #0003; }
+.order-print-dialog::backdrop { background: #10271b99; }
+.order-print-dialog header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 18px; }
+.order-print-icon { display: flex; padding: 12px; border-radius: 14px; color: var(--main-color); background: var(--main-soft); }
+.order-print-dialog button { min-height: 44px; border: 1px solid var(--border-color); border-radius: 12px; background: white; color: inherit; font: inherit; cursor: pointer; }
+.order-print-dialog header button { display: grid; place-items: center; width: 44px; }
+.order-print-dialog h2 { margin: 0 0 8px; font-size: 24px; }
+.order-print-dialog p { margin: 0; color: var(--font-color); font-size: 14px; line-height: 1.5; }
+.order-print-choices { display: grid; gap: 12px; margin: 22px 0; }
+.order-print-choices button { display: flex; align-items: center; gap: 12px; padding: 16px; text-align: left; flex-wrap: wrap; }
+.order-print-choices button > span:not(.order-print-badge) { flex: 1; min-width: 160px; }
+.order-print-choices strong, .order-print-choices small { display: block; }
+.order-print-choices strong { font-size: 15px; }
+.order-print-choices small { margin-top: 5px; color: var(--font-color); font-size: 13px; line-height: 1.4; }
+.order-print-choices .order-print-recommended { border-color: var(--main-color); background: var(--main-soft); }
+.order-print-badge { padding: 4px 8px; border-radius: 6px; background: var(--main-color); color: white; font-size: 11px; }
+.order-print-dialog footer { display: grid; gap: 14px; border-top: 1px solid var(--border-color); padding-top: 18px; }
+.order-print-dialog footer button { display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; }
+.order-print-dialog button:hover { border-color: var(--main-color); }
+.order-print-dialog button:focus-visible { outline: 2px solid var(--main-color); outline-offset: 3px; }
+.order-print-dialog button:disabled { opacity: .6; cursor: wait; }

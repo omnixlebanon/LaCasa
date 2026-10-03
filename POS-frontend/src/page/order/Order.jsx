@@ -5,7 +5,7 @@ import CashPaymentDialog from '../../components/CashPaymentDialog.jsx';
 import useDrafts, { editDrafts } from '../../offline/useDrafts.js';
 import LoadingState from '../../components/LoadingState.jsx';
 import './Order.css';
-import { Search, Plus, Minus, X, Ticket, SlidersHorizontal, CircleCheckBig } from 'lucide-react';
+import { Search, Plus, Minus, X, Ticket, SlidersHorizontal, CircleCheckBig, Printer, SkipForward } from 'lucide-react';
 import OrderButton from '../../components/orderButton/OrderButton.jsx';
 import OrderOptions from '../../components/orderOptions/OrderOptions.jsx';
 import api from '/src/api.js';
@@ -30,6 +30,10 @@ function Order() {
     const [receipt,setReceipt]=useState(null);
     const [preparation, setPreparation] = useState(null);
     const [printChoice, setPrintChoice] = useState(false);
+    const printChoiceDialog = useRef(null);
+    useEffect(() => {
+        if (printChoice) printChoiceDialog.current?.showModal();
+    }, [printChoice]);
     const [tables, setTables] = useState([]);
     const [tableBusy, setTableBusy] = useState(false);
     const [tableError, setTableError] = useState('');
@@ -205,6 +209,26 @@ function Order() {
         });
         closePreparation();
     };
+    const skipPreparation = async () => {
+        if (!activeOrder || preparationLock.current) return;
+        preparationLock.current = true;
+        setIsProcessing(true);
+        try {
+            await editDrafts(drafts => {
+                const order = drafts.orders.find(order => order.id === activeOrder.id);
+                if (!order) throw new Error('This order was closed.');
+                // Acknowledge this version so checkout can continue; future changes still prompt.
+                order.printedPreparation = preparationSnapshot(activeOrder.items);
+                order.preparationPrinted = true;
+            });
+            setPrintChoice(false);
+        } catch (error) {
+            alert('Could not skip printing: ' + error.message);
+        } finally {
+            preparationLock.current = false;
+            setIsProcessing(false);
+        }
+    };
     const updateItemNote = (index, note) => setOrders(previous => previous.map(order => order.id === activeOrderId ? {
         ...order, items: order.items.map((item, itemIndex) => itemIndex === index ? { ...item, note } : item)
     } : order));
@@ -356,10 +380,16 @@ function Order() {
     return (
         <>
             {preparation && <PreparationDialog items={preparation.items} tableName={preparation.tableName} floorName={preparation.floorName} onClose={closePreparation} onPrinted={confirmPreparation} />}
-            {printChoice && <div className="editPopup"><div className="editPopup-container" role="dialog" aria-modal="true" aria-labelledby="print-choice-title">
-                <div className="editPopup-head"><p id="print-choice-title">Print order updates</p><button className="close-btn" aria-label="Cancel printing" onClick={() => setPrintChoice(false)}><X /></button></div>
-                <div className="input-area"><p>Print newly added quantities and changed notes, or the entire order?</p><div className="final-btn"><button className="cancel-btn" onClick={() => startPreparation(false)}>New items only</button><button className="save-btn" onClick={() => startPreparation(true)}>All items</button></div></div>
-            </div></div>}
+            {printChoice && <dialog ref={printChoiceDialog} className="order-print-dialog" aria-labelledby="print-choice-title" aria-describedby="print-choice-description" onCancel={event => { event.preventDefault(); if (!isProcessing) setPrintChoice(false); }}>
+                <header><span className="order-print-icon"><Printer size={24} /></span><button type="button" aria-label="Cancel printing" disabled={isProcessing} onClick={() => setPrintChoice(false)}><X size={20} /></button></header>
+                <h2 id="print-choice-title">Print order updates</h2>
+                <p id="print-choice-description">Choose what to send to Bar and Kitchen for {activeOrder?.label}.</p>
+                <div className="order-print-choices">
+                    <button type="button" className="order-print-recommended" disabled={isProcessing} onClick={() => startPreparation(false)}><Plus size={20} /><span><strong>Print updates only</strong><small>New quantities and changed item notes.</small></span><span className="order-print-badge">Recommended</span></button>
+                    <button type="button" disabled={isProcessing} onClick={() => startPreparation(true)}><Printer size={20} /><span><strong>Print entire order</strong><small>Reprint all items, including previous items.</small></span></button>
+                </div>
+                <footer><p>Skip these updates and continue to check in. Future changes will still ask to print.</p><button type="button" disabled={isProcessing} onClick={skipPreparation}><SkipForward size={18} />{isProcessing ? 'Saving...' : 'Skip printing'}</button></footer>
+            </dialog>}
             {receipt&&<ReceiptDialog autoPrint order={receipt} onClose={()=>setReceipt(null)}/>}
             {paymentOrder&&<CashPaymentDialog total={paymentOrder.payload.totalAmount} rate={paymentOrder.rate} busy={isProcessing} error={paymentError} onCancel={()=>{if(!isProcessing)setPaymentOrder(null);}} onConfirm={confirmPayment}/>}
             <OrderOptions
