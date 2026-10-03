@@ -27,7 +27,6 @@ function OrderOptions({ optionsOpen, setOptionsOpen, optionOpen, setOptionOpen, 
             <div className='option-btns'>
                 <button className={`option-btn ${activeOrder?.label && activeOrder?.tableName !== activeOrder?.label ? 'active-option' : ''}`} onClick={() => handleActiveOption('orderName')}>Order Name</button>
                 <button className={`option-btn ${activeOrder?.noPrint ? 'active-option' : ''}`} onClick={() => handleActiveOption('print')}>{activeOrder?.noPrint ? 'Printing Off' : "Printing On"}</button>
-                <button className={`option-btn ${activeOrder?.kitchenNote ? 'active-option' : ''}`} onClick={() => handleActiveOption('kitchenNote')}>Kitchen Note</button>
                 <button className={`option-btn ${activeOrder?.discount ? 'active-option' : ''}`} onClick={() => handleActiveOption('discount')}>Discount</button>
                 <button className='option-btn' onClick={() => handleActiveOption('reset')}>Reset Order</button>
                 <button className={`option-btn ${activeOrder?.orderType === 'dine-in' ? 'active-option' : ''}`} onClick={() => handleActiveOption('dineIn')}>{activeOrder?.orderType === 'dine-in' ? 'Dine In' : 'Takeout'}</button>
@@ -37,12 +36,6 @@ function OrderOptions({ optionsOpen, setOptionsOpen, optionOpen, setOptionOpen, 
         {optionOpen === 'orderName' && <div className='editPopup'><form className='editPopup-container' onSubmit={e => submitTextOption(e, 'orderName', 'name')}>
             <div className='editPopup-head'><p>Order Name</p><button type="button" className='close-btn' onClick={() => setOptionOpen('')}><X /></button></div>
             <div className='input-area'><div className='label-input'><label htmlFor='orderName'>Order Name:</label><input name='name' id='orderName' defaultValue={activeOrder?.label || ''} required /></div>
-            <div className='final-btn'><button type='button' className='cancel-btn' onClick={() => setOptionOpen('')}>Cancel</button><button className='save-btn' type='submit'>Save Changes</button></div></div>
-        </form></div>}
-
-        {optionOpen === 'kitchenNote' && <div className='editPopup'><form className='editPopup-container' onSubmit={e => submitTextOption(e, 'kitchenNote', 'note')}>
-            <div className='editPopup-head'><p>Kitchen Note</p><button type="button" className='close-btn' onClick={() => setOptionOpen('')}><X /></button></div>
-            <div className='input-area'><div className='label-input'><label htmlFor='kitchenNote'>Kitchen Note:</label><input name='note' id='kitchenNote' defaultValue={activeOrder?.kitchenNote || ''} /></div>
             <div className='final-btn'><button type='button' className='cancel-btn' onClick={() => setOptionOpen('')}>Cancel</button><button className='save-btn' type='submit'>Save Changes</button></div></div>
         </form></div>}
 

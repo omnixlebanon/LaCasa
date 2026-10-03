@@ -1,0 +1,6 @@
+.preparation-slip + .preparation-slip { margin-top: 20px; }
+.preparation-slip th:first-child { width: 80%; }
+.preparation-slip small { white-space: pre-wrap; font-size: 12px; }
+@media print {
+    .preparation-slip + .preparation-slip { break-before: page; margin-top: 0; }
+}

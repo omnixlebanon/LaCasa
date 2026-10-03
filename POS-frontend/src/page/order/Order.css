@@ -454,7 +454,8 @@
 .check-area { position: static; height: 100%; min-height: 0; }
 .order-items-list { overscroll-behavior-y: contain; }
 .mobile-order-tabs, .mobile-order-context { display: none; }
-.item-name-price-area { flex: 1; }
+.item-name-price-area { flex: 1; min-width: 0; }
+.item-kitchen-note { width: 100%; box-sizing: border-box; margin-top: 6px; padding: 8px; border: 1px solid var(--border-color); border-radius: 6px; font: inherit; font-size: 13px; resize: vertical; }
 .item-name { white-space: normal; max-width: none; overflow-wrap: anywhere; }
 .item-price { overflow-wrap: anywhere; }
 .order-item-row { flex-shrink: 0; }

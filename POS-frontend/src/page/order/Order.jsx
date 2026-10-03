@@ -1,4 +1,6 @@
 import ReceiptDialog from '../../components/ReceiptDialog.jsx';
+import PreparationDialog from '../../components/PreparationDialog.jsx';
+import { lineKey, pendingPreparation, preparationSnapshot } from '../../utils/preparation.js';
 import CashPaymentDialog from '../../components/CashPaymentDialog.jsx';
 import useDrafts, { editDrafts } from '../../offline/useDrafts.js';
 import LoadingState from '../../components/LoadingState.jsx';
@@ -26,6 +28,8 @@ function Order() {
     const [paymentOrder,setPaymentOrder]=useState(null),[paymentError,setPaymentError]=useState('');
     const checkoutLock=useRef(false);
     const [receipt,setReceipt]=useState(null);
+    const [preparation, setPreparation] = useState(null);
+    const [printChoice, setPrintChoice] = useState(false);
     const [optionOpen, setOptionOpen] = useState("");
     const { formatPrice, rate } = useCurrency();
 
@@ -108,9 +112,7 @@ function Order() {
         setOrders((prevOrders) =>
             prevOrders.map((order) => {
                 if (order.id !== activeOrderId) return order;
-                const existingItemIndex = order.items.findIndex(
-                    (item) => item.product_id === product.product_id
-                );
+                const existingItemIndex = product.lineId ? order.items.findIndex(item => item.lineId === product.lineId) : -1;
                 let updatedItems = [...order.items];
 
                 if (existingItemIndex > -1) {
@@ -120,9 +122,12 @@ function Order() {
                     };
                 } else {
                     updatedItems.push({
+                        lineId: crypto.randomUUID(),
                         product_id: product.product_id,
                         product_name: product.product_name,
                         product_price: product.product_price,
+                        product_category: product.product_category,
+                        note: '',
                         qty: 1,
                     });
                 }
@@ -131,12 +136,12 @@ function Order() {
         );
     };
 
-    const removeProductFromOrder = (product) => {
+    const removeProductFromOrder = (product, index) => {
         setOrders((prevOrders) =>
             prevOrders.map((order) => {
                 if (order.id !== activeOrderId) return order;
-                const updatedItems = order.items.map((item) =>
-                    item.product_id === product.product_id
+                const updatedItems = order.items.map((item, itemIndex) =>
+                    lineKey(item, itemIndex) === lineKey(product, index)
                         ? { ...item, qty: item.qty - 1 }
                         : item
                 )
@@ -155,6 +160,27 @@ function Order() {
     const activeOrder = useMemo(() => {
         return orders.find(order => order.id === activeOrderId) || null;
     }, [orders, activeOrderId]);
+
+    const preparationItems = (activeOrder?.items || []).map(item => ({ ...item, product_category: item.product_category || products.find(product => product.product_id === item.product_id)?.product_category }));
+    const pendingItems = pendingPreparation(preparationItems, activeOrder?.printedPreparation);
+    const needsPreparation = !activeOrder?.preparationPrinted || pendingItems.length > 0;
+    const startPreparation = (all = true) => {
+        if (!activeOrder?.items.length) return;
+        setPrintChoice(false);
+        setPreparation({ id: activeOrder.id, items: all ? preparationItems : pendingItems, snapshot: preparationSnapshot(activeOrder.items) });
+    };
+    const confirmPreparation = async () => {
+        await editDrafts(drafts => {
+            const order = drafts.orders.find(order => order.id === preparation.id);
+            if (!order) throw new Error('This order was closed.');
+            order.printedPreparation = preparation.snapshot;
+            order.preparationPrinted = true;
+        });
+        setPreparation(null);
+    };
+    const updateItemNote = (index, note) => setOrders(previous => previous.map(order => order.id === activeOrderId ? {
+        ...order, items: order.items.map((item, itemIndex) => itemIndex === index ? { ...item, note } : item)
+    } : order));
 
     const subtotal = useMemo(() => {
         if (!activeOrder) return 0;
@@ -180,7 +206,7 @@ function Order() {
         else if (id === 'dineIn') updateActiveOrder({ orderType: activeOrder.orderType === 'dine-in' ? 'takeout' : 'dine-in' });
         else if (id === 'reset') {
             if (window.confirm('Remove all items and options from this order?')) {
-                updateActiveOrder({ items: [], kitchenNote: '', discount: null, noPrint: false });
+                updateActiveOrder({ items: [], kitchenNote: '', discount: null, noPrint: false, printedPreparation: {}, preparationPrinted: false });
                 setOptionsOpen(false);
             }
         } else setOptionOpen(id);
@@ -188,7 +214,6 @@ function Order() {
 
     const handleSaveChanges = (id, values) => {
         if (id === 'orderName') updateActiveOrder({ label: values.name.trim() });
-        if (id === 'kitchenNote') updateActiveOrder({ kitchenNote: values.note.trim() });
         if (id === 'discount') updateActiveOrder({ discount: values.discount });
         setOptionOpen('');
         setOptionsOpen(false);
@@ -219,6 +244,11 @@ function Order() {
             alert("Cannot check in an empty order.");
             return;
         }
+        if (needsPreparation) {
+            if (activeOrder.preparationPrinted) setPrintChoice(true);
+            else startPreparation();
+            return;
+        }
         const payload = {
             totalAmount: parseFloat(totalPrice),
             customerName: activeOrder.label,
@@ -237,7 +267,9 @@ function Order() {
                     product_id: item.product_id,
                     product_name: item.product_name,
                     price: item.product_price,
-                    qty: item.qty
+                    qty: item.qty,
+                    note: item.note || '',
+                    product_category: item.product_category
                 }))
             }
         };
@@ -264,6 +296,11 @@ function Order() {
 
     return (
         <>
+            {preparation && <PreparationDialog items={preparation.items} onClose={() => setPreparation(null)} onPrinted={confirmPreparation} />}
+            {printChoice && <div className="editPopup"><div className="editPopup-container" role="dialog" aria-modal="true" aria-labelledby="print-choice-title">
+                <div className="editPopup-head"><p id="print-choice-title">Print order updates</p><button className="close-btn" aria-label="Cancel printing" onClick={() => setPrintChoice(false)}><X /></button></div>
+                <div className="input-area"><p>Print newly added quantities and changed notes, or the entire order?</p><div className="final-btn"><button className="cancel-btn" onClick={() => startPreparation(false)}>New items only</button><button className="save-btn" onClick={() => startPreparation(true)}>All items</button></div></div>
+            </div></div>}
             {receipt&&<ReceiptDialog autoPrint order={receipt} onClose={()=>setReceipt(null)}/>}
             {paymentOrder&&<CashPaymentDialog total={paymentOrder.payload.totalAmount} rate={paymentOrder.rate} busy={isProcessing} error={paymentError} onCancel={()=>{if(!isProcessing)setPaymentOrder(null);}} onConfirm={confirmPayment}/>}
             <OrderOptions
@@ -350,16 +387,17 @@ function Order() {
                     </div>
                     <div className="order-items-list">
                         {activeOrder && activeOrder.items.length > 0 ? (
-                            activeOrder.items.map((item) => (
-                                <div key={item.product_id} className="order-item-row">
+                            activeOrder.items.map((item, index) => (
+                                <div key={lineKey(item, index)} className="order-item-row">
                                     <div className='item-name-price-area'>
                                         <span className="item-name">{item.product_name}</span>
                                         <span className='item-price'>{formatPrice(item.product_price * item.qty)}</span>
+                                        <textarea className="item-kitchen-note" aria-label={`Note for ${item.product_name}, line ${index + 1}`} placeholder="Item note (optional)" value={item.note || ''} onChange={event => updateItemNote(index, event.target.value)} rows={1} />
                                     </div>
                                     <span className="qty-control-area">
-                                        <button aria-label={`Remove one ${item.product_name}`} className='decrease-qty' onClick={() => removeProductFromOrder(item)}><Minus /></button>
+                                        <button aria-label={`Remove one ${item.product_name}`} className='decrease-qty' onClick={() => removeProductFromOrder(item, index)}><Minus /></button>
                                         <span className="item-qty">{item.qty}x</span>
-                                        <button aria-label={`Add one ${item.product_name}`} className='increase-qty' onClick={() => addProductToOrder(item)}><Plus /></button>
+                                        <button aria-label={`Add one ${item.product_name}`} className='increase-qty' onClick={() => updateActiveOrder({ items: activeOrder.items.map((line, lineIndex) => lineIndex === index ? { ...line, qty: line.qty + 1 } : line) })}><Plus /></button>
                                     </span>
                                 </div>
                             ))
@@ -392,7 +430,7 @@ function Order() {
                                 {isProcessing ? (
                                     <span>Processing...</span>
                                 ) : (
-                                    <><CircleCheckBig /><span>Check in</span></>
+                                    <><CircleCheckBig /><span>{needsPreparation ? 'Print order' : 'Check in'}</span></>
                                 )}
                             </button>
                         </div>

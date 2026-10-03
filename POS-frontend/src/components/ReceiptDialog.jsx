@@ -41,7 +41,6 @@ export default function ReceiptDialog({order,onClose,autoPrint=false}){
   <div className="receipt-preview"><article className="receipt-paper">
    <header><h1>LA CASA</h1><p>Sales receipt</p>{receipt.refunded&&<strong className="receipt-refunded">REFUNDED</strong>}</header>
    <p className="receipt-reference">{receipt.local?'Device receipt':'Order'}: {receipt.id}</p>
-   {!receipt.local&&receipt.reference&&<p className="receipt-reference">Reference: {receipt.reference}</p>}
    <p>{receiptDate(receipt.date)}</p><p>{receipt.customer}{receipt.type==='dine-in'?' / Dine-in':receipt.type==='takeout'?' / Takeaway':''}</p>
    <table><thead><tr><th>Item</th><th>Qty</th><th>USD</th></tr></thead><tbody>{receipt.items.map((item,index)=><tr key={index}><td>{item.name}<small>{usd(item.price)} each</small></td><td>{item.qty}</td><td>{usd(item.price*item.qty)}</td></tr>)}</tbody></table>
    {!receipt.items.length&&<p>Item details not recorded.</p>}
