@@ -17,7 +17,8 @@ export default function ReceiptDialog({order,onClose,autoPrint=false}){
   // Measure at the printed width, without the preview's padding or viewport constraint.
   Object.assign(sample.style,{position:'fixed',visibility:'hidden',width:paper==='58'?'48mm':'72mm',maxWidth:'none',height:'auto',padding:'0',margin:'0',display:'flow-root'});
   document.body.appendChild(sample);
-  const heightMm=Math.ceil(sample.getBoundingClientRect().height*25.4/96)+3;
+  // Keep short receipts portrait as well; some drivers rotate wider-than-tall pages.
+  const heightMm=Math.max(Number(paper)+1,Math.ceil(sample.getBoundingClientRect().height*25.4/96)+3);
   sample.remove();
   const style=document.createElement('style');style.dataset.receiptPage='true';
   style.textContent=`@media print { @page { size: ${paper}mm ${heightMm}mm; margin:0; } @page receipt { size: ${paper}mm ${heightMm}mm; } }`;

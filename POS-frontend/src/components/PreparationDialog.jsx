@@ -42,8 +42,10 @@ export default function PreparationDialog({ items, tableName, floorName, onClose
                     sample.remove();
                     return height;
                 });
+                // Short slips must still have portrait dimensions so drivers do not rotate them.
+                const heightMm = Math.max(Number(paper) + 1, ...heights);
                 pageStyle = document.createElement('style');
-                pageStyle.textContent = '@media print { @page preparation { size: ' + paper + 'mm ' + Math.max(...heights) + 'mm; margin: 0; } }';
+                pageStyle.textContent = '@media print { @page { size: ' + paper + 'mm ' + heightMm + 'mm; margin: 0; } @page preparation { size: ' + paper + 'mm ' + heightMm + 'mm; margin: 0; } }';
                 document.head.appendChild(pageStyle);
                 window.print();
             } catch (error) {
