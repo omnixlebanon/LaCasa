@@ -107,27 +107,51 @@ test('rejected conflicts are removed with a reason instead of waiting for review
  assert.equal(count,2);assert.equal(state.queue.length,0);assert.equal(state.recovery.length,2);assert.match(state.recovery[0].skipReason,/First.*Another device changed this/);
 });
 
-test('two laptops changing the shared revision preserve pending work until reviewed',async()=>{
+test('two laptops changing the shared revision sync automatically without review',async()=>{
  await write('/api/products',{product_name:'First laptop draft',product_category:'Hot',product_price:2});
  await write('/api/products',{product_name:'Second draft',product_category:'Hot',product_price:3});
  const original=(await load()).queue.map(op=>op.id);
- let attempts=0,revision=25;
+ const sent=[];let revision=25;
  network.defaults.adapter=async config=>{
-  if(config.method==='get')return {data:config.url==='/api/offline/revision'?{}:fixture().cache[keyOf(config.url)]?.data||[],status:200,headers:headers(revision),config};
-  attempts++;
+  if(config.method==='get')return {data:fixture().cache[keyOf(config.url)]?.data||[],status:200,headers:headers(revision),config};
+  sent.push({id:config.headers['X-Operation-Id'],data:config.data});
   if(Number(config.headers['X-Base-Revision'])!==revision)throw new AxiosError('Conflict','ERR_BAD_REQUEST',config,null,{status:409,data:{code:'SYNC_CONFLICT',revision,error:'Another device changed the shared data.'},headers:headers(revision)});
-  return {data:{insertId:100+attempts},status:201,headers:headers(++revision),config};
+  return {data:{insertId:100+sent.length},status:201,headers:headers(++revision),config};
+ };
+ navigator.onLine=true;await syncPending();
+ const state=await load();
+ assert.equal(state.queue.length,0);assert.equal(state.recovery.length,0);
+ assert.deepEqual(state.archive.map(op=>op.id),original);
+ assert.equal(sent.length,3);assert.deepEqual(sent[0],sent[1]);
+});
+
+test('continuous concurrent writes yield and resume automatically with pending data intact',async()=>{
+ await write('/api/products/1',{product_price:6},'patch');
+ const original=(await load()).queue[0].id;
+ let revision=20,conflicting=true,attempts=0;
+ network.defaults.adapter=async config=>{
+  if(config.method==='get')return {data:fixture().cache[keyOf(config.url)]?.data||[],status:200,headers:headers(revision),config};
+  attempts++;
+  if(conflicting)throw new AxiosError('Conflict','ERR_BAD_REQUEST',config,null,{status:409,data:{code:'SYNC_CONFLICT',revision:++revision},headers:headers(revision)});
+  return {data:{success:true},status:200,headers:headers(++revision),config};
  };
  navigator.onLine=true;await syncPending({manual:true});
- await syncPending();await syncPending({manual:true});
- let state=await load();
- assert.equal(attempts,1);assert.deepEqual(state.queue.map(op=>op.id),original);
- assert.equal(state.recovery.length,0);assert.ok(state.queue.every(op=>op.blocked));
- await resolvePending();state=await load();
- assert.equal(state.archive.length,1);assert.equal(state.queue.length,1);assert.equal(state.recovery.length,0);
- await syncPending({manual:true});assert.equal((await load()).queue.length,1);
- await resolvePending();state=await load();
- assert.equal(state.queue.length,0);assert.equal(state.archive.length,2);assert.equal(state.recovery.length,0);
+ let state=await load();assert.equal(attempts,3);assert.equal(state.queue.length,1);
+ assert.equal(state.queue[0].id,original);assert.equal(state.queue[0].blocked,false);assert.equal(state.recovery.length,0);
+ conflicting=false;await syncPending();state=await load();
+ assert.equal(state.queue.length,0);assert.equal(state.archive[0].id,original);
+});
+
+test('a revision conflict paused by an older client resumes without review',async()=>{
+ await write('/api/products/1',{product_price:6},'patch');
+ await change(state=>Object.assign(state.queue[0],{blocked:true,status:409,conflictRevision:25,conflictCode:'SYNC_CONFLICT',problem:'Another device changed shared data.'}));
+ let writes=0;
+ network.defaults.adapter=async config=>{
+  if(config.method!=='get'){writes++;assert.equal(config.headers['X-Base-Revision'],'25');}
+  return {data:config.method==='get'?fixture().cache[keyOf(config.url)]?.data||[]:{success:true},status:200,headers:headers(26),config};
+ };
+ navigator.onLine=true;await syncPending();
+ const state=await load();assert.equal(writes,1);assert.equal(state.queue.length,0);assert.equal(state.recovery.length,0);
 });
 
 test('temporary product IDs are mapped before syncing dependent orders',async()=>{

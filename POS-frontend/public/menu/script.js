@@ -1,3 +1,10 @@
+// Keep anchor destinations below the header when desktop navigation wraps.
+const menuHeader = document.querySelector('nav');
+const updateHeaderHeight = () => document.documentElement.style.setProperty('--menu-header-height', menuHeader.getBoundingClientRect().height + 'px');
+if (typeof ResizeObserver !== 'undefined') new ResizeObserver(updateHeaderHeight).observe(menuHeader);
+window.addEventListener('resize', updateHeaderHeight);
+updateHeaderHeight();
+
 const content = document.getElementById('menu-content');
 const status = document.getElementById('menu-status');
 const retry = document.getElementById('menu-retry');

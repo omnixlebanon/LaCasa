@@ -8,7 +8,7 @@ function isChatbotRecord(record){return /^\/api\/(bot(?:\/|$)|management\/reques
 function syncMessage(message){if(/Telegram chatbot features are disabled/i.test(message||''))return '';return /products_product_name_key/i.test(message||'')?'A product with this name already exists on the server. Change the saved name or leave this request unsynced.':message;}
 function PendingChange({op,active,waiting,run}){
  const [editing,setEditing]=useState(false),[text,setText]=useState(''),[productName,setProductName]=useState(op.data.product_name||'');
- return <details><summary>{op.method.toUpperCase()} {op.url} — {op.deferred?'Left unsynced':waiting?'Waiting for a related unsynced request':op.blocked?(needsConflictReview(op)?'Review required: another device changed shared data':'Will be checked and skipped on Sync now'):'Waiting to sync'}</summary>
+ return <details><summary>{op.method.toUpperCase()} {op.url} — {op.deferred?'Left unsynced':waiting?'Waiting for a related unsynced request':op.blocked?(needsConflictReview(op)?'Waiting for automatic retry':'Will be checked and skipped on Sync now'):'Waiting to sync'}</summary>
   <time>{new Date(op.createdAt).toLocaleString()}</time><pre>{JSON.stringify(redact(op.data),null,2)}</pre>
   {syncMessage(op.problem)&&<p role="alert">{syncMessage(op.problem)}</p>}
   {op.deferred&&<button onClick={()=>run(()=>resumeHeld(op.id))}>Review and retry later</button>}

@@ -463,3 +463,88 @@ nav ul li a:focus {
 #menu-retry { display: block; margin: 12px auto; padding: 12px 20px; cursor: pointer; }
 #menu-retry[hidden] { display: none; }
 .section h3 { scroll-margin-top: 150px; }
+
+/* Desktop menu: bounded cards and navigation that fits laptop screens. */
+@media (min-width: 601px) {
+    body { padding-bottom: 48px; }
+    nav { padding: 16px 28px; }
+    nav .nav-inner {
+        max-width: 1160px;
+        display: grid;
+        grid-template-columns: auto minmax(0, 1fr) auto;
+        gap: 24px;
+    }
+    .logo { display: flex; align-items: center; }
+    nav ul {
+        min-width: 0;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+    nav ul li { min-width: 0; max-width: 100%; }
+    nav ul li a {
+        display: block;
+        padding: 8px 14px;
+        font-size: 0.95rem;
+        overflow-wrap: anywhere;
+    }
+    .theme-toggle-btn { min-height: 44px; white-space: nowrap; }
+    .section { margin: 48px auto; padding: 0 28px; }
+    .section h2 {
+        font-size: 2rem;
+        line-height: 1.3;
+        border-color: var(--accent-color);
+        margin-bottom: 20px;
+        padding-bottom: 16px;
+    }
+    .section > h3 {
+        font-size: 1.2rem;
+        margin: 32px 0 16px;
+        line-height: 1.4;
+    }
+    .mini-nav {
+        position: static;
+        justify-content: flex-start;
+        gap: 8px;
+        padding: 0 0 8px;
+        margin-bottom: 16px;
+    }
+    .mini-nav a { padding: 8px 16px; }
+    .menu-grid {
+        grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+        gap: 24px;
+        align-items: stretch;
+    }
+    .menu-item {
+        min-width: 0;
+        border: 1px solid var(--accent-color);
+        border-radius: 16px;
+        box-shadow: 0 4px 14px var(--card-shadow);
+    }
+    .menu-item img {
+        height: 200px;
+        object-fit: contain;
+        padding: 16px;
+        background: var(--bg-color);
+    }
+    .menu-details { min-width: 0; padding: 20px; }
+    .menu-details h3 { font-size: 1.1rem; line-height: 1.4; overflow-wrap: anywhere; }
+    .menu-details p { font-size: 0.95rem; overflow-wrap: anywhere; }
+    .menu-details .price { flex: 0; margin: 16px 0 0; font-size: 1.1rem; }
+}
+@media (min-width: 601px) and (max-width: 900px) {
+    nav .nav-inner { grid-template-columns: 1fr auto; gap: 12px; }
+    nav ul { grid-column: 1 / -1; grid-row: 2; justify-content: flex-start; }
+    nav .theme-toggle-btn { grid-column: 2; grid-row: 1; }
+}
+html { scroll-padding-top: calc(var(--menu-header-height, 100px) + 24px); }
+.section h3 { scroll-margin-top: 0; }
+nav a:focus-visible, .mini-nav a:focus-visible, .theme-toggle-btn:focus-visible {
+    outline: 3px solid var(--text-color);
+    outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+    html { scroll-behavior: auto; }
+    .menu-item { transition: none; }
+    .menu-item:hover { transform: none; }
+}

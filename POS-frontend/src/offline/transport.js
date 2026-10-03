@@ -203,11 +203,16 @@ export async function syncPending({resumeAuth=false,manual=false}={}) {
   if(!lock){if(manual){connectionState='sync already running';announce();}return;}
   if(manual)await change(state=>{for(const op of state.queue)if(op.deferred&&(op.blocked||op.problem))op.deferred=false;},owner);
   let completed=false;
+  const revisionRetries=new Map();
   syncProgress={active:true,done:0,total:(await load(owner)).queue.length,stage:'sync'};announce();
   try {
   for(;;){
    if(accountId()!==owner)return;
    const snapshot=await load(owner);const op=activePending(snapshot);if(syncProgress.stage==='sync')syncProgress={...syncProgress,total:Math.max(syncProgress.total,syncProgress.done+snapshot.queue.length)};if(!op){connectionState=snapshot.queue.length?'requests left unsynced':'online';announce();if(completed)await prepareOffline();if(manual&&snapshot.queue.length)await change(state=>{state.error='Requests are left unsynced. Open a saved request and choose Review and retry later to resume it.';},owner);return;}
+   if(op.blocked&&needsConflictReview(op)){
+    await change(state=>{const pending=activePending(state);if(pending?.id!==op.id)return;pending.blocked=false;pending.problem=null;pending.expectedRevision=pending.conflictRevision??state.revision;delete pending.conflictCode;delete pending.conflictRevision;state.error=null;},owner);
+    continue;
+   }
    if(op.blocked&&rejectedRequest(op,op.status,op.problem)){try{await skipDuplicateProduct(owner,op);completed=true;syncProgress={...syncProgress,done:syncProgress.done+1};announce();continue;}catch(error){await change(state=>{state.error=error.response?.data?.error||error.message;},owner);return;}}
    if(op.blocked&&manual&&Number(op.status)!==401&&!needsConflictReview(op)){
     try{
@@ -240,6 +245,20 @@ export async function syncPending({resumeAuth=false,manual=false}={}) {
     },owner);
     completed=true;syncProgress={...syncProgress,done:syncProgress.done+1};connectionState='online';announce();
    }catch(error){
+    // A shared revision change is normal when cashiers work concurrently. The
+    // server rejected this attempt before writing; resend the immutable operation
+    // against its current revision. Its transaction still validates business rules
+    // and the operation ID protects retries after a lost acknowledgement.
+    if(error.response?.status===409&&error.response.data?.code==='SYNC_CONFLICT'){
+     const revision=Number(error.response.data.revision);
+     if(Number.isSafeInteger(revision)&&revision>=0){
+      await change(state=>{const pending=activePending(state);if(pending?.id!==op.id)return;pending.expectedRevision=revision;pending.blocked=false;pending.status=409;pending.problem=null;delete pending.conflictCode;delete pending.conflictRevision;state.error=null;},owner);
+      const retries=(revisionRetries.get(op.id)||0)+1;revisionRetries.set(op.id,retries);
+      if(retries<3)continue;
+      // Yield under sustained writes. The normal timer resumes without review.
+      connectionState='waiting to sync';announce();return;
+     }
+    }
     if(rejectedRequest(op,error.response?.status,error.response?.data?.error,error.response?.data?.code)){
      try{await skipDuplicateProduct(owner,op,error.response?.data?.error,error.response?.data?.code);completed=true;syncProgress={...syncProgress,done:syncProgress.done+1};announce();continue;}catch(refreshError){await change(state=>{state.error='Could not refresh the catalog. The rejected request is still saved. '+refreshError.message;},owner);return;}
     }
