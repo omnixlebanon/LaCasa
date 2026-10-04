@@ -42,6 +42,7 @@ function Stock({initialTab = "btn1"}) {
                 api.get("/api/stock/recipe")
             ]);
             setCategories(categories_res.data);
+            setCategoryFilter(current => categories_res.data.some(cat => cat.i_category_name === current) ? current : '');
             setItems(items_res.data);
             setStockSummary(summary_res.data);
             setProductSummary(product_summary_res.data);
@@ -63,7 +64,7 @@ function Stock({initialTab = "btn1"}) {
         let result = [...items];
 
         if (searchQuery.trim() !== "") {
-            const term = searchQuery.toLowerCase();
+            const term = searchQuery.trim().toLowerCase();
             result = result.filter(item => {
                 return (item.item_name || item.name)?.toLowerCase().includes(term);
             });
@@ -94,7 +95,7 @@ function Stock({initialTab = "btn1"}) {
     const sortedProducts = useMemo(() => {
         let result = [...productSummary];
         if (searchQuery.trim() !== "") {
-            const term = searchQuery.toLowerCase();
+            const term = searchQuery.trim().toLowerCase();
             result = result.filter(product => {
                 return product.product_name?.toLowerCase().includes(term);
             });
@@ -204,7 +205,12 @@ function Stock({initialTab = "btn1"}) {
                 {activeID === "btn3" && (
                     <BulkChange 
                         loading={loading}
-                        items={items}
+                        items={sortedItems}
+                        categories={categories}
+                        searchQuery={searchQuery} setSearchQuery={setSearchQuery}
+                        stockFilter={stockFilter} setStockFilter={setStockFilter}
+                        dateFilter={dateFilter} setDateFilter={setDateFilter}
+                        categoryFilter={categoryFilter} setCategoryFilter={setCategoryFilter}
                         fetchData={fetchData}
                         handleAddBatch={handleAddBatch}
                     />

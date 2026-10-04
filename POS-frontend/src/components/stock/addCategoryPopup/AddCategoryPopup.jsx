@@ -13,7 +13,7 @@ function AddCategoryPopup({ isOpen, onClose, categories, onSuccess }) {
         if (isOpen && categories) {
             setTempCategories(
                 categories.map((cat, idx) => ({
-                    id: cat.i_category_id || cat.id || `existing-${idx}`,
+                    id: String(cat.i_category_id ?? cat.id ?? `existing-${idx}`),
                     name: cat.i_category_name,
                     isNew: false,
                     isEdited: false,
@@ -132,7 +132,7 @@ function AddCategoryPopup({ isOpen, onClose, categories, onSuccess }) {
             onClose();   // Close modal
         } catch (error) {
             console.error("Error saving category changes:", error.response?.data?.error || error.message);
-            alert("Failed to save category changes.");
+            alert(error.response?.data?.error || "Failed to save category changes.");
         } finally {
             setSubmitting(false);
         }
@@ -228,6 +228,9 @@ function AddCategoryPopup({ isOpen, onClose, categories, onSuccess }) {
                         </div>
                     )}
 
+                    {tempCategories.some(cat => cat.isDeleted) && (
+                        <p role="status">Categories marked for deletion will be removed when you save. Their ingredients will remain without a category.</p>
+                    )}
                     <div className='edit-submit-container'>
                         <button 
                             className='save-btn' 
