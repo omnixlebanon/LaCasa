@@ -6,7 +6,8 @@ import AddIngredientPopup from './addIngredientPopup/AddIngredientPopup.jsx';
 export default function StockToolbar({
     readOnly = false, categories, searchQuery, setSearchQuery,
     stockFilter, setStockFilter, dateFilter, setDateFilter,
-    categoryFilter, setCategoryFilter, fetchData
+    categoryFilter, setCategoryFilter, fetchData,
+    searchLabel = 'Search ingredients', filters
 }) {
     const [isIngModalOpen, setIsIngModalOpen] = useState(false);
     const [isCatModalOpen, setIsCatModalOpen] = useState(false);
@@ -17,14 +18,14 @@ export default function StockToolbar({
                     <Search />
                     <input
                         type="text"
-                        aria-label="Search ingredients"
-                        placeholder='Search ingredients...'
+                        aria-label={searchLabel}
+                        placeholder={`${searchLabel}...`}
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
                     />
                 </div>
                 <div className="stock-extra-nav">
-                    <div className="searchFilters">
+                    {filters !== undefined ? filters : <div className="searchFilters">
                         <select aria-label="Stock level" value={stockFilter} onChange={(e) => setStockFilter(e.target.value)}>
                             <option value="">All Stock Levels</option>
                             <option value="well">Well Stocked</option>
@@ -42,7 +43,7 @@ export default function StockToolbar({
                                 <option key={index} value={cat.i_category_name}>{cat.i_category_name}</option>
                             ))}
                         </select>
-                    </div>
+                    </div>}
                     {!readOnly && <div className="stock-nav-action-btns">
                         <button className="add-btn" onClick={() => setIsIngModalOpen(true)}>
                             <Plus size={16} /> Ingredient

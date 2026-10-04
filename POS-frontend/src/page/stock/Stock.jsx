@@ -197,6 +197,7 @@ function Stock({initialTab = "btn1"}) {
                         searchQuery={searchQuery}
                         setSearchQuery={setSearchQuery}
                         sortedProducts={sortedProducts}
+                        categories={categories}
                         items={items}
                         fetchData={fetchData}
                     />
