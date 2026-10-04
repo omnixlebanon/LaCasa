@@ -11,6 +11,7 @@ function stockItemInput(body, creating = false) {
             if (typeof body[key] !== 'string' || body[key].trim().length > 30 || (required && !body[key].trim())) throw invalid(`${column.replaceAll('_', ' ')} must ${required ? 'contain 1–30' : 'contain at most 30'} characters.`);
             values[column] = body[key].trim();
         } else if (Object.hasOwn(numberFields, key)) {
+            if (key === 'stock_shelf_life' && body[key] === null) { values.shelf_life = null; continue; }
             const number = Number(body[key]);
             const shelfLife = key === 'stock_shelf_life';
             if (!['string', 'number'].includes(typeof body[key]) || body[key] === '' || !Number.isFinite(number) || number < 0 ||
@@ -31,7 +32,7 @@ async function saveStockItem(connection, id, body) {
         const [result] = await connection.execute(`INSERT INTO items
             (item_name, item_category, uom, safety_limit, item_cost, shelf_life, stock, stockStatus)
             VALUES (?, ?, ?, ?, ?, ?, 0, 'out of stock')`,
-            [values.item_name, values.item_category || null, values.uom, values.safety_limit ?? 0, values.item_cost ?? 0, values.shelf_life ?? 0]);
+            [values.item_name, values.item_category || null, values.uom, values.safety_limit ?? 0, values.item_cost ?? 0, Object.hasOwn(values, 'shelf_life') ? values.shelf_life : 0]);
         id = result.insertId;
     } else {
         if (!Number.isSafeInteger(Number(id)) || Number(id) <= 0) throw invalid('Invalid ingredient ID.');

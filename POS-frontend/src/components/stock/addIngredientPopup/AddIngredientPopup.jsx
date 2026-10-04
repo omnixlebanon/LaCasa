@@ -141,9 +141,11 @@ function AddIngredientPopup({ isOpen, onClose, categories, onSuccess }) {
                                 type="number" min="0" step="1" required 
                                 id='stock_shelf_life' 
                                 name="stock_shelf_life" 
-                                value={formData.stock_shelf_life} 
+                                value={formData.stock_shelf_life ?? ''}
+                                disabled={formData.stock_shelf_life === null} 
                                 onChange={handleFormInputChange} 
                             />
+                            <label><input type="checkbox" checked={formData.stock_shelf_life === null} onChange={event => setFormData(prev => ({ ...prev, stock_shelf_life: event.target.checked ? null : 0 }))} /> N/A ? no expiration</label>
                         </div>
                         <div className='label-input'>
                             <label htmlFor="stock_supplier">Supplier</label>

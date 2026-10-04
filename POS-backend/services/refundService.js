@@ -18,7 +18,7 @@ module.exports=async function refundOrder(orderId,{reason,returnToStock},userId)
     for(const ingredient of recipe.ingredients){
      const qty=Number(sold.qty)*Number(ingredient.qty);if(!Number.isFinite(qty)||qty<=0)throw Error('Invalid saved ingredient quantity.');
      const [[item]]=await connection.query('SELECT item_id FROM items WHERE item_id = ? FOR UPDATE',[ingredient.item_id]);if(!item)throw Object.assign(Error('An ingredient no longer exists. Choose no stock return.'),{status:422});
-     await connection.query(`INSERT INTO batches (item_id,batch_stock,batch_exDate) VALUES (?, ?, ${sql('DATE_ADD(CURRENT_DATE, INTERVAL COALESCE((SELECT shelf_life FROM items WHERE item_id = ?),0) DAY)','(CURRENT_DATE + COALESCE((SELECT shelf_life FROM items WHERE item_id = ?),0))')})`,[ingredient.item_id,qty,ingredient.item_id]);
+     await connection.query(`INSERT INTO batches (item_id,batch_stock,batch_exDate) VALUES (?, ?, ${sql('DATE_ADD(CURRENT_DATE, INTERVAL (SELECT shelf_life FROM items WHERE item_id = ?) DAY)','(CURRENT_DATE + (SELECT shelf_life FROM items WHERE item_id = ?))')})`,[ingredient.item_id,qty,ingredient.item_id]);
      await connection.query("UPDATE items SET stock = stock + ?, stockStatus = CASE WHEN stock + ? > safety_limit THEN 'well' ELSE 'Low' END WHERE item_id = ?",[qty,qty,ingredient.item_id]);
     }
    }

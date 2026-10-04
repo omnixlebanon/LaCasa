@@ -24,7 +24,7 @@ function StockItem({ data, onItemEdit, categories = [], readOnly = false }) {
         stock_uom: data.uom || '',
         stock_limit: safetyLimit,
         stock_cost: itemCost,
-        stock_shelf_life: data.shelf_life ?? 0,
+        stock_shelf_life: data.shelf_life === null ? null : (data.shelf_life ?? 0),
         stock_supplier: data.supplier_name || '',
         stock_supplier_contact: data.supplier_contact || '',
     };
@@ -42,7 +42,7 @@ function StockItem({ data, onItemEdit, categories = [], readOnly = false }) {
             stock_uom: data.uom || '',
                 stock_limit: safetyLimit,
             stock_cost: itemCost,
-                stock_shelf_life: data.shelf_life ?? 0,
+                stock_shelf_life: data.shelf_life === null ? null : (data.shelf_life ?? 0),
             stock_supplier: data.supplier_name || '',
             stock_supplier_contact: data.supplier_contact || '',
         });
@@ -127,8 +127,8 @@ function StockItem({ data, onItemEdit, categories = [], readOnly = false }) {
                                 <div className='label-input'><label htmlFor="stock_cost">Unit Cost ({currencyLabel})</label><MoneyInput id="stock_cost" name="stock_cost" required min="0" value={formData.stock_cost} onChange={handleFormInputChange} /></div>
                             </div>
                             <div className='input-area-2nd-line'>
-                                <div className='label-input'><label htmlFor="stock_expiration">Current expiration</label><input id="stock_expiration" value={expirationLabel || 'No dated batch'} readOnly /></div>
-                                <div className='label-input'><label htmlFor="stock_shelf_life">Shelf Life (days)</label><input type="number" id="stock_shelf_life" name="stock_shelf_life" required min="0" max="2147483647" step="1" value={formData.stock_shelf_life} onChange={handleFormInputChange} /><small>Used for new batches.</small></div>
+                                <div className='label-input'><label htmlFor="stock_expiration">Current expiration</label><input id="stock_expiration" value={expirationLabel || 'N/A'} readOnly /></div>
+                                <div className='label-input'><label htmlFor="stock_shelf_life">Shelf Life (days)</label><input type="number" id="stock_shelf_life" name="stock_shelf_life" required min="0" max="2147483647" step="1" value={formData.stock_shelf_life ?? ''} disabled={formData.stock_shelf_life === null} onChange={handleFormInputChange} /><label><input type="checkbox" checked={formData.stock_shelf_life === null} onChange={event => setFormData(prev => ({ ...prev, stock_shelf_life: event.target.checked ? null : 0 }))} /> N/A ? no expiration</label><small>Used for new batches. Existing batch dates stay unchanged.</small></div>
                             </div>
                             <div className='input-area-2nd-line'>
                                 <div className='label-input'><label htmlFor="stock_supplier">Supplier</label><input type="text" id="stock_supplier" name="stock_supplier" maxLength={30} value={formData.stock_supplier} onChange={handleFormInputChange} /></div>

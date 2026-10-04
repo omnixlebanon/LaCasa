@@ -205,7 +205,7 @@ router.post('/stock/:id/batch', async (req, res) => {
         await require('../services/stockPurchaseService').recordPurchase(connection, id, batch_stock, req.body, req.get('X-Operation-Id') ? req.get('X-Offline-Created-At') : null);
         const insertBatchQuery = `
             INSERT INTO batches (item_id, batch_stock, batch_exDate)
-            VALUES (?, ?, ${sql(`DATE_ADD(COALESCE(?, CURRENT_DATE), INTERVAL COALESCE((SELECT shelf_life FROM items WHERE item_id = ?), 0) DAY)`, `(COALESCE(?::date, CURRENT_DATE) + COALESCE((SELECT shelf_life FROM items WHERE item_id = ?), 0))`)})
+            VALUES (?, ?, ${sql(`DATE_ADD(COALESCE(?, CURRENT_DATE), INTERVAL (SELECT shelf_life FROM items WHERE item_id = ?) DAY)`, `(COALESCE(?::date, CURRENT_DATE) + (SELECT shelf_life FROM items WHERE item_id = ?))`)})
         `;
         const [inserted] = await connection.execute(insertBatchQuery, [id, batch_stock, req.offlineDate || null, id]);
 
