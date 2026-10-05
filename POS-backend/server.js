@@ -27,7 +27,7 @@ app.use(cors({
 // Stay below Vercel's 4.5 MB request limit, including the JSON envelope.
 app.use(express.json({ limit: '4mb' }));
 app.use(cookieParser())
-app.use('/api/public/product-images', express.static(require('./services/productImages').imageDirectory, { dotfiles: 'deny', fallthrough: false }));
+app.use('/api/public/product-images', express.static(require('./services/productImages').imageDirectory, { dotfiles: 'deny', fallthrough: false, maxAge: '1y', immutable: true }));
 
 app.use('/api/public', require('./routes/publicMenuRout'));
 app.use('/api/auth', auth_routes)

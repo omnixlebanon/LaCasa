@@ -68,6 +68,36 @@ test('login, employee creation and duplicate handling', async () => {
   assert.equal(duplicate.status, 409);
 });
 
+test('product images upload from the device through the API and return a direct Storage URL', async () => {
+  const data = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+  process.env.SUPABASE_URL = 'https://images-test.supabase.co';
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'server-only-test-key';
+  const originalFetch = global.fetch;
+  const uploads = [];
+  global.fetch = async (url, options) => {
+    if (!url.startsWith(process.env.SUPABASE_URL)) return originalFetch(url, options);
+    if (url.includes('/bucket/')) return Response.json({ public: true });
+    uploads.push({ url, options });
+    return Response.json({ Key: 'uploaded' });
+  };
+  try {
+    const uploaded = await request('/products/image-upload', 'POST', { imageData: `data:image/png;base64,${data}` });
+    assert.equal(uploaded.status, 201);
+    const url = uploaded.data.product_image;
+    assert.match(url, /^https:\/\/images-test\.supabase\.co\/storage\/v1\/object\/public\/menu-images\/products\/[a-f0-9-]+\.png$/);
+    assert.equal(url.includes(process.env.SUPABASE_SERVICE_ROLE_KEY), false);
+    assert.equal(fs.existsSync(path.join(require('../services/productImages').imageDirectory, path.basename(url))), false);
+    assert.equal(uploads.length, 1);
+    assert.deepEqual(uploads[0].options.body, Buffer.from(data, 'base64'));
+    assert.equal(uploads[0].options.headers['Cache-Control'], 'max-age=31536000');
+    // An accepted CDN URL reaches the update rather than failing image validation.
+    assert.equal((await request('/products/999999', 'PATCH', { product_image: url })).status, 404);
+    const invalid = await request('/products/image-upload', 'POST', { imageData: 'data:image/png;base64,aGVsbG8=' });
+    assert.equal(invalid.status, 400);
+    assert.equal(uploads.length, 1);
+  } finally { global.fetch = originalFetch; delete process.env.SUPABASE_URL; delete process.env.SUPABASE_SERVICE_ROLE_KEY; }
+});
+
 test('stock, recipes, checkout, expiration triggers and transaction rollback', async () => {
   const category = await request('/stock/categories', 'POST', { i_category_name: 'Ingredients' });
   assert.equal(category.status, 201);

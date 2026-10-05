@@ -222,7 +222,10 @@ CREATE TABLE IF NOT EXISTS stock_purchases (
  purchased_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 ALTER TABLE stock_purchases ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON stock_purchases FROM anon, authenticated;
+DO $$ BEGIN
+ IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN REVOKE ALL ON stock_purchases FROM anon; END IF;
+ IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN REVOKE ALL ON stock_purchases FROM authenticated; END IF;
+END $$;
 
 CREATE TABLE IF NOT EXISTS position_salary_defaults (
  position_key VARCHAR(50) NOT NULL, position_name VARCHAR(50) NOT NULL,
@@ -231,4 +234,7 @@ CREATE TABLE IF NOT EXISTS position_salary_defaults (
 );
 CREATE UNIQUE INDEX users_single_owner ON users(access_level) WHERE access_level = 'owner';
 ALTER TABLE position_salary_defaults ENABLE ROW LEVEL SECURITY;
-REVOKE ALL ON position_salary_defaults FROM anon, authenticated;
+DO $$ BEGIN
+ IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN REVOKE ALL ON position_salary_defaults FROM anon; END IF;
+ IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN REVOKE ALL ON position_salary_defaults FROM authenticated; END IF;
+END $$;

@@ -1,6 +1,6 @@
 # Deploy the POS to Vercel and Supabase
 
-Product image uploads from Product Management save files in `POS-backend/images/products` and store their `/api/public/product-images/...` path in the product record. This folder must be writable and persisted on the backend host, and included in backups. The folder upload implementation is intended for a local or persistent server; the Vercel deployment below requires persistent image storage before using device uploads in production. Existing menu images and HTTPS image URLs still display as before. Uploads accept PNG, JPEG, and WebP files under 3 MB and require a server connection.
+Product image uploads use **Supabase Storage** on Vercel, with files in the `products/` folder of the public `menu-images` bucket. The backend creates this bucket on the first valid upload, restricted to PNG, JPEG, and WebP files under 3 MB. It stores the direct public CDN URL in the product record so the menu loads images without going through the backend or fetching image bytes from PostgreSQL. Unique filenames and a one-year cache lifetime allow CDN/browser caching without stale replacements. No product-images database migration is needed. Local installations without cloud/storage configuration save files in `POS-backend/images/products`; keep that folder writable, persisted, and backed up. Existing menu images and HTTPS image URLs still display as before. Uploads require a server connection.
 
 The frontend is React/Vite; the API is Express. Deploy them as two Vercel projects from this repository. Supabase provides PostgreSQL. The existing Express login and employee roles remain in use; Supabase Auth is not required.
 
@@ -45,12 +45,17 @@ Set these production environment variables:
 | Variable | Value |
 | --- | --- |
 | `DATABASE_URL` | Supabase transaction-pooler URL with TLS verification |
+| `SUPABASE_URL` | Project URL, e.g. `https://your-project-ref.supabase.co` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Legacy `service_role` API key from the same project's Settings → API Keys; backend only |
+| `SUPABASE_IMAGE_BUCKET` | Optional; defaults to `menu-images` |
 | `JWT_TOKEN` | A long, random secret |
 | `CLIENT_URL` | Exact frontend origin, e.g. `https://your-pos.vercel.app` |
 | `BOT_API_SECRET` | A random secret shared with the Telegram bot |
 | `APP_TIMEZONE` | `Asia/Beirut`, or the store's timezone |
 | `DB_POOL_SIZE` | `3` initially |
 | `NODE_ENV` | `production` |
+
+Add the Supabase Storage variables to the **backend** Vercel project's production environment, then redeploy it. Never use `VITE_` prefixes or expose the service-role key in the frontend. Uploads remain restricted to the existing management roles. The bucket allows public image downloads; uploads go through the authenticated backend. No public upload policy or Supabase Auth setup is needed. If a bucket with the configured name already exists, it must be public; the backend will not change a private bucket's visibility. Use a dedicated image bucket rather than one containing private files. See [Supabase Storage access control](https://supabase.com/docs/guides/storage/security/access-control).
 
 Use the backend project's production hostname in the next step. Its API must be reachable by the frontend proxy and bot; Vercel deployment protection must not intercept those production requests. Express still enforces login and bot authentication. See [Express on Vercel](https://vercel.com/docs/frameworks/backend/express).
 

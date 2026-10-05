@@ -3,7 +3,8 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs/promises');
 const path = require('node:path');
 const express = require('express');
-const { imageDirectory, saveProductImage } = require('../services/productImages');
+const { imageDirectory, createProductImageStore } = require('../services/productImages');
+const { saveProductImage } = createProductImageStore();
 
 test('uploaded image is saved in the images folder and publicly served', async () => {
     const data = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
@@ -26,7 +27,7 @@ test('uploaded image is saved in the images folder and publicly served', async (
 });
 
 test('rejects unsupported, forged and oversized image uploads', async () => {
-    for (const data of [undefined, 'data:image/svg+xml;base64,PHN2Zz4=', 'data:image/png;base64,aGVsbG8=', 'data:image/jpeg;base64,' + Buffer.alloc(3 * 1024 * 1024 + 1).toString('base64')]) {
+    for (const data of [undefined, 'data:image/svg+xml;base64,PHN2Zz4=', 'data:image/png;base64,aGVsbG8=', 'data:image/jpeg;base64,' + Buffer.alloc(3 * 1024 * 1024).toString('base64'), 'data:image/jpeg;base64,' + Buffer.alloc(3 * 1024 * 1024 + 1).toString('base64')]) {
         await assert.rejects(saveProductImage(data));
     }
 });

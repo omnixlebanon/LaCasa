@@ -7,7 +7,9 @@ router.post('/products/image-upload', requireManagement, async (req, res) => {
         const product_image = await require('../services/productImages').saveProductImage(req.body?.imageData);
         res.status(201).json({ product_image });
     } catch (error) {
-        res.status(error.code ? 500 : 400).json({ error: error.code ? 'Could not save image to the images folder.' : error.message });
+        if (error.code) console.error('Product image upload failed:', error.code);
+        const storageError = typeof error.code === 'string' && error.code.startsWith('IMAGE_STORAGE_');
+        res.status(error.code ? 503 : 400).json({ error: storageError || !error.code ? error.message : 'Could not save the image. Check that image storage is available and retry.' });
     }
 });
 function validateMenuDetails(body) {
