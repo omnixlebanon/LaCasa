@@ -18,7 +18,7 @@ export const PieChartsSection = ({ productMetrics, categorySummaries, ingredient
 		color: PRODUCT_COLORS[idx % PRODUCT_COLORS.length],
 		isHighlight: m.isMostSold,
 		margin: m.profitMargin
-	})), 5);
+	})), 2.5);
 	// 3. Category Share Donut Data
 	const categoryPieData = groupSmallSlices(categorySummaries.map((c) => ({
 		name: c.category,
