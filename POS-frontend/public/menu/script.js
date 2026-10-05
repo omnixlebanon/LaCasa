@@ -16,18 +16,33 @@ function element(tag, text, className) {
     if (className) node.className = className;
     return node;
 }
-function placeholder(img) {
-    img.classList.add('placeholder-img');
-    img.src = document.documentElement.dataset.theme === 'dark' ? 'imgs/no_img_dark.png' : 'imgs/no_img.png';
+function placeholderUrl() {
+    return document.documentElement.dataset.theme === 'dark' ? '/menu/imgs/no_img_dark.jpg' : '/menu/imgs/no_img.jpg';
 }
-function createCard(product) {
+function placeholder(img) {
+    img.onload = null;
+    img.onerror = null;
+    img.classList.remove('image-loading');
+    img.style.removeProperty('background-image');
+    img.classList.add('placeholder-img');
+    img.loading = 'eager';
+    img.src = placeholderUrl();
+}
+function createCard(product, index) {
     const card = element('div', undefined, 'menu-item');
     const img = document.createElement('img');
     img.alt = product.product_name;
-    img.loading = 'lazy';
+    img.loading = index < 6 ? 'eager' : 'lazy';
+    img.fetchPriority = index < 2 ? 'high' : 'auto';
+    img.decoding = 'async';
+    img.width = 320;
+    img.height = 200;
+    img.classList.add('image-loading');
+    img.style.backgroundImage = `url("${placeholderUrl()}")`;
+    img.onload = () => { img.classList.remove('image-loading'); img.style.removeProperty('background-image'); };
     img.onerror = () => { img.onerror = null; placeholder(img); };
     const src = product.product_image || '';
-    if (/^https:\/\//i.test(src) || /^(?:\/menu\/)?imgs\//.test(src) || /^\/api\/public\/product-images\/[a-f0-9-]+\.(png|jpg|webp)$/.test(src)) img.src = src;
+    if (/^https:\/\//i.test(src) || /^(?:\/menu\/)?imgs\//.test(src) || /^\/api\/public\/product-images\/[a-f0-9-]+\.(png|jpg|webp)$/.test(src)) img.src = src.startsWith('imgs/') ? '/menu/' + src : src;
     else placeholder(img);
     const details = element('div', undefined, 'menu-details');
     details.append(element('h3', product.product_name), element('p', product.product_description || ''), element('p', new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(product.product_price)), 'price'));
@@ -47,6 +62,15 @@ function renderMenu(products, groups) {
     const sections = groups.map(group => ({id:'group-'+group.group_id,name:group.group_name,categories:categoryNames.filter(name=>String(assigned.get(name))===String(group.group_id))}));
     sections.push({id:'other',name:'More',categories:categoryNames.filter(name=>!known.has(String(assigned.get(name))))});
     const fragment = document.createDocumentFragment();
+    let imageIndex = 0;
+    const imageOrigin = products.find(product => /^https:\/\//i.test(product.product_image || ''))?.product_image;
+    if (imageOrigin) {
+        const origin = new URL(imageOrigin).origin;
+        if (!document.querySelector('link[data-menu-image-origin]')) {
+            const link = document.createElement('link'); link.rel = 'preconnect'; link.href = origin; link.dataset.menuImageOrigin = '';
+            document.head.append(link);
+        }
+    }
     const navigation = document.createDocumentFragment();
     for (const group of sections) {
         const available = group.categories.filter(name => categories.has(name));
@@ -65,7 +89,7 @@ function renderMenu(products, groups) {
             if (name !== group.name) section.append(heading);
             const grid = element('div', undefined, 'menu-grid');
             if (name === group.name) grid.id = heading.id;
-            for (const product of categories.get(name)) grid.append(createCard(product));
+            for (const product of categories.get(name)) grid.append(createCard(product, imageIndex++));
             section.append(grid);
         });
         fragment.append(section);
@@ -95,6 +119,7 @@ document.getElementById('themeToggle').addEventListener('click', () => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     document.getElementById('themeToggle').textContent = dark ? 'Light Mode' : 'Dark Mode';
     document.querySelectorAll('.placeholder-img').forEach(placeholder);
+    document.querySelectorAll('.image-loading').forEach(img => { img.style.backgroundImage = `url("${placeholderUrl()}")`; });
 });
 document.getElementById('back-to-top').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 window.addEventListener('scroll', () => { document.getElementById('back-to-top').style.display = window.scrollY > 400 ? 'flex' : 'none'; });

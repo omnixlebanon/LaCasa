@@ -1,15 +1,17 @@
 import { useEffect, useId, useState } from 'react';
 import api, { apiAssetUrl } from '../api.js';
+import { prepareMenuImage } from '../utils/menuImage.js';
 
 export async function uploadProductImage(file) {
     if (!file) return undefined;
     if (!['image/png', 'image/jpeg', 'image/webp'].includes(file.type)) throw Error('Choose a PNG, JPEG, or WebP image.');
     if (file.size >= 3 * 1024 * 1024) throw Error('Image must be smaller than 3 MB.');
+    const upload = await prepareMenuImage(file);
     const imageData = await new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.onload = () => resolve(reader.result);
         reader.onerror = () => reject(Error('Could not read the selected image.'));
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(upload);
     });
     const response = await api.post('/api/products/image-upload', { imageData }, { adapter: 'xhr' });
     return response.data.product_image;
