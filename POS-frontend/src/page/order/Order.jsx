@@ -421,6 +421,11 @@ function Order() {
             {receipt&&<ReceiptDialog autoPrint order={receipt} onClose={()=>setReceipt(null)}/>}
             {paymentOrder&&<CashPaymentDialog total={paymentOrder.payload.totalAmount} rate={paymentOrder.rate} busy={isProcessing} error={paymentError} onCancel={()=>{if(!isProcessing)setPaymentOrder(null);}} onConfirm={confirmPayment}/>}
             <OrderOptions
+                printingDisabled={printingDisabled}
+                onTogglePrinting={() => {
+                    try { setPrintingDisabled(!printingDisabled); }
+                    catch { alert('Could not save the printing preference.'); }
+                }}
                 optionsOpen={optionsOpen}
                 setOptionsOpen={setOptionsOpen}
                 optionOpen={optionOpen}
@@ -439,7 +444,7 @@ function Order() {
                 </div>
                 <div className='order-area'>
                     <div className="mobile-order-context">
-                        <span>{activeOrder ? `Order: ${activeOrder.label}${activeOrder.tableName ? ` · Table: ${activeOrder.tableName}` : ''}` : 'Create an order to start adding products'}</span>
+                        <span>{activeOrder ? `Order: ${activeOrder.label}${activeOrder.tableName ? ` Â· Table: ${activeOrder.tableName}` : ''}` : 'Create an order to start adding products'}</span>
                         <button onClick={addOrder}><Plus size={16} /> New order</button>
                     </div>
                     <div className="head-area">
@@ -497,7 +502,7 @@ function Order() {
                                             <X />
                                         </button>
                                         <Ticket className="order-icon" />
-                                        <span className="order-label">{order.label}{order.tableName && order.label !== order.tableName ? ` · ${order.tableName}` : ''}</span>
+                                        <span className="order-label">{order.label}{order.tableName && order.label !== order.tableName ? ` Â· ${order.tableName}` : ''}</span>
                                     </div>
                                 ))}
                             <button className='new-order-btn' onClick={addOrder} aria-label="Create order">
@@ -528,15 +533,9 @@ function Order() {
                         )}
                     </div>
                     <div className="order-bottom-area">
-                        <button type="button" className={`printing-all-toggle ${printingDisabled ? 'printing-stopped' : ''}`} aria-pressed={printingDisabled} disabled={isProcessing} onClick={() => {
-                            try { setPrintingDisabled(!printingDisabled); }
-                            catch { alert('Could not save the printing preference.'); }
-                        }}>
-                            <Printer size={18} /><span>{printingDisabled ? 'Resume printing for all' : 'Stop printing for all'}</span>
-                        </button>
-                        {printingDisabled && <p className="printing-all-status" role="status">Printing is off for all orders on this register. Checkout opens directly.</p>}
+
                         <div className='order-total'>
-                            {discountAmount > 0 && <span className='order-discount-summary'>Subtotal {formatPrice(subtotal)} · Discount {formatPrice(discountAmount)}</span>}
+                            {discountAmount > 0 && <span className='order-discount-summary'>Subtotal {formatPrice(subtotal)} Â· Discount {formatPrice(discountAmount)}</span>}
                             <span className='total-text'>Total</span>
                             <span className='total-price'>{formatPrice(totalPrice)}</span>
                         </div>

@@ -10,7 +10,7 @@ async function getPayroll(month, userId = null, connection = db) {
     (SELECT monthly_salary FROM employee_salary_rates sr WHERE sr.user_id=u.user_id AND sr.effective_month<=? ORDER BY sr.effective_month DESC LIMIT 1) AS personal_salary,
     (SELECT monthly_salary FROM position_salary_defaults ps WHERE ps.position_key=LOWER(TRIM(u.user_position)) AND ps.effective_month<=? ORDER BY ps.effective_month DESC LIMIT 1) AS position_salary,
     (SELECT effective_month FROM position_salary_defaults ps WHERE ps.position_key=LOWER(TRIM(u.user_position)) AND ps.effective_month<=? ORDER BY ps.effective_month DESC LIMIT 1) AS position_salary_month
-    FROM users u WHERE u.access_level IN ('employee','manager') ${userId===null?'':'AND u.user_id = ?'} ORDER BY u.user_name`,userId===null?[start,start,start]:[start,start,start,userId]);
+    FROM users u WHERE u.access_level IN ('employee','payroll_only','manager') ${userId===null?'':'AND u.user_id = ?'} ORDER BY u.user_name`,userId===null?[start,start,start]:[start,start,start,userId]);
   const [deductions] = await connection.execute(`SELECT d.user_id, d.request_id, d.order_id, d.amount, d.deducted_at,
     ${sql("JSON_UNQUOTE(JSON_EXTRACT(r.payload, '$.reason'))", "(r.payload ->> 'reason')")} AS reason, r.review_note
     FROM salary_deductions d JOIN workflow_requests r ON r.request_id = d.request_id

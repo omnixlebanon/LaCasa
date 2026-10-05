@@ -42,6 +42,7 @@ app.get('/api/offline/batches', async (req,res,next) => {
     catch (error) { next(error); }
 });
 app.use('/api', seating_routes)
+app.use('/api', require('./routes/settingsRout'));
 app.use('/api', require('./routes/openOrdersRout').router);
 app.use('/api', stock_routes);
 app.use('/api', product_routes);

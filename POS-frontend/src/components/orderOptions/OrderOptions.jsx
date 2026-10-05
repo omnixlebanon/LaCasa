@@ -2,7 +2,7 @@ import MoneyInput from '../MoneyInput.jsx';
 import { useCurrency } from '../../global.jsx';
 import { X } from 'lucide-react';
 
-function OrderOptions({ optionsOpen, setOptionsOpen, optionOpen, setOptionOpen, activeOrder, tables = [], tableBusy = false, tableError = '', handleActiveOption, handleSaveChanges }) {
+function OrderOptions({ optionsOpen, setOptionsOpen, optionOpen, setOptionOpen, activeOrder, printingDisabled, onTogglePrinting, tables = [], tableBusy = false, tableError = '', handleActiveOption, handleSaveChanges }) {
     const { currencyLabel } = useCurrency();
     const submitTextOption = (event, id, field) => {
         event.preventDefault();
@@ -25,6 +25,7 @@ function OrderOptions({ optionsOpen, setOptionsOpen, optionOpen, setOptionOpen, 
         {optionsOpen && <div className='editPopup'><div className='editPopup-container'>
             <div className='editPopup-head'><p>Options</p><button type="button" className='close-btn' onClick={closeAll}><X /></button></div>
             <div className='option-btns'>
+                <button className={`option-btn ${printingDisabled ? 'active-option' : ''}`} aria-pressed={printingDisabled} onClick={onTogglePrinting}>{printingDisabled ? 'Resume printing for all' : 'Stop printing for all'}</button>
                 <button className='option-btn' disabled={!activeOrder || activeOrder.items.reduce((sum, item) => sum + item.qty, 0) < 2} onClick={() => handleActiveOption('split')}>Split Order</button>
                 <button className={`option-btn ${activeOrder?.label && activeOrder?.tableName !== activeOrder?.label ? 'active-option' : ''}`} onClick={() => handleActiveOption('orderName')}>Order Name</button>
                 <button className={`option-btn ${activeOrder?.tableName ? 'active-option' : ''}`} onClick={() => handleActiveOption('table')}>{activeOrder?.tableName ? `Table: ${activeOrder.tableName}` : 'Add Table to Order'}</button>
@@ -33,6 +34,7 @@ function OrderOptions({ optionsOpen, setOptionsOpen, optionOpen, setOptionOpen, 
                 <button className='option-btn' onClick={() => handleActiveOption('reset')}>Reset Order</button>
                 <button className={`option-btn ${activeOrder?.orderType === 'dine-in' ? 'active-option' : ''}`} onClick={() => handleActiveOption('dineIn')}>{activeOrder?.orderType === 'dine-in' ? 'Dine In' : 'Takeout'}</button>
             </div>
+            {printingDisabled && <p role="status">Printing is off for all orders on this register. Checkout opens directly.</p>}
         </div></div>}
 
         {optionOpen === 'orderName' && <div className='editPopup'><form className='editPopup-container' onSubmit={e => submitTextOption(e, 'orderName', 'name')}>

@@ -6,10 +6,10 @@ require('dotenv').config({quiet:true});
  try{
   if(url){
    await db.query('ALTER TABLE users DROP CONSTRAINT IF EXISTS users_access_level_check');
-   await db.query("ALTER TABLE users ADD CONSTRAINT users_access_level_check CHECK (access_level IN ('admin','owner','manager','employee'))");
+   await db.query("ALTER TABLE users ADD CONSTRAINT users_access_level_check CHECK (access_level IN ('admin','owner','manager','employee','payroll_only'))");
    await db.query("CREATE UNIQUE INDEX IF NOT EXISTS users_single_owner ON users (access_level) WHERE access_level = 'owner'");
   }else{
-   await db.query("ALTER TABLE users MODIFY access_level ENUM('admin','owner','manager','employee') NOT NULL DEFAULT 'employee'");
+   await db.query("ALTER TABLE users MODIFY access_level ENUM('admin','owner','manager','employee','payroll_only') NOT NULL DEFAULT 'employee'");
    const [columns]=await db.query("SHOW COLUMNS FROM users LIKE 'owner_slot'");
    if(!columns.length)await db.query("ALTER TABLE users ADD COLUMN owner_slot TINYINT GENERATED ALWAYS AS (CASE WHEN access_level = 'owner' THEN 1 ELSE NULL END) STORED, ADD UNIQUE KEY users_single_owner (owner_slot)");
   }

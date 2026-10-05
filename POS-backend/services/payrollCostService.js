@@ -1,7 +1,7 @@
 async function getPaidPayrollCosts(connection) {
  const [rows]=await connection.execute(`SELECT p.user_id, u.user_name AS employee_name, p.salary_month, p.amount_paid, p.paid_at
  FROM employee_payroll_payments p JOIN users u ON u.user_id = p.user_id
- WHERE u.access_level IN ('employee','manager') AND p.status = 'paid' AND p.paid_at IS NOT NULL ORDER BY p.paid_at DESC, p.user_id`);
+ WHERE u.access_level IN ('employee','payroll_only','manager') AND p.status = 'paid' AND p.paid_at IS NOT NULL ORDER BY p.paid_at DESC, p.user_id`);
  return rows;
 }
 function paymentTimestamp(value) {

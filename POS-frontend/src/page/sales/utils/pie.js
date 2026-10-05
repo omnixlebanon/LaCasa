@@ -1,8 +1,8 @@
 // Compare each original slice with the total before combining small slices.
-export function groupSmallSlices(rows) {
+export function groupSmallSlices(rows, thresholdPercent = 1) {
   const positive = rows.filter(row => Number.isFinite(row.value) && row.value > 0);
   const total = positive.reduce((sum, row) => sum + row.value, 0);
-  const small = positive.filter(row => row.value * 100 < total);
+  const small = positive.filter(row => row.value * 100 < total * thresholdPercent);
   if (!small.length) return positive;
 
   const others = {
@@ -18,5 +18,5 @@ export function groupSmallSlices(rows) {
         : small.reduce((sum, row) => sum + row[field], 0);
     }
   }
-  return [...positive.filter(row => row.value * 100 >= total), others];
+  return [...positive.filter(row => row.value * 100 >= total * thresholdPercent), others];
 }

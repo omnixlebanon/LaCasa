@@ -77,12 +77,13 @@ export default function EmployeeManagement() {
       <form className="employee-panel employee-form" onSubmit={saveEmployee}>
         <h3>{editingId ? 'Edit employee' : 'Add employee'}</h3>
         <input aria-label="Name" placeholder="Full name" value={employeeForm.name} onChange={e => setEmployeeForm({ ...employeeForm, name: e.target.value })} required />
-        <input aria-label="Email" type="email" placeholder="Email" value={employeeForm.email} onChange={e => setEmployeeForm({ ...employeeForm, email: e.target.value })} required />
-        <input aria-label="Password" type="password" placeholder={editingId ? 'New password (optional)' : 'Password'} value={employeeForm.password} onChange={e => setEmployeeForm({ ...employeeForm, password: e.target.value })} required={!editingId} />
+        {employeeForm.accessLevel !== 'payroll_only' && <><input aria-label="Email" type="email" placeholder="Email" value={employeeForm.email} onChange={e => setEmployeeForm({ ...employeeForm, email: e.target.value })} required />
+        <input aria-label="Password" type="password" placeholder={editingId ? 'New password (optional)' : 'Password'} value={employeeForm.password} onChange={e => setEmployeeForm({ ...employeeForm, password: e.target.value })} required={!editingId} /></>}
         <input aria-label="Position" placeholder="Position (e.g. Cashier)" value={employeeForm.position} onChange={e => setEmployeeForm({ ...employeeForm, position: e.target.value })} required />
-        <select aria-label="Access level" value={employeeForm.accessLevel} onChange={e => setEmployeeForm({ ...employeeForm, accessLevel: e.target.value })}>
-          {roleChoices.map(role=><option key={role} value={role}>{role.charAt(0).toUpperCase()+role.slice(1)}</option>)}
+        <select aria-label="Access level" value={employeeForm.accessLevel} onChange={e => setEmployeeForm({ ...employeeForm, accessLevel: e.target.value, position: e.target.value === 'payroll_only' ? 'Normal Employee' : employeeForm.position })}>
+          {roleChoices.map(role=><option key={role} value={role}>{role === 'payroll_only' ? 'Normal Employee (salary only, no POS access)' : role.charAt(0).toUpperCase()+role.slice(1)}</option>)}
         </select>
+        {employeeForm.accessLevel === 'payroll_only' && <p>This employee is included in salary management and cannot sign in to the POS.</p>}
         <div className="employee-form-actions">
           {editingId && <button type="button" onClick={() => { setEditingId(null); setEmployeeForm(emptyEmployee); }}>Cancel</button>}
           <button className="add-btn" type="submit" disabled={saving}><Plus />{editingId ? 'Save employee' : 'Add employee'}</button>
@@ -94,7 +95,7 @@ export default function EmployeeManagement() {
     {isAdmin && <section className="employee-panel employee-list">
       <h3>Employees</h3>
       {loading || loadError ? <LoadingState label="Loading employees..." error={loadError} onRetry={loadData} /> : <div className="employee-table-wrap"><table><thead><tr><th>Name</th><th>Email</th><th>Position</th><th>Access</th><th>Joined</th><th>Actions</th></tr></thead>
-        <tbody>{employees.map(employee => <tr key={employee.user_id}><td data-label="Name">{employee.user_name}</td><td data-label="Email">{employee.user_email}</td><td data-label="Position">{employee.user_position}</td><td data-label="Access"><span className={`access-badge ${employee.access_level}`}>{employee.access_level}</span></td><td data-label="Joined">{new Date(employee.created_at).toLocaleDateString()}</td><td data-label="Actions">{canManage(user?.accessLevel,employee.access_level)?<><button className="icon-button edit" onClick={() => editEmployee(employee)} aria-label={`Edit ${employee.user_name}`}><Pencil /></button><button className="icon-button delete" onClick={() => deleteEmployee(employee.user_id)} aria-label={`Delete ${employee.user_name}`}><Trash2 /></button></>:<span>Protected account</span>}</td></tr>)}</tbody>
+        <tbody>{employees.map(employee => <tr key={employee.user_id}><td data-label="Name">{employee.user_name}</td><td data-label="Email">{employee.user_email}</td><td data-label="Position">{employee.user_position}</td><td data-label="Access"><span className={`access-badge ${employee.access_level}`}>{employee.access_level === 'payroll_only' ? 'Salary only' : employee.access_level}</span></td><td data-label="Joined">{new Date(employee.created_at).toLocaleDateString()}</td><td data-label="Actions">{canManage(user?.accessLevel,employee.access_level)?<><button className="icon-button edit" onClick={() => editEmployee(employee)} aria-label={`Edit ${employee.user_name}`}><Pencil /></button><button className="icon-button delete" onClick={() => deleteEmployee(employee.user_id)} aria-label={`Delete ${employee.user_name}`}><Trash2 /></button></>:<span>Protected account</span>}</td></tr>)}</tbody>
       </table>{!employees.length && <p>No employees found.</p>}</div>}
     </section>}
 

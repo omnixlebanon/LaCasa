@@ -1,5 +1,13 @@
 const test=require('node:test');const assert=require('node:assert/strict');const {PGlite}=require('@electric-sql/pglite');const {wrap}=require('../config/postgres');
 const {assertChange,canManage,management,salaryEligible}=require('../services/accessPolicy');
+test('salary-only employees remain eligible for payroll and manageable without management access',()=>{
+ assert.equal(salaryEligible('payroll_only'),true);
+ assert.equal(management('payroll_only'),false);
+ for(const actor of ['admin','owner','manager']) {
+  assert.equal(canManage(actor,'payroll_only'),true);
+  assert.doesNotThrow(()=>assertChange(actor,null,'payroll_only',true));
+ }
+});
 test('access rules protect owners/admins and owners and admins grant manager',()=>{
  for(const actor of ['admin','owner','manager','employee'])assert.doesNotThrow(()=>assertChange(actor,null,'employee',true));
  for(const actor of ['manager','employee'])assert.throws(()=>assertChange(actor,null,'manager',true),/Only an Owner or Admin/);
@@ -25,6 +33,11 @@ test('database enforces a single owner and account service blocks unauthorized e
   await saveAccount(db,{user_id:1,access_level:'admin'},4,{accessLevel:'employee'});
   await saveAccount(db,{user_id:2,access_level:'owner'},4,{accessLevel:'manager'});
   assert.equal((await db.execute('SELECT access_level FROM users WHERE user_id = 4'))[0][0].access_level,'manager');
+  const created=await saveAccount(db,{user_id:1,access_level:'admin'},null,{name:'Salary only',accessLevel:'payroll_only'});
+  const [[employee]]=await db.execute('SELECT * FROM users WHERE user_id = ?',[created.user_id]);
+  assert.equal(employee.access_level,'payroll_only');
+  assert.equal(employee.user_position,'Normal Employee');
+  assert.ok(employee.user_password_hash);
  }finally{await engine.close();}
 });
 test('payroll defaults respect effective months, individual overrides, and exclude owner/admin',async()=>{
@@ -35,7 +48,8 @@ test('payroll defaults respect effective months, individual overrides, and exclu
  const {getPayroll}=require('../services/payrollService');
  try{
   await engine.exec(`CREATE TABLE users(user_id integer,user_name text,user_position text,access_level text);CREATE TABLE employee_salary_rates(user_id integer,effective_month date,monthly_salary numeric);CREATE TABLE position_salary_defaults(position_key text,effective_month date,monthly_salary numeric);INSERT INTO users VALUES(1,'Admin','Cashier','admin'),(2,'Owner','Cashier','owner'),(3,'Cashier','Cashier','employee'),(4,'Manager','Manager','manager'),(5,'Override','Cashier','employee');INSERT INTO position_salary_defaults VALUES('cashier','2026-09-01',500),('cashier','2026-10-01',600),('manager','2026-09-01',900);INSERT INTO employee_salary_rates VALUES(5,'2026-08-01',700);`);
-  let rows=await getPayroll('2026-09');assert.deepEqual(rows.map(r=>r.userId).sort(),[3,4,5]);assert.equal(rows.find(r=>r.userId===3).baseSalary,500);assert.equal(rows.find(r=>r.userId===5).baseSalary,700);
+  await engine.exec("INSERT INTO users VALUES(6,'Normal','Normal Employee','payroll_only'); INSERT INTO position_salary_defaults VALUES('normal employee','2026-09-01',400)");
+  let rows=await getPayroll('2026-09');assert.deepEqual(rows.map(r=>r.userId).sort(),[3,4,5,6]);assert.equal(rows.find(r=>r.userId===6).baseSalary,400);assert.equal(rows.find(r=>r.userId===3).baseSalary,500);assert.equal(rows.find(r=>r.userId===5).baseSalary,700);
   rows=await getPayroll('2026-10');assert.equal(rows.find(r=>r.userId===3).baseSalary,600);assert.equal(rows.find(r=>r.userId===5).baseSalary,700);
   rows=await getPayroll('2026-08');assert.equal(rows.find(r=>r.userId===3).baseSalary,null);
  }finally{await engine.close();}

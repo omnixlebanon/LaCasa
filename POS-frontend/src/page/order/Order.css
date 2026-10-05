@@ -535,7 +535,3 @@
 .order-print-dialog button:hover { border-color: var(--main-color); }
 .order-print-dialog button:focus-visible { outline: 2px solid var(--main-color); outline-offset: 3px; }
 .order-print-dialog button:disabled { opacity: .6; cursor: wait; }
-.printing-all-toggle { display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 44px; margin-bottom: 8px; padding: 8px 12px; border: 1px solid var(--border-color); border-radius: 10px; background: white; color: var(--text-color); font: inherit; cursor: pointer; }
-.printing-all-toggle.printing-stopped { background: var(--main-soft); border-color: var(--main-color); color: var(--main-color); }
-.printing-all-toggle:disabled { opacity: .6; cursor: wait; }
-.printing-all-status { margin: 0 0 10px; font-size: 12px; line-height: 1.4; }

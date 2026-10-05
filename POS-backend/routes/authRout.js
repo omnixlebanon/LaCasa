@@ -36,6 +36,7 @@ router.post('/login', async (req, res) => {
     }
 
     const user = rows[0];
+    if (user.access_level === 'payroll_only') return res.status(403).json({ success: false, message: 'This employee is registered for salary management only and cannot sign in to the POS.' });
 
     const isMatch = await bcrypt.compare(password, user.user_password_hash);
     if (!isMatch) {
@@ -74,6 +75,7 @@ router.get('/me', verifyToken, async (req, res) => {
       return res.status(404).json({ success: false, message: "User account no longer exists" });
     }
     const user = rows[0];
+    if (user.access_level === 'payroll_only') return res.status(403).json({ success: false, message: 'This employee has no POS access.' });
     return res.json({
       success: true,
       user: { 

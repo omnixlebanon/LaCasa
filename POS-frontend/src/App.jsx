@@ -26,7 +26,7 @@ const Layout = () => {
   if (loading) {
     return <div style={{ padding: '40px', textAlign: 'center' }}>Loading POS System...</div>;
   }
-  if (loading==true || !user) {
+  if (loading==true || !user || user.accessLevel === 'payroll_only') {
     return <Navigate to="/login" replace />;
   }
   return (

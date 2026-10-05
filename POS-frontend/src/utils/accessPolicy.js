@@ -1,8 +1,8 @@
-const roles=['employee','manager','owner','admin'];
+const roles=['employee','payroll_only','manager','owner','admin'];
 const management=role=>['manager','owner','admin'].includes(role);
-const salaryEligible=role=>['employee','manager'].includes(role);
-function canManage(actor,target){return actor==='admin'||(actor==='owner'&&['employee','manager'].includes(target))||(actor==='manager'&&target==='employee');}
-function allowedNewRoles(actor){return actor==='admin'?['employee','manager','owner','admin']:actor==='owner'?['employee','manager']:['employee'];}
+const salaryEligible=role=>['employee','payroll_only','manager'].includes(role);
+function canManage(actor,target){return actor==='admin'||(actor==='owner'&&['employee','payroll_only','manager'].includes(target))||(actor==='manager'&&['employee','payroll_only'].includes(target));}
+function allowedNewRoles(actor){return actor==='admin'?['employee','payroll_only','manager','owner','admin']:actor==='owner'?['employee','payroll_only','manager']:['employee','payroll_only'];}
 function assertChange(actor,target,next,creating=false){
  if(!roles.includes(actor)||!roles.includes(next))throw Object.assign(Error('Invalid access level.'),{status:400});
  if(!creating&&!canManage(actor,target))throw Object.assign(Error('You cannot change this account.'),{status:403});

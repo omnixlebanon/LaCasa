@@ -4,6 +4,9 @@ async function saveAccount(connection,actor,id,data){
  let current;
  if(id!==null){const [[row]]=await connection.execute('SELECT user_id,access_level FROM users WHERE user_id = ? FOR UPDATE',[id]);if(!row)throw Object.assign(Error('Employee not found.'),{status:404});current=row;}
  const role=data.accessLevel||current?.access_level||'employee';
+ if (!current && role === 'payroll_only') {
+  data = { ...data, email: data.email || `payroll-${require('crypto').randomUUID()}@employee.invalid`, password: require('crypto').randomUUID(), position: data.position || 'Normal Employee' };
+ }
  assertChange(actor.access_level,current?.access_level,role,!current);
  if(current&&Number(current.user_id)===Number(actor.user_id)&&role!==current.access_level)throw Object.assign(Error('An administrator cannot change their own access level.'),{status:403});
  if(role==='owner'){
