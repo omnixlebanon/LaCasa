@@ -17,13 +17,11 @@ function element(tag, text, className) {
     return node;
 }
 function placeholderUrl() {
-    return document.documentElement.dataset.theme === 'dark' ? '/menu/imgs/no_img_dark.jpg' : '/menu/imgs/no_img.jpg';
+    return document.documentElement.dataset.theme === 'dark' ? '/menu/imgs/no_img_dark.png' : '/menu/imgs/no_img.png';
 }
 function placeholder(img) {
     img.onload = null;
     img.onerror = null;
-    img.classList.remove('image-loading');
-    img.style.removeProperty('background-image');
     img.classList.add('placeholder-img');
     img.loading = 'eager';
     img.src = placeholderUrl();
@@ -37,9 +35,6 @@ function createCard(product, index) {
     img.decoding = 'async';
     img.width = 320;
     img.height = 200;
-    img.classList.add('image-loading');
-    img.style.backgroundImage = `url("${placeholderUrl()}")`;
-    img.onload = () => { img.classList.remove('image-loading'); img.style.removeProperty('background-image'); };
     img.onerror = () => { img.onerror = null; placeholder(img); };
     const src = product.product_image || '';
     if (/^https:\/\//i.test(src) || /^(?:\/menu\/)?imgs\//.test(src) || /^\/api\/public\/product-images\/[a-f0-9-]+\.(png|jpg|webp)$/.test(src)) img.src = src.startsWith('imgs/') ? '/menu/' + src : src;
@@ -63,14 +58,6 @@ function renderMenu(products, groups) {
     sections.push({id:'other',name:'More',categories:categoryNames.filter(name=>!known.has(String(assigned.get(name))))});
     const fragment = document.createDocumentFragment();
     let imageIndex = 0;
-    const imageOrigin = products.find(product => /^https:\/\//i.test(product.product_image || ''))?.product_image;
-    if (imageOrigin) {
-        const origin = new URL(imageOrigin).origin;
-        if (!document.querySelector('link[data-menu-image-origin]')) {
-            const link = document.createElement('link'); link.rel = 'preconnect'; link.href = origin; link.dataset.menuImageOrigin = '';
-            document.head.append(link);
-        }
-    }
     const navigation = document.createDocumentFragment();
     for (const group of sections) {
         const available = group.categories.filter(name => categories.has(name));
@@ -119,7 +106,6 @@ document.getElementById('themeToggle').addEventListener('click', () => {
     document.documentElement.dataset.theme = dark ? 'dark' : 'light';
     document.getElementById('themeToggle').textContent = dark ? 'Light Mode' : 'Dark Mode';
     document.querySelectorAll('.placeholder-img').forEach(placeholder);
-    document.querySelectorAll('.image-loading').forEach(img => { img.style.backgroundImage = `url("${placeholderUrl()}")`; });
 });
 document.getElementById('back-to-top').addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
 window.addEventListener('scroll', () => { document.getElementById('back-to-top').style.display = window.scrollY > 400 ? 'flex' : 'none'; });

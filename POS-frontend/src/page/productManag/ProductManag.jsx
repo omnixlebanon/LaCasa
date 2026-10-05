@@ -17,6 +17,7 @@ function ProductManag() {
     const [saveError, setSaveError] = useState('');
     const [savingProduct,setSavingProduct]=useState(false);
     const [imageFile, setImageFile] = useState(null);
+    const [imageUrl, setImageUrl] = useState('');
     const [saveMessage,setSaveMessage]=useState('');
     const [categoryError, setCategoryError] = useState('');
     const { currencyLabel } = useCurrency();
@@ -120,7 +121,7 @@ function ProductManag() {
             product_category: product_category,
             product_price: Number(product_price),
             product_description: form.elements.product_description.value,
-            product_image: ''
+            product_image: imageUrl.trim()
         };
         if(!product_name||!product_category||product_price===''||!Number.isFinite(Number(product_price))||Number(product_price)<0){setSaveError('Enter a product name, select a category, and enter a valid price.');return;}
         setSavingProduct(true);
@@ -133,6 +134,7 @@ function ProductManag() {
                 setSaveMessage('Saved '+product_name+' on this device. Check Sync for the server result.');
                 setIsAddPopupOpen(false);
                 setImageFile(null);
+                setImageUrl('');
                 form.reset();
             }
         } catch (error) {
@@ -151,7 +153,7 @@ function ProductManag() {
                     <form className='editPopup-container' onSubmit={handleAdd}>
                         <div className='editPopup-head'>
                             <p>Add Product Info</p>
-                            <button type="button" className='close-btn' disabled={savingProduct} onClick={() => { setIsAddPopupOpen(false); setImageFile(null); }}>
+                            <button type="button" className='close-btn' disabled={savingProduct} onClick={() => { setIsAddPopupOpen(false); setImageFile(null); setImageUrl(''); }}>
                                 <X />
                             </button>
                         </div>
@@ -177,7 +179,7 @@ function ProductManag() {
                                 </div>
                             </div>
                             <div className='label-input'><label htmlFor="product_description">Menu description</label><textarea id="product_description" name="product_description" maxLength={2000}  /></div>
-                            <ProductImageInput file={imageFile} onChange={setImageFile} disabled={savingProduct} />
+                            <ProductImageInput value={imageUrl} file={imageFile} onChange={setImageFile} onValueChange={setImageUrl} disabled={savingProduct} />
                             <div className='edit-submit-container'>
                                 <button type='submit' disabled={savingProduct}>{savingProduct?'Saving...':'Save Changes'}</button>
                             </div>

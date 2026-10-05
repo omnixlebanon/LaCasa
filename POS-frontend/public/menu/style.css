@@ -174,12 +174,6 @@ nav ul li a:focus {
     height: 160px;
     object-fit: cover;
 }
-.menu-item img.image-loading {
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-    color: transparent;
-}
 
 .menu-details {
     padding: 15px;
