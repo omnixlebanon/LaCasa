@@ -111,7 +111,7 @@ function ProductCard({ data, categories = [], onProductEdit }) {
                             <div className='input-area-4th-line'>
                             </div>
                             <div className='label-input'><label htmlFor="product_description">Menu description</label><textarea id="product_description" name="product_description" maxLength={2000} value={formData.product_description} onChange={handleFormInputChange} /></div>
-                            <ProductImageInput value={formData.product_image} file={imageFile} onChange={setImageFile} disabled={saving} />
+                            <ProductImageInput value={formData.product_image} file={imageFile} onChange={setImageFile} onRemove={() => setFormData(current => ({ ...current, product_image: '' }))} disabled={saving} />
                             <div className='edit-submit-container'><button type='submit' disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button></div>
                         </div>
                     </form>
