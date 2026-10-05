@@ -115,7 +115,8 @@ export function applyLocal(state,op) {
   each(state,'/api/expenses',(rows,key)=>{
    if(method==='delete')return rows.filter(r=>!same(r.expense_id,parts[3]));
    if(parts[4]==='stop')return rows.filter(r=>!same(r.expense_id,parts[3])||r.expense_date<data.from);
-   const row={expense_id:method==='post'?id:Number(parts[3]),category:data.category,description:data.description,amount:data.amount,expense_date:data.date,frequency:data.frequency==='none'?null:data.frequency,repeat_until:data.repeat_until||null,recurring:data.frequency&&data.frequency!=='none',pending_sync:true};
+   const previous=rows.find(r=>same(r.expense_id,parts[3]));
+   const row={start_date:data.date,stopped_before: data.frequency === 'none' ? null : previous?.stopped_before,expense_id:method==='post'?id:Number(parts[3]),category:data.category,description:data.description,amount:data.amount,expense_date:data.date,frequency:data.frequency==='none'?null:data.frequency,repeat_until:data.repeat_until||null,recurring:data.frequency&&data.frequency!=='none',pending_sync:true};
    rows=rows.filter(r=>!same(r.expense_id,row.expense_id));const params=new URL(key,'https://local').searchParams;const from=params.get('from')||(params.get('month')?params.get('month')+'-01':'2000-01-01');const to=params.get('through')||(params.get('month')?new Date(Date.UTC(Number(params.get('month').slice(0,4)),Number(params.get('month').slice(5,7)),0)).toISOString().slice(0,10):'9999-01-01');
    for(const occurrence of expenseOccurrences(row,from,to))rows.push(occurrence);return rows;
   });
@@ -220,8 +221,8 @@ export function applyLocal(state,op) {
  summaries(state);return response;
 }
 export function expenseOccurrences(row,from,to){
- const result=[];const start=row.expense_date;const [y,m,d]=start.split('-').map(Number);if(!row.recurring)return start>=from&&start<=to?[{...row,occurrence_id:`${row.expense_id}:${start}`}]:[];
- for(let i=0;i<10000;i++){let date;if(row.frequency==='weekly')date=new Date(Date.parse(start+'T00:00:00Z')+i*604800000);else{date=new Date(Date.UTC(y,m-1+i*(row.frequency==='yearly'?12:1),1));date.setUTCDate(Math.min(d,new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth()+1,0)).getUTCDate()));}const key=date.toISOString().slice(0,10);if(key>to||(row.repeat_until&&key>row.repeat_until))break;if(key>=from)result.push({...row,expense_date:key,occurrence_id:`${row.expense_id}:${key}`});}return result;
+ const result=[];const start=row.start_date || row.expense_date;const [y,m,d]=start.split('-').map(Number);if(!row.recurring)return start>=from&&start<=to?[{...row,start_date:start,occurrence_id:`${row.expense_id}:${start}`}]:[];
+ for(let i=0;i<10000;i++){let date;if(row.frequency==='weekly')date=new Date(Date.parse(start+'T00:00:00Z')+i*604800000);else{date=new Date(Date.UTC(y,m-1+i*(row.frequency==='yearly'?12:1),1));date.setUTCDate(Math.min(d,new Date(Date.UTC(date.getUTCFullYear(),date.getUTCMonth()+1,0)).getUTCDate()));}const key=date.toISOString().slice(0,10);if(key>to||(row.repeat_until&&key>row.repeat_until)||(row.stopped_before&&key>=row.stopped_before))break;if(key>=from)result.push({...row,start_date:start,expense_date:key,occurrence_id:`${row.expense_id}:${key}`});}return result;
 }
 export function readLocal(state,key){
  removeSkippedProducts(state);

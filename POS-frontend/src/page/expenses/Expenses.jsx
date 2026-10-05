@@ -47,7 +47,7 @@ export default function Expenses({ onChanged }) {
     finally { setBusy(false); }
   };
   const remove = async row => {
-    if (busy || !window.confirm(`Delete "${row.description}" (${formatPrice(row.amount)})?`)) return;
+    if (busy || !window.confirm(`Delete "${row.description}" (${formatPrice(row.amount)})?${row.recurring ? " This deletes the entire repeating bill, including past and future occurrences." : ""}`)) return;
     setBusy(true); setError(''); setMessage('');
     try {
       await api.delete(`/api/expenses/${row.expense_id}`);
@@ -72,14 +72,14 @@ export default function Expenses({ onChanged }) {
     {message && <p className="expenses-message" role="status">{message}</p>}
     {error && <p className="error-message" role="alert">{error}</p>}
     <form className="expenses-form" onSubmit={save}>
-      <h3>{editing ? 'Edit expense' : 'Record an expense'}</h3>
+      <h3>{editing ? 'Edit expense' : 'Record an expense'}</h3>{editing && <p>Changes apply to the whole bill. For repeating bills, this includes past and future occurrences.</p>}
       <fieldset disabled={busy || loading || !!loadError}>
         <label>Category<select name="category" value={form.category} onChange={update}>{Object.entries(categories).map(([key, label]) => <option key={key} value={key}>{label}</option>)}</select></label>
         <label>Date<input type="date" name="date" min="2000-01-01" max="9998-12-31" value={form.date} onChange={update} required /></label>
         <label>Description<input name="description" maxLength={200} value={form.description} onChange={update} placeholder="e.g. September electricity bill or 4 dining tables" required /></label>
         <label>Amount ({currencyLabel})<MoneyInput name="amount" value={form.amount} onChange={update} min="0" required /></label>
-        {!editing && <label>Repeat<select name="frequency" value={form.frequency} onChange={update}><option value="none">One-time expense</option><option value="weekly">Every week</option><option value="monthly">Every month</option><option value="yearly">Every year</option></select></label>}
-        {!editing && form.frequency !== 'none' && <label>Repeat until (optional)<input type="date" name="repeat_until" min={form.date} max="9998-12-31" value={form.repeat_until} onChange={update} /><small>Same day each period; shorter months use their last day. To change an amount later, stop this schedule and create a new one.</small></label>}
+        {<label>Repeat<select name="frequency" value={form.frequency} onChange={update}><option value="none">One-time expense</option><option value="weekly">Every week</option><option value="monthly">Every month</option><option value="yearly">Every year</option></select></label>}
+        {form.frequency !== 'none' && <label>Repeat until (optional)<input type="date" name="repeat_until" min={form.date} max="9998-12-31" value={form.repeat_until} onChange={update} /><small>Same day each period; shorter months use their last day. Editing a repeating bill changes the entire series, including past occurrences.</small></label>}
         <div className="expenses-form-actions">{editing && <button type="button" onClick={() => { setEditing(null); setForm(emptyForm()); setError(''); }}>Cancel</button>}<button className="add-btn" type="submit">{busy ? 'Saving...' : editing ? 'Save changes' : 'Add expense'}</button></div>
       </fieldset>
     </form>
@@ -87,7 +87,7 @@ export default function Expenses({ onChanged }) {
 
       <section className="expenses-list" aria-label="Expenses for selected month">
         {!rows.length && <p className="expenses-empty">No expenses recorded for this month.</p>}
-        {rows.map(row => <article key={row.occurrence_id}><div><span className="expenses-category">{categories[row.category] || row.category}</span><h3>{row.description}</h3><time dateTime={row.expense_date}>{new Date(`${row.expense_date}T00:00:00`).toLocaleDateString()}</time>{row.recurring && <p className="expenses-hint">Repeats {row.frequency}{row.repeat_until ? ` through ${row.repeat_until}` : ''}{row.stopped_before ? `; stopped from ${row.stopped_before}` : ''}</p>}</div><strong>{formatPrice(row.amount)}</strong><div className="expenses-actions">{row.recurring ? (!row.stopped_before && <button disabled={busy} onClick={() => stop(row)}>Stop repeating</button>) : <><button disabled={busy} aria-label={`Edit ${row.description}`} onClick={() => { setEditing(row.expense_id); setForm({ category: row.category, description: row.description, amount: Number(row.amount), date: row.expense_date }); setError(''); setMessage(''); document.querySelector('.expenses-form')?.scrollIntoView({ behavior: 'smooth' }); }}><Pencil size={18} /> Edit</button><button disabled={busy} aria-label={`Delete ${row.description}`} onClick={() => remove(row)}><Trash2 size={18} /> Delete</button></>}</div></article>)}
+        {rows.map(row => <article key={row.occurrence_id}><div><span className="expenses-category">{categories[row.category] || row.category}</span><h3>{row.description}</h3><time dateTime={row.expense_date}>{new Date(`${row.expense_date}T00:00:00`).toLocaleDateString()}</time>{row.recurring && <p className="expenses-hint">Repeats {row.frequency}{row.repeat_until ? ` through ${row.repeat_until}` : ''}{row.stopped_before ? `; stopped from ${row.stopped_before}` : ''}</p>}</div><strong>{formatPrice(row.amount)}</strong><div className="expenses-actions">{row.recurring && !row.stopped_before && <button disabled={busy} onClick={() => stop(row)}>Stop repeating</button>}<><button disabled={busy} aria-label={`Edit ${row.description}`} onClick={() => { setEditing(row.expense_id); setForm({ category: row.category, description: row.description, amount: Number(row.amount), date: row.start_date || row.expense_date, frequency: row.frequency || 'none', repeat_until: row.repeat_until || '' }); setError(''); setMessage(''); document.querySelector('.expenses-form')?.scrollIntoView({ behavior: 'smooth' }); }}><Pencil size={18} /> Edit</button><button disabled={busy} aria-label={`Delete ${row.description}`} onClick={() => remove(row)}><Trash2 size={18} /> Delete</button></></div></article>)}
       </section>
     </>}
   </section>;

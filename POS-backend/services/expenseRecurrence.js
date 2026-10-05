@@ -17,7 +17,7 @@ function expandExpenses(rows, from, to) {
     const start = String(row.expense_date).slice(0, 10);
     const limit = row.repeat_until && row.repeat_until < to ? row.repeat_until : to;
     const add = date => {
-      if (date >= from && date <= limit && (!row.stopped_before || date < row.stopped_before)) result.push({ ...row, expense_date: date, occurrence_id: `${row.expense_id}:${date}`, recurring: !!row.frequency });
+      if (date >= from && date <= limit && (!row.stopped_before || date < row.stopped_before)) result.push({ ...row, start_date: start, expense_date: date, occurrence_id: `${row.expense_id}:${date}`, recurring: !!row.frequency });
       if (result.length > 100000) throw invalid('Too many expense occurrences. Use a shorter range.');
     };
     if (!row.frequency) { add(start); continue; }

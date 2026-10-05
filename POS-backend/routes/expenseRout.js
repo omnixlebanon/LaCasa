@@ -43,22 +43,28 @@ router.patch('/expenses/:id/stop', async (req, res) => {
     res.json({ success: true });
   } catch (error) { fail(res, error); }
 });
-async function requireOneTime(id) {
-  const [rows] = await db.execute('SELECT expense_id FROM expense_recurrences WHERE expense_id = ?', [id]);
-  if (rows.length) throw Object.assign(new Error('Repeating bills cannot be edited or deleted. Stop future repeats and create a new bill to preserve history.'), { status: 409 });
-}
 router.patch('/expenses/:id', async (req, res) => {
+  let connection;
   try {
     const id = expenseId(req.params.id), data = expenseInput(req.body);
-    await requireOneTime(id);
-    const [result] = await db.execute('UPDATE business_expenses SET category = ?, description = ?, amount = ?, expense_date = ? WHERE expense_id = ?', [data.category, data.description, data.amount, data.date, id]);
-    if (!result.affectedRows) return res.status(404).json({ error: 'Expense not found.' });
+    connection = await db.getConnection(); await connection.beginTransaction();
+    const [[existing]] = await connection.execute('SELECT expense_id FROM business_expenses WHERE expense_id = ? FOR UPDATE', [id]);
+    if (!existing) throw Object.assign(new Error('Expense not found.'), { status: 404 });
+    await connection.execute('UPDATE business_expenses SET category = ?, description = ?, amount = ?, expense_date = ? WHERE expense_id = ?', [data.category, data.description, data.amount, data.date, id]);
+    if (req.body.frequency !== undefined) {
+      const recurrence = recurrenceInput(req.body);
+      const [[current]] = await connection.execute('SELECT frequency FROM expense_recurrences WHERE expense_id = ?', [id]);
+      if (recurrence.frequency === 'none') await connection.execute('DELETE FROM expense_recurrences WHERE expense_id = ?', [id]);
+      else if (current) await connection.execute('UPDATE expense_recurrences SET frequency = ?, repeat_until = ? WHERE expense_id = ?', [recurrence.frequency, recurrence.until, id]);
+      else await connection.execute('INSERT INTO expense_recurrences (expense_id, frequency, repeat_until) VALUES (?, ?, ?)', [id, recurrence.frequency, recurrence.until]);
+    }
+    await connection.commit();
     res.json({ success: true });
-  } catch (error) { fail(res, error); }
+  } catch (error) { if (connection) await connection.rollback(); fail(res, error); }
+  finally { connection?.release(); }
 });
 router.delete('/expenses/:id', async (req, res) => {
   try {
-    await requireOneTime(expenseId(req.params.id));
     const [result] = await db.execute('DELETE FROM business_expenses WHERE expense_id = ?', [expenseId(req.params.id)]);
     if (!result.affectedRows) return res.status(404).json({ error: 'Expense not found.' });
     res.json({ success: true });
