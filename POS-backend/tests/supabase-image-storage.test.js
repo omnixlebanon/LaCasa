@@ -1,9 +1,28 @@
 const test = require('node:test');
 const assert = require('node:assert/strict');
-const { createSupabaseImageStorage } = require('../services/supabaseImageStorage');
+const { createSupabaseImageStorage, projectUrlFromDatabase } = require('../services/supabaseImageStorage');
 const { createProductImageStore } = require('../services/productImages');
 const config = { url: 'https://test-project.supabase.co', serviceRoleKey: 'server-only-test-key' };
 const png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jRZkAAAAASUVORK5CYII=';
+
+test('derives the Storage project from direct and pooled DATABASE_URL connections', async () => {
+    for (const connection of ['postgresql://postgres:password@db.abcdefgh.supabase.co:5432/postgres', 'postgres://postgres.abcdefgh:password@aws-0-eu-central-1.pooler.supabase.com:6543/postgres']) {
+        assert.equal(projectUrlFromDatabase(connection), 'https://abcdefgh.supabase.co');
+        const calls = [];
+        const storage = createSupabaseImageStorage({ databaseUrl: connection, serviceRoleKey: config.serviceRoleKey, fetchImpl: async url => {
+            calls.push(url); return Response.json({ public: true });
+        } });
+        await storage.ensureBucket();
+        assert.equal(calls[0], 'https://abcdefgh.supabase.co/storage/v1/bucket/menu-images');
+    }
+    for (const invalid of [undefined, 'invalid', 'postgres://postgres.abcdefgh:password@other.example/postgres', 'https://db.abcdefgh.supabase.co']) {
+        assert.equal(projectUrlFromDatabase(invalid), undefined);
+    }
+    const storage = createSupabaseImageStorage({ ...config, databaseUrl: 'postgres://postgres:password@db.abcdefgh.supabase.co/postgres', fetchImpl: async url => {
+        assert.equal(url.startsWith(config.url), true); return Response.json({ public: true });
+    } });
+    await storage.ensureBucket();
+});
 
 test('creates a public image bucket, uploads device bytes in products/, and returns cacheable public URLs', async () => {
     const calls = [];

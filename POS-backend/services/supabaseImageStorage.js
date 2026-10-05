@@ -5,9 +5,21 @@ function storageError(message, code = 'IMAGE_STORAGE_UNAVAILABLE') {
     return Object.assign(new Error(message), { code });
 }
 
-function createSupabaseImageStorage({ url, serviceRoleKey, bucket = 'menu-images', fetchImpl = fetch } = {}) {
+function projectUrlFromDatabase(databaseUrl) {
+    try {
+        const connection = new URL(databaseUrl);
+        if (!['postgres:', 'postgresql:'].includes(connection.protocol)) return undefined;
+        const direct = /^db\.([a-z0-9]+)\.supabase\.co$/.exec(connection.hostname);
+        const pooled = /\.pooler\.supabase\.com$/.test(connection.hostname)
+            && /^postgres\.([a-z0-9]+)$/.exec(decodeURIComponent(connection.username));
+        const reference = direct?.[1] || pooled?.[1];
+        return reference ? `https://${reference}.supabase.co` : undefined;
+    } catch { return undefined; }
+}
+
+function createSupabaseImageStorage({ url, databaseUrl, serviceRoleKey, bucket = 'menu-images', fetchImpl = fetch } = {}) {
     let project;
-    try { project = new URL(url); } catch { /* Report configuration without exposing credentials. */ }
+    try { project = new URL(url || projectUrlFromDatabase(databaseUrl)); } catch { /* Report configuration without exposing credentials. */ }
     if (!project || project.protocol !== 'https:' || project.username || project.password || project.pathname !== '/' || project.search || project.hash || !serviceRoleKey || !/^[a-zA-Z0-9_-]{1,63}$/.test(bucket)) {
         throw storageError('Image storage is not configured. Set SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY on the backend.', 'IMAGE_STORAGE_CONFIG');
     }
@@ -55,4 +67,4 @@ function createSupabaseImageStorage({ url, serviceRoleKey, bucket = 'menu-images
     }
     return { upload, ensureBucket };
 }
-module.exports = { createSupabaseImageStorage };
+module.exports = { createSupabaseImageStorage, projectUrlFromDatabase };

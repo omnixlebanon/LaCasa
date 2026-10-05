@@ -45,7 +45,7 @@ Set these production environment variables:
 | Variable | Value |
 | --- | --- |
 | `DATABASE_URL` | Supabase transaction-pooler URL with TLS verification |
-| `SUPABASE_URL` | Project URL, e.g. `https://your-project-ref.supabase.co` |
+| `SUPABASE_URL` | Optional for standard Supabase `DATABASE_URL` connections; otherwise the project URL, e.g. `https://your-project-ref.supabase.co` |
 | `SUPABASE_SERVICE_ROLE_KEY` | Legacy `service_role` API key from the same project's Settings → API Keys; backend only |
 | `SUPABASE_IMAGE_BUCKET` | Optional; defaults to `menu-images` |
 | `JWT_TOKEN` | A long, random secret |
@@ -55,7 +55,7 @@ Set these production environment variables:
 | `DB_POOL_SIZE` | `3` initially |
 | `NODE_ENV` | `production` |
 
-Add the Supabase Storage variables to the **backend** Vercel project's production environment, then redeploy it. Never use `VITE_` prefixes or expose the service-role key in the frontend. Uploads remain restricted to the existing management roles. The bucket allows public image downloads; uploads go through the authenticated backend. No public upload policy or Supabase Auth setup is needed. If a bucket with the configured name already exists, it must be public; the backend will not change a private bucket's visibility. Use a dedicated image bucket rather than one containing private files. See [Supabase Storage access control](https://supabase.com/docs/guides/storage/security/access-control).
+Add `SUPABASE_SERVICE_ROLE_KEY` to the **backend** Vercel project's production environment, then redeploy it. The Storage project URL is derived from `DATABASE_URL` for Supabase's direct `db.<project-ref>.supabase.co` connection or pooler connections using the `postgres.<project-ref>` username. For custom hosts or connection formats, set `SUPABASE_URL` explicitly; it takes precedence. Never use `VITE_` prefixes or expose the service-role key in the frontend. Uploads remain restricted to the existing management roles. The bucket allows public image downloads; uploads go through the authenticated backend. No public upload policy or Supabase Auth setup is needed. If a bucket with the configured name already exists, it must be public; the backend will not change a private bucket's visibility. Use a dedicated image bucket rather than one containing private files. See [Supabase Storage access control](https://supabase.com/docs/guides/storage/security/access-control).
 
 Use the backend project's production hostname in the next step. Its API must be reachable by the frontend proxy and bot; Vercel deployment protection must not intercept those production requests. Express still enforces login and bot authentication. See [Express on Vercel](https://vercel.com/docs/frameworks/backend/express).
 
