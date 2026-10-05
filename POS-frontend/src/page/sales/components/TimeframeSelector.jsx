@@ -5,7 +5,7 @@ export const TimeframeSelector = ({ selectedTimeframe, onSelectTimeframe, custom
 		{
 			id: "daily",
 			label: "Daily",
-			sub: "Today (24 Hours)",
+			sub: "Today (Beirut time)",
 			icon: <Clock className="w-4 h-4" />
 		},
 		{

@@ -1,3 +1,4 @@
+import { businessDate } from './utils/businessTime.js';
 import Expenses from '../expenses/Expenses.jsx';
 import LoadingState from '../../components/LoadingState.jsx';
 import { useCurrency } from '../../global.jsx';
@@ -32,7 +33,7 @@ export default function Sales() {
 		setRefreshing(true);
 		try {
 			const now = new Date();
-            const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+            const today = businessDate(now);
             const through = timeframe === 'custom' && customEndDate ? customEndDate : today;
             const [history, summary, expenseResponse, payrollResponse] = await Promise.all([api.get("/api/history", { signal }), api.get("/api/products/summary", { signal }), api.get('/api/expenses', { params: { through }, signal }), api.get('/api/employees/payroll-costs', {signal})]);
 			if (signal?.aborted) return;

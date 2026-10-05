@@ -1,7 +1,8 @@
+import { businessTimestamp } from '../utils/businessTime.js';
 import React from "react";
 import { TrendingUp, Download } from "lucide-react";
 export const Navbar = ({ onExportCSV, lastUpdated }) => {
-	return <div className="head-area sales-page-header" title={`Last updated: ${lastUpdated.toLocaleString()}`}>
+	return <div className="head-area sales-page-header" title={`Last updated: ${businessTimestamp(lastUpdated)}`}>
       <div className="PageTitle">
         <TrendingUp />
         <h2 className="PageName">Sales Analytics</h2>

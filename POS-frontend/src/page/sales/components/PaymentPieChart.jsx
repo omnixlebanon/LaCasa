@@ -1,9 +1,10 @@
 import {ResponsiveContainer,PieChart,Pie,Cell,Tooltip} from 'recharts';
 import {useCurrency} from '../../../global.jsx';
 import {getPaymentBreakdown} from '../utils/analytics';
+import {groupSmallSlices} from '../utils/pie.js';
 export default function PaymentPieChart({transactions}){
  const {formatPrice}=useCurrency();
- const data=getPaymentBreakdown(transactions);
+ const data=groupSmallSlices(getPaymentBreakdown(transactions));
  const total=data.reduce((sum,row)=>sum+row.value,0);
  return <section className="sales-payment-chart" aria-label="Cash and WHISH sales">
   <p className="text-sm text-slate-500">Sales value by payment method</p>

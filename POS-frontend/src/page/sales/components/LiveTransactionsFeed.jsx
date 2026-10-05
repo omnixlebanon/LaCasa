@@ -1,3 +1,4 @@
+import { businessCalendar } from '../utils/businessTime.js';
 import { useCurrency } from '../../../global.jsx';
 import React from "react";
 
@@ -27,9 +28,10 @@ export const LiveTransactionsFeed = ({ transactions, isLive }) => {
       <div className="space-y-2.5 max-h-80 overflow-y-auto pr-1">
         {recentTx.length === 0 && <p className="text-sm text-slate-500">No sales in this period.</p>}
         {recentTx.map((tx) => {
-		const date = new Date(tx.timestamp);
+		const date = businessCalendar(tx.timestamp);
 		const timeStr = date.toLocaleTimeString([], {
-			hour: "2-digit",
+			timeZone: "UTC",
+            hour: "2-digit",
 			minute: "2-digit",
 			second: "2-digit"
 		});

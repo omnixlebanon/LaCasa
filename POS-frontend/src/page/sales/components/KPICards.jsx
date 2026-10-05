@@ -2,8 +2,11 @@ import { useCurrency } from '../../../global.jsx';
 import { DollarSign, TrendingUp, ShoppingBag, Crown, Receipt } from 'lucide-react';
 import { formatNumber } from '../utils/analytics';
 
-export const KPICards = ({ totalRevenue, totalCost, totalProfit, profitMargin, totalUnitsSold, avgOrderValue, mostSold, mostProfitable, timeframe, metricView = 'all', businessExpenses = 0, payrollCost = 0, missingCosts = 0 }) => {
+export const KPICards = ({ totalRevenue, totalCost, totalUnitsSold, avgOrderValue, mostSold, mostProfitable, timeframe, metricView = 'all', businessExpenses = 0, payrollCost = 0, missingCosts = 0 }) => {
   const { formatPrice: formatCurrency } = useCurrency();
+    const allCosts = totalCost + businessExpenses + payrollCost;
+    const netProfit = totalRevenue - allCosts;
+    const netMargin = totalRevenue > 0 ? Math.round(netProfit / totalRevenue * 1000) / 10 : 0;
     const period = { daily: 'Today', monthly: 'This month', yearly: 'This year', 'all-time': 'All time', custom: 'Custom range' }[timeframe];
     const cards = [
         {
@@ -14,15 +17,15 @@ export const KPICards = ({ totalRevenue, totalCost, totalProfit, profitMargin, t
         },
         {
             title: 'Total Cost', tone: 'cost', icon: Receipt, metric: 'cost',
-            value: missingCosts ? 'Unavailable' : formatCurrency(totalCost + businessExpenses + payrollCost),
-            description: <>Cost ratio: <strong>{missingCosts ? 'Unavailable' : `${totalRevenue > 0 ? Math.round((totalCost + businessExpenses + payrollCost) / totalRevenue * 100) : 0}%`}</strong></>,
+            value: missingCosts ? 'Unavailable' : formatCurrency(allCosts),
+            description: <>Cost ratio: <strong>{missingCosts ? 'Unavailable' : `${totalRevenue > 0 ? Math.round(allCosts / totalRevenue * 100) : 0}%`}</strong></>,
             detail: 'Order costs + business expenses + paid payroll',
         },
         {
-            title: 'Est. Gross Profit', tone: totalProfit < 0 ? 'red' : 'green', icon: TrendingUp,
-            value: missingCosts ? 'Unavailable' : formatCurrency(totalProfit),
-            description: <>Profit margin: <strong>{missingCosts ? 'Unavailable' : `${profitMargin}%`}</strong></>,
-            detail: missingCosts ? 'Historical costs missing' : `ROI: ${totalCost > 0 ? Math.round(totalProfit / totalCost * 100) : 0}%`,
+            title: 'Est. Net Profit', tone: netProfit < 0 ? 'red' : 'green', icon: TrendingUp,
+            value: missingCosts ? 'Unavailable' : formatCurrency(netProfit),
+            description: <>Profit margin: <strong>{missingCosts ? 'Unavailable' : `${netMargin}%`}</strong></>,
+            detail: missingCosts ? 'Historical costs missing' : `After ingredients, expenses and paid salaries · ROI: ${allCosts > 0 ? Math.round(netProfit / allCosts * 100) : 0}%`,
         },
         {
             title: 'Most Sold Product', tone: 'yellow', icon: ShoppingBag,

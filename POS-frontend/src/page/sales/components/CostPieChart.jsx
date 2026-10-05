@@ -1,10 +1,11 @@
 import {ResponsiveContainer,PieChart,Pie,Cell,Tooltip} from 'recharts';
 import {useCurrency} from '../../../global.jsx';
 import {getCostCategories} from '../utils/analytics';
+import {groupSmallSlices} from '../utils/pie.js';
 
 export default function CostPieChart({ingredientCost,expenses,payrollCost,missingCosts}){
  const {formatPrice}=useCurrency();
- const data=getCostCategories(ingredientCost,expenses,payrollCost);
+ const data=groupSmallSlices(getCostCategories(ingredientCost,expenses,payrollCost));
  const total=data.reduce((sum,row)=>sum+Math.round(row.value*100),0)/100;
  return <section className="sales-cost-chart" aria-labelledby="cost-chart-title">
   <header className="sales-cost-chart-header"><div><h2 id="cost-chart-title">Total Cost by Expense</h2><p>For the selected period</p></div>{!missingCosts&&<strong>{formatPrice(total)}</strong>}</header>

@@ -1,5 +1,6 @@
 import PaymentPieChart from './PaymentPieChart.jsx';
 import CostPieChart from './CostPieChart.jsx';
+import { groupSmallSlices } from '../utils/pie.js';
 import { useCurrency } from '../../../global.jsx';
 import React, { useState } from "react";
 import { formatNumber, PRODUCT_COLORS } from "../utils/analytics";
@@ -10,21 +11,21 @@ export const PieChartsSection = ({ productMetrics, categorySummaries, ingredient
 	// Filter out zero values
 	const activeProducts = productMetrics.filter((m) => m.totalRevenue > 0);
 	// 1. Units Sold Pie Data (For Most Sold Product breakdown)
-	const unitsPieData = activeProducts.map((m, idx) => ({
+	const unitsPieData = groupSmallSlices(activeProducts.map((m, idx) => ({
 		name: m.product.name,
 		value: m.unitsSold,
 		rawCurrency: m.totalRevenue,
 		color: PRODUCT_COLORS[idx % PRODUCT_COLORS.length],
 		isHighlight: m.isMostSold,
 		margin: m.profitMargin
-	}));
+	})));
 	// 3. Category Share Donut Data
-	const categoryPieData = categorySummaries.map((c) => ({
+	const categoryPieData = groupSmallSlices(categorySummaries.map((c) => ({
 		name: c.category,
 		value: c.revenue,
 		profit: c.profit,
 		color: c.color
-	}));
+	})));
 	return <div className="bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
       {	/* Header & Tabs */}
       <div className="flex flex-col items-start gap-3 border-b border-slate-200 pb-4">
