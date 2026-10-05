@@ -1,4 +1,5 @@
 import MoneyInput from '../MoneyInput.jsx';
+import ProductImageInput, { uploadProductImage } from '../ProductImageInput.jsx';
 import './ProductCard.css'
 import { Eye, EyeOff, Trash, PenLine, X } from 'lucide-react';
 import { useCurrency } from '../../global';
@@ -10,6 +11,8 @@ function ProductCard({ data, categories = [], onProductEdit }) {
     const [visibilityBusy, setVisibilityBusy] = useState(false);
     const [visibilityError, setVisibilityError] = useState('');
     const [editError, setEditError] = useState('');
+    const [imageFile, setImageFile] = useState(null);
+    const [saving, setSaving] = useState(false);
     const hidden = Number(data.pos_hidden) === 1;
     const categoryHidden = Number(data.category_hidden) === 1;
     const toggleVisibility = async () => {
@@ -53,18 +56,22 @@ function ProductCard({ data, categories = [], onProductEdit }) {
     const handleEdit = async (e) => {
         setEditError('');
         if (e) e.preventDefault();
+        if (saving) return;
+        setSaving(true);
         try {
+            const product_image = imageFile ? await uploadProductImage(imageFile) : formData.product_image;
             const res = await api.patch(
                 `/api/products/${data.product_id}`,
-                formData
+                { ...formData, product_image }
             );
             if (res.status === 200) {
                 setIsEditPopupOpen(false);
+                setImageFile(null);
                 if (onProductEdit) await onProductEdit();
             }
         } catch (error) {
-            setEditError(error.response?.data?.error || 'Could not save product. Please try again.');
-        }
+            setEditError(error.response?.data?.error || error.message || 'Could not save product. Please try again.');
+        } finally { setSaving(false); }
     }
 
 
@@ -75,7 +82,7 @@ function ProductCard({ data, categories = [], onProductEdit }) {
                     <form className='editPopup-container' onSubmit={handleEdit}>
                         <div className='editPopup-head'>
                             <p>Edit Product Info</p>
-                            <button type="button" className='close-btn' onClick={() => { setIsEditPopupOpen(false); setFormData(default_form_values) }}>
+                            <button type="button" className='close-btn' disabled={saving} onClick={() => { setIsEditPopupOpen(false); setFormData(default_form_values); setImageFile(null); }}>
                                 <X />
                             </button>
                         </div>
@@ -104,8 +111,8 @@ function ProductCard({ data, categories = [], onProductEdit }) {
                             <div className='input-area-4th-line'>
                             </div>
                             <div className='label-input'><label htmlFor="product_description">Menu description</label><textarea id="product_description" name="product_description" maxLength={2000} value={formData.product_description} onChange={handleFormInputChange} /></div>
-                            <div className='label-input'><label htmlFor="product_image">Menu image URL</label><input id="product_image" name="product_image" maxLength={255} placeholder="https://... or imgs/items/photo.png" value={formData.product_image} onChange={handleFormInputChange} /></div>
-                            <div className='edit-submit-container'><button type='submit'>Save Changes</button></div>
+                            <ProductImageInput value={formData.product_image} file={imageFile} onChange={setImageFile} disabled={saving} />
+                            <div className='edit-submit-container'><button type='submit' disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button></div>
                         </div>
                     </form>
                 </div>, document.body
@@ -124,7 +131,7 @@ function ProductCard({ data, categories = [], onProductEdit }) {
                         <button type="button" className="product-visibility-toggle" disabled={visibilityBusy} onClick={toggleVisibility} aria-label={`${hidden ? 'Show' : 'Hide'} ${data.product_name} ${hidden ? 'in' : 'from'} POS`} title={categoryHidden ? 'The category is hidden; showing this product will not override the category.' : undefined}>
                             {hidden ? <Eye size={18} /> : <EyeOff size={18} />}{visibilityBusy ? 'Saving...' : hidden ? 'Show in POS & menu' : 'Hide from POS & menu'}
                         </button>
-                        <button className='edit-btn action-btn' onClick={() => setIsEditPopupOpen(true)}><PenLine /></button>
+                        <button className='edit-btn action-btn' onClick={() => { setFormData(default_form_values); setEditError(''); setImageFile(null); setIsEditPopupOpen(true); }}><PenLine /></button>
                         <button className='delete-btn action-btn' onClick={handleDelete}><Trash /></button>
                     </div>
                 </div>

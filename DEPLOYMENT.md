@@ -1,5 +1,7 @@
 # Deploy the POS to Vercel and Supabase
 
+Product image uploads from Product Management save files in `POS-backend/images/products` and store their `/api/public/product-images/...` path in the product record. This folder must be writable and persisted on the backend host, and included in backups. The folder upload implementation is intended for a local or persistent server; the Vercel deployment below requires persistent image storage before using device uploads in production. Existing menu images and HTTPS image URLs still display as before. Uploads accept PNG, JPEG, and WebP files under 3 MB and require a server connection.
+
 The frontend is React/Vite; the API is Express. Deploy them as two Vercel projects from this repository. Supabase provides PostgreSQL. The existing Express login and employee roles remain in use; Supabase Auth is not required.
 
 Local MySQL still works when `DATABASE_URL` is unset. No migration runs during application startup or a Vercel build.

@@ -27,7 +27,7 @@ function createCard(product) {
     img.loading = 'lazy';
     img.onerror = () => { img.onerror = null; placeholder(img); };
     const src = product.product_image || '';
-    if (/^https:\/\//i.test(src) || /^(?:\/menu\/)?imgs\//.test(src)) img.src = src;
+    if (/^https:\/\//i.test(src) || /^(?:\/menu\/)?imgs\//.test(src) || /^\/api\/public\/product-images\/[a-f0-9-]+\.(png|jpg|webp)$/.test(src)) img.src = src;
     else placeholder(img);
     const details = element('div', undefined, 'menu-details');
     details.append(element('h3', product.product_name), element('p', product.product_description || ''), element('p', new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(product.product_price)), 'price'));

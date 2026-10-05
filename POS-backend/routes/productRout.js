@@ -2,6 +2,14 @@ const express = require('express');
 const router = express.Router();
 const db = require('../config/database');
 const { requireManagement } = require('../middleware/auth');
+router.post('/products/image-upload', requireManagement, async (req, res) => {
+    try {
+        const product_image = await require('../services/productImages').saveProductImage(req.body?.imageData);
+        res.status(201).json({ product_image });
+    } catch (error) {
+        res.status(error.code ? 500 : 400).json({ error: error.code ? 'Could not save image to the images folder.' : error.message });
+    }
+});
 function validateMenuDetails(body) {
     if (body.product_name !== undefined) {
         if (typeof body.product_name !== 'string' || !body.product_name.trim() || body.product_name.trim().length > 120) return 'Product name must contain 1?120 characters.';
@@ -11,7 +19,7 @@ function validateMenuDetails(body) {
     if (body.product_image !== undefined) {
         const image = body.product_image;
         if (typeof image !== 'string' || image.length > 255) return 'Image URL must be at most 255 characters.';
-        if (image && !/^https:\/\/[^\s]+$/i.test(image) && !/^(?:\/menu\/)?imgs\/[a-zA-Z0-9_./ -]+$/.test(image)) return 'Use an HTTPS image URL or a menu image path.';
+        if (image && !/^https:\/\/[^\s]+$/i.test(image) && !/^(?:\/menu\/)?imgs\/[a-zA-Z0-9_./ -]+$/.test(image) && !/^\/api\/public\/product-images\/[a-f0-9-]+\.(png|jpg|webp)$/.test(image)) return 'Use an HTTPS image URL or a menu image path.';
     }
     return null;
 }

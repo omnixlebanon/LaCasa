@@ -1,4 +1,5 @@
 import StructurePopup from "../../components/StructurePopup.jsx";
+import ProductImageInput, { uploadProductImage } from '../../components/ProductImageInput.jsx';
 import LoadingState from '../../components/LoadingState.jsx';
 import { useCurrency } from '../../global.jsx';
 import MoneyInput from '../../components/MoneyInput.jsx';
@@ -15,6 +16,7 @@ function ProductManag() {
     const [productError, setProductError] = useState('');
     const [saveError, setSaveError] = useState('');
     const [savingProduct,setSavingProduct]=useState(false);
+    const [imageFile, setImageFile] = useState(null);
     const [saveMessage,setSaveMessage]=useState('');
     const [categoryError, setCategoryError] = useState('');
     const { currencyLabel } = useCurrency();
@@ -118,21 +120,23 @@ function ProductManag() {
             product_category: product_category,
             product_price: Number(product_price),
             product_description: form.elements.product_description.value,
-            product_image: form.elements.product_image.value
+            product_image: ''
         };
         if(!product_name||!product_category||product_price===''||!Number.isFinite(Number(product_price))||Number(product_price)<0){setSaveError('Enter a product name, select a category, and enter a valid price.');return;}
         setSavingProduct(true);
         try {
+            if (imageFile) payload.product_image = await uploadProductImage(imageFile);
             const res = await api.post('/api/products', payload);
             if (res.status === 201) {
                 setSearchQuery('');setCategoryFilter('');setVisibilityFilter('');
                 await fetchData();
                 setSaveMessage('Saved '+product_name+' on this device. Check Sync for the server result.');
                 setIsAddPopupOpen(false);
+                setImageFile(null);
                 form.reset();
             }
         } catch (error) {
-            setSaveError(error.response?.data?.error || 'Could not save product. Please try again.');
+            setSaveError(error.response?.data?.error || error.message || 'Could not save product. Please try again.');
         } finally {setSavingProduct(false);}
     };
 
@@ -147,7 +151,7 @@ function ProductManag() {
                     <form className='editPopup-container' onSubmit={handleAdd}>
                         <div className='editPopup-head'>
                             <p>Add Product Info</p>
-                            <button type="button" className='close-btn' onClick={() => setIsAddPopupOpen(false)}>
+                            <button type="button" className='close-btn' disabled={savingProduct} onClick={() => { setIsAddPopupOpen(false); setImageFile(null); }}>
                                 <X />
                             </button>
                         </div>
@@ -173,7 +177,7 @@ function ProductManag() {
                                 </div>
                             </div>
                             <div className='label-input'><label htmlFor="product_description">Menu description</label><textarea id="product_description" name="product_description" maxLength={2000}  /></div>
-                            <div className='label-input'><label htmlFor="product_image">Menu image URL</label><input id="product_image" name="product_image" maxLength={255} placeholder="https://... or imgs/items/photo.png"  /></div>
+                            <ProductImageInput file={imageFile} onChange={setImageFile} disabled={savingProduct} />
                             <div className='edit-submit-container'>
                                 <button type='submit' disabled={savingProduct}>{savingProduct?'Saving...':'Save Changes'}</button>
                             </div>
