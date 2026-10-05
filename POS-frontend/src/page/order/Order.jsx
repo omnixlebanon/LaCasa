@@ -124,13 +124,15 @@ function Order() {
         setOrders((prevOrders) =>
             prevOrders.map((order) => {
                 if (order.id !== activeOrderId) return order;
-                const existingItemIndex = product.lineId ? order.items.findIndex(item => item.lineId === product.lineId) : -1;
+                const existingItemIndex = order.items.findIndex(item => product.lineId
+                    ? item.lineId === product.lineId
+                    : String(item.product_id) === String(product.product_id));
                 let updatedItems = [...order.items];
 
                 if (existingItemIndex > -1) {
                     updatedItems[existingItemIndex] = {
                         ...updatedItems[existingItemIndex],
-                        qty: updatedItems[existingItemIndex].qty + 1,
+                        qty: Number(updatedItems[existingItemIndex].qty) + 1,
                     };
                 } else {
                     updatedItems.push({
