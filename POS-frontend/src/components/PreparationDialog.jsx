@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { preparationStation } from '../utils/preparation.js';
+import { isPrintingDisabled, usePrintingDisabled } from '../utils/printing.js';
 import './ReceiptDialog.css';
 import './PreparationDialog.css';
 
 // This content is visible only to the printer.
 export default function PreparationDialog({ items, tableName, floorName, onClose, onPrinted }) {
+    const [printingDisabled] = usePrintingDisabled();
     const [station, setStation] = useState('Bar');
     const container = useRef(null);
     const callbacks = useRef({ onClose, onPrinted });
@@ -14,6 +16,7 @@ export default function PreparationDialog({ items, tableName, floorName, onClose
         try { return localStorage.getItem('receipt-paper') === '58' ? '58' : '80'; } catch { return '80'; }
     })()).current;
     useEffect(() => {
+        if (printingDisabled) { callbacks.current.onClose(); return; }
         let pageStyle;
         let finished = false;
         const finish = async () => {
@@ -33,6 +36,7 @@ export default function PreparationDialog({ items, tableName, floorName, onClose
         };
         window.addEventListener('afterprint', finish);
         const timer = setTimeout(() => {
+            if (isPrintingDisabled()) { callbacks.current.onClose(); return; }
             try {
                 const heights = [...container.current.querySelectorAll('.receipt-paper')].map(ticket => {
                     const sample = ticket.cloneNode(true);
@@ -54,7 +58,7 @@ export default function PreparationDialog({ items, tableName, floorName, onClose
             }
         }, 150);
         return () => { clearTimeout(timer); window.removeEventListener('afterprint', finish); pageStyle?.remove(); };
-    }, [paper, station]);
+    }, [paper, station, printingDisabled]);
     return createPortal(<div ref={container} className="preparation-print" aria-hidden="true" style={{ '--receipt-width': paper === '58' ? '48mm' : '72mm' }}>
         <article className="receipt-paper preparation-slip" key={station}>
             <header><h1>{station}</h1><p>Table: {tableName || 'No table'}</p><p>Floor: {floorName || 'No floor'}</p></header>

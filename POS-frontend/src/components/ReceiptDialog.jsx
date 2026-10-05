@@ -2,10 +2,12 @@ import {useEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
 import {Printer,X} from 'lucide-react';
 import {receiptData,receiptDate} from '../utils/receipt.js';
+import {isPrintingDisabled,usePrintingDisabled} from '../utils/printing.js';
 import './ReceiptDialog.css';
 const usd=value=>'$'+Number(value).toFixed(2);
 const lbp=value=>Math.round(Number(value)).toLocaleString('en-US')+' L.L.';
 export default function ReceiptDialog({order,onClose,autoPrint=false}){
+ const [printingDisabled]=usePrintingDisabled();
  const dialog=useRef(null);const [paper,setPaper]=useState(()=>{try{return ['58','80','a4'].includes(localStorage.getItem('receipt-paper'))?localStorage.getItem('receipt-paper'):'80';}catch{return '80';}}),[error,setError]=useState('');
  useEffect(()=>{dialog.current.showModal();},[]);
  const closeRef=useRef(onClose);closeRef.current=onClose;
@@ -25,19 +27,20 @@ export default function ReceiptDialog({order,onClose,autoPrint=false}){
   document.head.appendChild(style);pageStyle.current=style;
  }
  useEffect(()=>()=>{pageStyle.current?.remove();pageStyle.current=null;},[paper]);
- printRef.current=()=>{preparePage();window.print();};
+ printRef.current=()=>{if(isPrintingDisabled())return;preparePage();window.print();};
  useEffect(()=>{
   if(!autoPrint)return;
+  if(printingDisabled){closeRef.current();return;}
   const afterPrint=()=>closeRef.current();
   window.addEventListener('afterprint',afterPrint);
   const timer=setTimeout(()=>{try{printRef.current();}catch{setError('Printing could not start. Retry below or use Order History to reprint.');}},150);
   return()=>{clearTimeout(timer);window.removeEventListener('afterprint',afterPrint);};
- },[autoPrint]);
+ },[autoPrint,printingDisabled]);
  const receipt=receiptData(order),payment=receipt.payment;
  function print(){setError('');try{printRef.current();}catch{setError('Could not open printing. You can try again or reprint from Order History.');}}
  return createPortal(<dialog ref={dialog} className="receipt-dialog" aria-labelledby="receipt-title" style={{'--receipt-width':paper==='a4'?'180mm':paper==='58'?'48mm':'72mm'}} onCancel={event=>{event.preventDefault();onClose();}}>
   <header className="receipt-controls"><h2 id="receipt-title">Receipt</h2><button type="button" onClick={onClose} aria-label="Close receipt"><X size={20}/></button></header>
-  <div className="receipt-toolbar"><label>Paper size<select value={paper} onChange={event=>{setPaper(event.target.value);try{localStorage.setItem('receipt-paper',event.target.value);}catch{}}}><option value="80">80 mm receipt</option><option value="58">58 mm receipt</option><option value="a4">A4</option></select></label><button type="button" className="receipt-print-button" onClick={print}><Printer size={18}/>Print receipt</button></div>
+  <div className="receipt-toolbar"><label>Paper size<select value={paper} onChange={event=>{setPaper(event.target.value);try{localStorage.setItem('receipt-paper',event.target.value);}catch{}}}><option value="80">80 mm receipt</option><option value="58">58 mm receipt</option><option value="a4">A4</option></select></label><button type="button" className="receipt-print-button" disabled={printingDisabled} onClick={print}><Printer size={18}/>{printingDisabled?'Printing is off':'Print receipt'}</button></div>
   {error&&<p className="receipt-print-error" role="alert">{error}</p>}
   <div className="receipt-preview"><article className="receipt-paper">
    <header><h1>LA CASA</h1><p>Sales receipt</p>{receipt.refunded&&<strong className="receipt-refunded">REFUNDED</strong>}</header>

@@ -1,0 +1,15 @@
+.split-order-dialog { margin: auto; width: min(560px, calc(100vw - 32px)); max-height: calc(100dvh - 32px); box-sizing: border-box; overflow: auto; padding: 24px; border: 1px solid var(--border-color); border-radius: 18px; background: white; color: var(--text-color); }
+.split-order-dialog::backdrop { background: #10271b99; }
+.split-order-dialog header, .split-order-dialog footer { display: flex; justify-content: space-between; align-items: center; gap: 12px; }
+.split-order-dialog h2 { margin: 0; }
+.split-order-dialog p { font-size: 14px; line-height: 1.5; margin: 16px 0; }
+.split-order-dialog input, .split-order-dialog button { min-height: 44px; box-sizing: border-box; border: 1px solid var(--border-color); border-radius: 8px; padding: 10px; font: inherit; background: white; color: inherit; }
+.split-order-dialog label { display: block; margin-bottom: 8px; }
+.split-order-dialog form > input { width: 100%; }
+.split-order-items { margin-top: 16px; }
+.split-order-line { display: flex; align-items: center; justify-content: space-between; gap: 16px; border-bottom: 1px solid var(--border-color); padding: 12px 0; }
+.split-order-line > div { min-width: 0; overflow-wrap: anywhere; }
+.split-order-line small { display: block; margin-top: 5px; }
+.split-order-line input { width: 80px; flex-shrink: 0; }
+.split-order-dialog footer button:last-child { background: var(--main-color); color: white; }
+.split-order-dialog button:disabled { opacity: .5; }

@@ -25,6 +25,7 @@ function OrderOptions({ optionsOpen, setOptionsOpen, optionOpen, setOptionOpen, 
         {optionsOpen && <div className='editPopup'><div className='editPopup-container'>
             <div className='editPopup-head'><p>Options</p><button type="button" className='close-btn' onClick={closeAll}><X /></button></div>
             <div className='option-btns'>
+                <button className='option-btn' disabled={!activeOrder || activeOrder.items.reduce((sum, item) => sum + item.qty, 0) < 2} onClick={() => handleActiveOption('split')}>Split Order</button>
                 <button className={`option-btn ${activeOrder?.label && activeOrder?.tableName !== activeOrder?.label ? 'active-option' : ''}`} onClick={() => handleActiveOption('orderName')}>Order Name</button>
                 <button className={`option-btn ${activeOrder?.tableName ? 'active-option' : ''}`} onClick={() => handleActiveOption('table')}>{activeOrder?.tableName ? `Table: ${activeOrder.tableName}` : 'Add Table to Order'}</button>
                 <button className={`option-btn ${activeOrder?.noPrint ? 'active-option' : ''}`} onClick={() => handleActiveOption('print')}>{activeOrder?.noPrint ? 'Printing Off' : "Printing On"}</button>

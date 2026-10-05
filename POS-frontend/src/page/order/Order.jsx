@@ -1,4 +1,7 @@
 import ReceiptDialog from '../../components/ReceiptDialog.jsx';
+import SplitOrderDialog from '../../components/SplitOrderDialog.jsx';
+import { splitOrder } from '../../utils/splitOrder.js';
+import { isPrintingDisabled, usePrintingDisabled } from '../../utils/printing.js';
 import PreparationDialog from '../../components/PreparationDialog.jsx';
 import { lineKey, pendingPreparation, preparationSnapshot } from '../../utils/preparation.js';
 import CashPaymentDialog from '../../components/CashPaymentDialog.jsx';
@@ -24,6 +27,8 @@ function Order() {
     const [categoryFilter, setCategoryFilter] = useState("");
 
     const [optionsOpen, setOptionsOpen] = useState(false);
+    const [printingDisabled, setPrintingDisabled] = usePrintingDisabled();
+    const [splitSource, setSplitSource] = useState(null);
     const [isProcessing, setIsProcessing] = useState(false);
     const [paymentOrder,setPaymentOrder]=useState(null),[paymentError,setPaymentError]=useState('');
     const checkoutLock=useRef(false);
@@ -170,9 +175,10 @@ function Order() {
 
     const preparationItems = (activeOrder?.items || []).map(item => ({ ...item, product_category: item.product_category || products.find(product => product.product_id === item.product_id)?.product_category }));
     const pendingItems = pendingPreparation(preparationItems, activeOrder?.printedPreparation);
-    const needsPreparation = !activeOrder?.preparationPrinted || pendingItems.length > 0;
+    const needsPreparation = !printingDisabled && (!activeOrder?.preparationPrinted || pendingItems.length > 0);
     const preparationLock = useRef(false);
     const startPreparation = async (all = true) => {
+        if (isPrintingDisabled()) return;
         if (!activeOrder?.items.length || preparationLock.current) return;
         preparationLock.current = true;
         setIsProcessing(true);
@@ -253,6 +259,12 @@ function Order() {
 
     const handleActiveOption = (id) => {
         if (!activeOrder) return alert('Select or create an order first.');
+        if (id === 'split') {
+            if (activeOrder.items.reduce((sum, item) => sum + item.qty, 0) < 2) return alert('Add at least two items before splitting an order.');
+            setSplitSource(structuredClone(activeOrder));
+            setOptionsOpen(false);
+            return;
+        }
         if (id === 'table') {
             setTableError('');
             setOptionOpen('table');
@@ -302,6 +314,21 @@ function Order() {
         setOptionsOpen(false);
     };
 
+    const confirmSplit = async (quantities, label) => {
+        await editDrafts(drafts => {
+            const index = drafts.orders.findIndex(order => order.id === splitSource.id);
+            if (index < 0 || JSON.stringify(drafts.orders[index]) !== JSON.stringify(splitSource)) throw new Error('This order changed. Cancel and reopen Split Order.');
+            const id = crypto.randomUUID();
+            const result = splitOrder(drafts.orders[index], quantities, id, label);
+            drafts.orders[index] = result.original;
+            drafts.orders.push(result.split);
+            drafts.nextOrder++;
+            drafts.activeOrderId = id;
+            newlyAddedOrderRef.current = id;
+        });
+        setSplitSource(null);
+    };
+
     const releaseOrderTable = async (order) => {
         if (order.tableId) await api.put(`/api/seating/tables/${order.tableId}/status`, { t_status: 'available' });
         else if (order.tableName || /^T\d+$/i.test(order.label)) {
@@ -343,7 +370,7 @@ function Order() {
                 table_name: activeOrder.tableName || (/^T\d+$/i.test(activeOrder.label) ? activeOrder.label : null),
                 order_type: activeOrder.orderType || 'takeout',
                 kitchen_note: activeOrder.kitchenNote || '',
-                no_print: !!activeOrder.noPrint,
+                no_print: printingDisabled || !!activeOrder.noPrint,
                 subtotal,
                 discount: discountAmount,
                 items: activeOrder.items.map(item => ({
@@ -366,7 +393,7 @@ function Order() {
         if(!current||JSON.stringify(current)!==paymentOrder.order){setPaymentError('This order changed. Cancel and reopen payment to use the latest total.');return;}
         checkoutLock.current=true;setIsProcessing(true);setPaymentError('');
         try{
-            const savedDetails={...paymentOrder.payload.details,receipt_exchange_rate:paymentOrder.rate,payment_method:payment.method==='whish'?'WHISH Money':'Cash',payment};
+            const savedDetails={...paymentOrder.payload.details,no_print:isPrintingDisabled()||paymentOrder.payload.details.no_print,receipt_exchange_rate:paymentOrder.rate,payment_method:payment.method==='whish'?'WHISH Money':'Cash',payment};
             const result=await api.post('/api/checkout',{...paymentOrder.payload,details:savedDetails});
             if(!savedDetails.no_print)setReceipt(result.data.receipt||{order_id:result.data.orderId,customer_name:paymentOrder.payload.customerName,total_amount:paymentOrder.payload.totalAmount,order_date:result.data.timestamp,details:savedDetails});
             setPaymentOrder(null);
@@ -379,6 +406,7 @@ function Order() {
 
     return (
         <>
+            {splitSource && <SplitOrderDialog order={splitSource} onCancel={() => setSplitSource(null)} onConfirm={confirmSplit} />}
             {preparation && <PreparationDialog items={preparation.items} tableName={preparation.tableName} floorName={preparation.floorName} onClose={closePreparation} onPrinted={confirmPreparation} />}
             {printChoice && <dialog ref={printChoiceDialog} className="order-print-dialog" aria-labelledby="print-choice-title" aria-describedby="print-choice-description" onCancel={event => { event.preventDefault(); if (!isProcessing) setPrintChoice(false); }}>
                 <header><span className="order-print-icon"><Printer size={24} /></span><button type="button" aria-label="Cancel printing" disabled={isProcessing} onClick={() => setPrintChoice(false)}><X size={20} /></button></header>
@@ -500,6 +528,13 @@ function Order() {
                         )}
                     </div>
                     <div className="order-bottom-area">
+                        <button type="button" className={`printing-all-toggle ${printingDisabled ? 'printing-stopped' : ''}`} aria-pressed={printingDisabled} disabled={isProcessing} onClick={() => {
+                            try { setPrintingDisabled(!printingDisabled); }
+                            catch { alert('Could not save the printing preference.'); }
+                        }}>
+                            <Printer size={18} /><span>{printingDisabled ? 'Resume printing for all' : 'Stop printing for all'}</span>
+                        </button>
+                        {printingDisabled && <p className="printing-all-status" role="status">Printing is off for all orders on this register. Checkout opens directly.</p>}
                         <div className='order-total'>
                             {discountAmount > 0 && <span className='order-discount-summary'>Subtotal {formatPrice(subtotal)} · Discount {formatPrice(discountAmount)}</span>}
                             <span className='total-text'>Total</span>
