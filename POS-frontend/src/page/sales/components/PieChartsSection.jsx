@@ -4,7 +4,7 @@ import { groupSmallSlices } from '../utils/pie.js';
 import { useCurrency } from '../../../global.jsx';
 import React, { useState } from "react";
 import { formatNumber, PRODUCT_COLORS } from "../utils/analytics";
-import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip, Legend } from "recharts";
+import { ResponsiveContainer, PieChart, Pie, Cell, Tooltip } from "recharts";
 export const PieChartsSection = ({ productMetrics, categorySummaries, ingredientCost, expenses, payrollCost, missingCosts, transactions }) => {
   const { formatPrice: formatCurrency } = useCurrency();
 	const [activeTab, setActiveTab] = useState("units");
@@ -50,7 +50,7 @@ export const PieChartsSection = ({ productMetrics, categorySummaries, ingredient
             
             <span>Categories</span>
           </button>
-          <button onClick={() => setActiveTab("costs")} aria-pressed={activeTab === "costs"} className={`sales-chart-tab${activeTab === "payments" ? <PaymentPieChart transactions={transactions} /> : activeTab === "costs" ? " is-active" : ""}`}><span>Total Cost by Expense</span></button>
+          <button onClick={() => setActiveTab("costs")} aria-pressed={activeTab === "costs"} className={`sales-chart-tab${activeTab === "costs" ? " is-active" : ""}`}><span>Total Cost by Expense</span></button>
         </div>
       </div>
 
@@ -69,10 +69,6 @@ export const PieChartsSection = ({ productMetrics, categorySummaries, ingredient
 		borderRadius: "12px",
 		fontSize: "12px"
 	}} formatter={(value, name, item) => [`${formatNumber(Number(value))} units (${formatCurrency(item.payload.rawCurrency)})`, item.payload.name]} />
-                <Legend verticalAlign="bottom" height={36} wrapperStyle={{
-		fontSize: "11px",
-		paddingTop: "10px"
-	}} />
               </PieChart> : <PieChart>
                 <Pie data={categoryPieData} cx="50%" cy="50%" outerRadius={100} innerRadius={60} paddingAngle={4} dataKey="value" label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`}>
                   {categoryPieData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.color} />)}
@@ -83,14 +79,13 @@ export const PieChartsSection = ({ productMetrics, categorySummaries, ingredient
 		borderRadius: "12px",
 		fontSize: "12px"
 	}} formatter={(value, name, item) => [`${formatCurrency(Number(value))} Sales | Gross profit: ${item.payload.profit === null ? 'Unavailable' : formatCurrency(item.payload.profit)}`, item.payload.name]} />
-                <Legend verticalAlign="bottom" height={36} wrapperStyle={{
-		fontSize: "11px",
-		paddingTop: "10px"
-	}} />
               </PieChart>}
           </ResponsiveContainer>
         </div>
 
+        <ul className="sales-pie-legend" tabIndex={0} aria-label={activeTab === 'units' ? 'Most sold products legend' : 'Categories legend'}>
+          {(activeTab === 'units' ? unitsPieData : categoryPieData).map(entry => <li key={entry.name}><i style={{ background: entry.color }} aria-hidden="true" /><span>{entry.name}</span></li>)}
+        </ul>
       </div>}
     </div>;
 };
