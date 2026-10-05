@@ -40,3 +40,10 @@
 .menu-category-placement li { flex-wrap:wrap; }
 .menu-category-placement select { min-width:0; max-width:100%; flex:1 1 120px; min-height:44px; padding:8px; border:1px solid var(--border-color); border-radius:8px; background:white; }
 .menu-category-placement li>span { flex:1 1 120px; }
+.menu-order-list li > span { flex:1; }
+.menu-drag-handle { display:grid; place-items:center; flex-shrink:0; width:40px; height:44px; padding:0; border:1px solid var(--border-color); border-radius:8px; background:var(--sec-bg); color:var(--font-color); cursor:grab; touch-action:none; user-select:none; }
+.menu-drag-handle:active { cursor:grabbing; }
+.menu-drag-handle:disabled { opacity:.4; cursor:default; }
+.menu-drag-handle:focus-visible { outline:2px solid var(--main-color); outline-offset:2px; }
+.menu-order-list li.menu-row-dragging { opacity:.55; background:var(--sec-bg); }
+.menu-order-list li.menu-row-drop-target { background:var(--main-soft); box-shadow:inset 0 3px var(--main-color),inset 0 -3px var(--main-color); }
