@@ -179,10 +179,9 @@ function ProductManag() {
                                 </div>
                             </div>
                             <div className='label-input'><label htmlFor="product_description">Menu description</label><textarea id="product_description" name="product_description" maxLength={2000}  /></div>
-                            <ProductImageInput value={imageUrl} file={imageFile} onChange={setImageFile} onRemove={() => setImageUrl('')} disabled={savingProduct} />
-                            <div className='edit-submit-container'>
+                            <ProductImageInput value={imageUrl} file={imageFile} onChange={setImageFile} onRemove={() => setImageUrl('')} disabled={savingProduct}>
                                 <button type='submit' disabled={savingProduct}>{savingProduct?'Saving...':'Save Changes'}</button>
-                            </div>
+                            </ProductImageInput>
                         </div>
                     </form>
                 </div>, document.body

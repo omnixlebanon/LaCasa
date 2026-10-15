@@ -2,3 +2,7 @@
 .product-image-remove:hover:not(:disabled) { background:#fff1f0; }
 .product-image-remove:focus-visible { outline:2px solid #b42318; outline-offset:2px; }
 .product-image-remove:disabled { opacity:.5; cursor:default; }
+.product-image-actions { display:flex; flex-direction:row; align-items:center; justify-content:flex-end; gap:12px; width:100%; }
+.product-image-actions button { flex:0 1 auto; }
+.product-image-actions .product-image-remove { align-self:auto; background:#fff; border-color:#b42318; color:#b42318; }
+.product-image-actions .product-image-remove:hover:not(:disabled) { background:#fff1f0; border-color:#b42318; }
