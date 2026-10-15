@@ -26,7 +26,7 @@ function placeholder(img) {
     img.loading = 'eager';
     img.src = placeholderUrl();
 }
-function createCard(product, index) {
+function createCard(product, index, appearance) {
     const card = element('div', undefined, 'menu-item');
     const img = document.createElement('img');
     img.alt = product.product_name;
@@ -42,9 +42,11 @@ function createCard(product, index) {
     const details = element('div', undefined, 'menu-details');
     details.append(element('h3', product.product_name), element('p', product.product_description || ''), element('p', new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(Number(product.product_price)), 'price'));
     card.append(img, details);
+    window.MenuSeason.decorate(card, appearance?.badges?.[product.product_id]);
     return card;
 }
-function renderMenu(products, groups) {
+function renderMenu(products, groups, appearance) {
+    window.MenuSeason.apply(appearance);
     const categories = new Map();
     for (const product of products) {
         const category = product.product_category || 'Other';
@@ -76,7 +78,7 @@ function renderMenu(products, groups) {
             if (name !== group.name) section.append(heading);
             const grid = element('div', undefined, 'menu-grid');
             if (name === group.name) grid.id = heading.id;
-            for (const product of categories.get(name)) grid.append(createCard(product, imageIndex++));
+            for (const product of categories.get(name)) grid.append(createCard(product, imageIndex++, appearance));
             section.append(grid);
         });
         fragment.append(section);
@@ -93,8 +95,8 @@ async function loadMenu() {
         if (!response.ok) throw new Error('Menu unavailable');
         const data = await response.json();
         if (!Array.isArray(data.products)) throw new Error('Invalid menu');
-        const signature = JSON.stringify([data.products,data.groups]);
-        if (signature !== previous) { renderMenu(data.products,data.groups||[]); previous = signature; }
+        const signature = JSON.stringify([data.products,data.groups,data.appearance,window.MenuSeason.nextYear()]);
+        if (signature !== previous) { renderMenu(data.products,data.groups||[],data.appearance); previous = signature; }
         status.textContent = data.products.length ? '' : 'The menu is being updated. Please check back soon.';
     } catch {
         status.textContent = previous === null ? 'Could not load the menu. Please try again.' : '';

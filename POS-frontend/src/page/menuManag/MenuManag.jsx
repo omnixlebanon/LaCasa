@@ -2,10 +2,13 @@ import { useEffect, useState, useRef } from "react";
 import { reorderVisible } from './reorder.js';
 import api from "../../api.js";
 import LoadingState from "../../components/LoadingState.jsx";
-import { LayoutList, ExternalLink, ArrowUp, ArrowDown, GripVertical } from "lucide-react";
+import { LayoutList, ExternalLink, ArrowUp, ArrowDown, GripVertical, Palette, Tags } from "lucide-react";
 import './MenuManag.css';
+import MenuAppearance from './MenuAppearance.jsx';
 
 function MenuManag() {
+    const [activePage,setActivePage]=useState('order');
+    const pages=[{id:'order',label:'Menu Order',Icon:LayoutList},{id:'themes',label:'Themes',Icon:Palette},{id:'badges',label:'Item Badges',Icon:Tags}];
     const [products,setProducts]=useState([]),[categories,setCategories]=useState([]),[groups,setGroups]=useState([]);
     const [selectedGroup,setSelectedGroup]=useState(null),[groupsReady,setGroupsReady]=useState(false);
     const [loading,setLoading]=useState(true),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState('');
@@ -76,14 +79,16 @@ function MenuManag() {
         catch(e){setError(e.response?.data?.error||'Could not move category.');}finally{setBusy(false);}
     }
     function controls(kind,row,index,length){const name=row.group_name||row.p_category_name||row.product_name;return <div className="menu-order-controls"><button type="button" disabled={busy||index===0} aria-label={'Move '+name+' up'} onClick={()=>move(kind,row,-1)}><ArrowUp size={18}/></button><button type="button" disabled={busy||index===length-1} aria-label={'Move '+name+' down'} onClick={()=>move(kind,row,1)}><ArrowDown size={18}/></button></div>;}
-    return <div className="main-area">
+    return <div className="main-area menu-management-page">
         <div className="head-area">
             <div className="PageTitle"><LayoutList /><h2>Menu Management</h2></div>
             <a className="menu-open-link" href="/menu" target="_blank" rel="noopener noreferrer"><ExternalLink size={18} />Open Menu</a>
         </div>
+        <nav className="menu-page-nav" aria-label="Menu management pages">{pages.map(({id,label,Icon})=><button key={id} type="button" className={activePage===id?'active':''} aria-current={activePage===id?'page':undefined} onClick={()=>setActivePage(id)}><Icon/>{label}</button>)}</nav>
         {error&&<div role="alert" className="menu-order-error">{error} <button onClick={refresh} disabled={busy}>Reload menu</button></div>}
-        {message&&<p role="status">{message}</p>}
-        {loading?<LoadingState label="Loading menu"/>:<div className="menu-order-layout" aria-busy={busy}>
+        {message&&activePage==='order'&&<p role="status">{message}</p>}
+        {!loading&&<div hidden={activePage==='order'}><MenuAppearance products={products} section={activePage==='badges'?'badges':'themes'}/></div>}
+        {loading?<LoadingState label="Loading menu"/>:<div hidden={activePage!=='order'}><div className="menu-order-layout" aria-busy={busy}>
             <section className="menu-public-card"><h3>Group order</h3><p>Drag the handles to arrange the main sections of the customer menu.</p><ol className="menu-order-list">{groupList.map((group,index)=><li key={group.group_id} {...rowProps('groups',group.group_id)}>{grip('groups',group)}<span>{group.group_name}</span>{controls('groups',group,index,groupList.length)}</li>)}</ol>{groupsReady&&!groupList.length&&<p>Add groups in Product Management.</p>}</section>
             <section className="menu-public-card"><h3>Category placement</h3><label className="menu-category-picker">Group<select disabled={busy||!groupsReady} value={groupKey} onChange={e=>setSelectedGroup(e.target.value)}>{groupList.map(g=><option key={g.group_id} value={g.group_id}>{g.group_name}</option>)}<option value="">More (no group)</option></select></label><p>Drag the handles to reorder categories, or choose a different group to move them.</p>
                 <ol className="menu-order-list menu-category-placement">{visibleCategories.map((category,index)=><li key={category.p_category_id} {...rowProps('categories',category.p_category_id)}>{grip('categories',category)}<span>{category.p_category_name}{!!Number(category.pos_hidden)&&<small>Hidden</small>}</span><select aria-label={'Move '+category.p_category_name+' to group'} disabled={busy||!groupsReady} value={category.menu_group_id??''} onChange={e=>assignGroup(category,e.target.value)}><option value="">More (no group)</option>{groupList.map(g=><option key={g.group_id} value={g.group_id}>{g.group_name}</option>)}</select>{controls('categories',category,index,visibleCategories.length)}</li>)}</ol>
@@ -93,7 +98,7 @@ function MenuManag() {
                 <ol className="menu-order-list">{visibleProducts.map((product,index)=><li key={product.product_id} {...rowProps('products',product.product_id)}>{grip('products',product)}<span>{product.product_name}{!!Number(product.pos_hidden)&&<small>Hidden</small>}</span>{controls('products',product,index,visibleProducts.length)}</li>)}</ol>
                 {!visibleProducts.length&&<p>No products in this category.</p>}
             </section>
-        </div>}
+        </div></div>}
     </div>;
 }
 export default MenuManag;

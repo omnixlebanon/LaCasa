@@ -1,0 +1,118 @@
+/* Seasonal palettes and effects preserve the reference menu's Christmas and Ramadan styling. */
+:root[data-season="christmas"] { --accent-color:#597288; --accent-color2:#274046; --season-light:#e6dada; --season-dark:#274046; }
+:root[data-season="ramadan"] { --accent-color:#a36b3d; --accent-color2:#582c07; --season-light:#fff3e0; --season-dark:#582c07; }
+:root[data-season="halloween"] { --accent-color:#c96515; --accent-color2:#5a286a; --season-light:#fff0df; --season-dark:#25152d; }
+:root[data-season="new-year"] { --accent-color:#9b751d; --accent-color2:#34304e; --season-light:#fff8df; --season-dark:#201e34; }
+:root[data-season]:not([data-season="default"]) body { background:linear-gradient(to bottom,var(--season-light),var(--season-dark)); background-attachment:fixed; }
+:root[data-theme="dark"][data-season]:not([data-season="default"]) body { background:linear-gradient(to bottom,#16161d,var(--season-dark)); }
+:root[data-theme="dark"][data-season="ramadan"] { --accent-color2:#e3b16d; }
+:root[data-theme="dark"][data-season="christmas"] { --accent-color2:#93b7c0; }
+:root[data-theme="dark"][data-season="halloween"] { --accent-color2:#e0a2f3; }
+:root[data-theme="dark"][data-season="new-year"] { --accent-color2:#e5c777; }
+:root[data-theme="dark"][data-season]:not([data-season="default"]) nav { background:var(--season-dark); }
+.menu-item.has-badges { position:relative; outline-offset:-2px; }
+.item-ribbons { position:absolute; inset:0; overflow:hidden; border-radius:inherit; pointer-events:none; z-index:1; }
+.menu-item.has-badges > img { border-radius:10px 10px 0 0; }
+.item-ribbon { position:absolute; top:calc(27px + var(--ribbon-index, 0) * 32px); right:-45px; width:190px; transform:rotate(45deg); text-align:center; color:white; font-size:11px; font-weight:600; padding:6px 0; box-shadow:0 2px 5px #0004; z-index:1; }
+.menu-item.holiday-christmas { outline:2px solid #d42426; }
+.menu-item.holiday-ramadan { outline:2px solid #a36b3d; }
+.menu-item.holiday-halloween { outline:2px solid #a64dcc; }
+.menu-item.holiday-new-year { outline:2px solid #a6852d; }
+.menu-item.holiday-limited-time { outline:2px solid #a73c12; }
+.menu-item.holiday-new { outline:2px solid #246346; }
+.menu-item.holiday-most-popular { outline:2px solid #344d87; }
+.badge-christmas { background:#b91c25; }
+.badge-ramadan { background:#73400d; }
+.badge-halloween { background:#633078; }
+.badge-new-year { background:#63501c; }
+.badge-limited-time { background:#a73c12; }
+.badge-new { background:#246346; }
+.badge-most-popular { background:#344d87; }
+.menu-item.has-christmas-lights { overflow:visible; }
+.item-christmas-lights { position:absolute; inset:-2px; border:1px solid #315541; border-radius:12px; pointer-events:none; z-index:2; }
+.item-light { position:absolute; width:6px; height:9px; border-radius:3px 3px 5px 5px; background:var(--bulb-color); box-shadow:0 0 5px var(--bulb-color),0 0 10px var(--bulb-color); animation:item-light-glow 3s ease-in-out infinite; animation-delay:var(--twinkle-delay); }
+.item-light::before { content:''; position:absolute; top:-2px; left:1px; width:4px; height:3px; border-radius:1px; background:#315541; }
+.light-top { top:-9px; left:var(--position); transform:translateX(-50%) rotate(180deg); }
+.light-bottom { bottom:-9px; left:var(--position); transform:translateX(-50%); }
+.light-left { left:-8px; top:var(--position); transform:translateY(-50%) rotate(90deg); }
+.light-right { right:-8px; top:var(--position); transform:translateY(-50%) rotate(-90deg); }
+.light-top.light-inward { top:0; transform:translateX(-50%); }
+.light-bottom.light-inward { bottom:0; transform:translateX(-50%) rotate(180deg); }
+.light-left.light-inward { left:0; transform:translateY(-50%) rotate(-90deg); }
+.light-right.light-inward { right:0; transform:translateY(-50%) rotate(90deg); }
+.item-ornaments { position:absolute; bottom:7px; left:10px; display:flex; gap:6px; pointer-events:none; }
+.item-ornament { display:block; width:48px; height:48px; filter:drop-shadow(0 2px 2px #0002); }
+.menu-item.has-halloween-pumpkin { overflow:visible; }
+.item-pumpkin-pair { position:absolute; right:-4px; bottom:-4px; display:flex; align-items:flex-end; gap:0; pointer-events:none; z-index:3; }
+.item-pumpkin-pair .ornament-halloween { width:38px; height:38px; transform:rotate(9deg); }
+.item-pumpkin-pair .pumpkin-original { width:58px; height:58px; margin-right:-7px; transform:rotate(-7deg); }
+.ornament-ramadan { filter:drop-shadow(0 0 5px #edc36955); }
+.item-hanging-lantern { position:absolute; top:0; right:16px; display:flex; flex-direction:column; align-items:center; pointer-events:none; z-index:3; }
+.item-hanging-lantern::before { content:''; width:2px; height:23px; background:linear-gradient(#88601f,#d9b967,#88601f); }
+.item-hanging-lantern .ornament-ramadan { margin-top:-4px; }
+.ornament-new-year { animation:item-star-glow 3s ease-in-out infinite; }
+.item-new-year-emblem { position:absolute; top:12px; left:12px; width:84px; padding:10px 8px 8px; display:flex; flex-direction:column; align-items:center; border:1px solid #dbb65f; outline:1px solid #dbb65f66; outline-offset:3px; border-radius:7px 7px 18px 18px; background:linear-gradient(145deg,#39304f,#171526); box-shadow:0 3px 10px #0004; color:#f8db91; pointer-events:none; z-index:2; transform:rotate(-5deg); }
+.item-new-year-emblem .ornament-new-year { position:absolute; top:-10px; right:-10px; width:27px; height:27px; }
+.year-caption { font-size:9px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; line-height:1.5; }
+.year-number { font-family:Georgia,'Times New Roman',serif; font-size:30px; font-style:italic; line-height:1.15; letter-spacing:-1px; color:#ffe6a0; text-shadow:0 1px 0 #936323,0 0 12px #edc36944; }
+@keyframes item-light-glow { 0%,100% { filter:brightness(.8); } 50% { filter:brightness(1.25); } }
+@keyframes item-star-glow { 0%,100% { filter:drop-shadow(0 0 2px #edc36933); } 50% { filter:drop-shadow(0 0 7px #edc36999); } }
+@media(prefers-reduced-motion:reduce) { .item-light,.ornament-new-year { animation:none; } }
+#seasonal-decorations { position:fixed; inset:0; overflow:hidden; pointer-events:none; z-index:1001; }
+.seasonal-ghost-popup { position:absolute; left:50%; top:50%; display:flex; flex-direction:column; align-items:center; gap:12px; opacity:0; animation:seasonal-ghost-visit 4s ease-in-out forwards; }
+.seasonal-ghost-greeting { padding:10px 22px; border-radius:24px 24px 24px 4px; background:#fff; color:#5a286a; font-size:clamp(28px,6vw,42px); font-weight:800; line-height:1.2; box-shadow:0 6px 24px #25152d33; }
+.seasonal-ghost-character { display:block; width:clamp(160px,36vw,230px); height:auto; overflow:visible; filter:drop-shadow(0 8px 16px #25152d44); animation:seasonal-ghost-float 1.6s ease-in-out infinite; }
+.seasonal-ghost-arm { transform-box:fill-box; animation:seasonal-ghost-wave .65s ease-in-out infinite alternate; }
+.seasonal-ghost-arm-left { transform-origin:right center; }
+.seasonal-ghost-arm-right { transform-origin:left center; animation-delay:-.65s; }
+@keyframes seasonal-ghost-float { 0%,100% { transform:translateY(0); } 50% { transform:translateY(-9px); } }
+@keyframes seasonal-ghost-wave { from { transform:rotate(-12deg); } to { transform:rotate(12deg); } }
+@keyframes seasonal-ghost-visit { 0%,100% { opacity:0; transform:translate(-50%,-40%) scale(.7); } 15%,75% { opacity:1; transform:translate(-50%,-50%) scale(1); } }
+.seasonal-new-year-popup { position:absolute; left:50%; top:50%; width:min(82vw,400px); box-sizing:border-box; padding:28px 20px; display:flex; flex-direction:column; align-items:center; border:1px solid #e9c979; border-radius:28px; background:linear-gradient(145deg,#39304ff5,#171526f5); box-shadow:0 12px 48px #17152655,inset 0 0 35px #edc36914; text-align:center; opacity:0; animation:seasonal-ghost-visit 4s ease-in-out forwards; }
+.seasonal-new-year-greeting { color:#ffedbd; font-size:clamp(20px,5vw,30px); font-weight:600; letter-spacing:.04em; }
+.seasonal-new-year-number { color:#ffe095; font-family:Georgia,'Times New Roman',serif; font-size:clamp(70px,20vw,112px); line-height:1.15; text-shadow:0 0 24px #edc36966; }
+.seasonal-firework { position:absolute; width:1px; height:1px; color:var(--burst-color); }
+.seasonal-firework i { position:absolute; left:0; top:0; width:4px; height:14px; border-radius:50%; background:currentColor; box-shadow:0 0 8px currentColor; opacity:0; animation:seasonal-firework-burst 1.7s ease-out var(--burst-delay) 2 both; }
+@keyframes seasonal-firework-burst { 0% { opacity:0; transform:rotate(var(--ray-angle)) translateY(0) scaleY(.3); } 18% { opacity:1; } 70% { opacity:.8; } 100% { opacity:0; transform:rotate(var(--ray-angle)) translateY(clamp(-110px,-18vw,-65px)) scaleY(.35); } }
+@media(prefers-reduced-motion:reduce) { .seasonal-new-year-popup { animation:none; opacity:1; transform:translate(-50%,-50%); } .seasonal-firework i { animation:none; opacity:.75; transform:rotate(var(--ray-angle)) translateY(-45px); } }
+@media(prefers-reduced-motion:reduce) { .seasonal-ghost-popup { animation:none; opacity:1; transform:translate(-50%,-50%); } .seasonal-ghost-character,.seasonal-ghost-arm { animation:none; } }
+.seasonal-mark { position:absolute; top:-40px; color:white; opacity:.65; filter:drop-shadow(0 0 3px #fff8); animation:seasonal-fall linear infinite; }
+[data-season="new-year"] .seasonal-mark { color:#f9d96e; }
+.seasonal-lantern { position:absolute; top:0; right:5%; display:flex; flex-direction:column; align-items:center; transform-origin:top center; animation:seasonal-sway 5s ease-in-out infinite; }
+.seasonal-lantern-chain { width:3px; height:85px; background:linear-gradient(#1a1a1a,#4d4d4d,#1a1a1a); }
+.seasonal-lantern img { width:72px; height:auto; filter:drop-shadow(0 0 15px #ffa50099); }
+@keyframes seasonal-fall { to { transform:translateY(110vh) rotate(25deg); } }
+@keyframes seasonal-sway { 0%,100% { transform:rotate(-6deg); } 50% { transform:rotate(6deg); } }
+@media(max-width:600px) { .seasonal-lantern { right:2%; } .seasonal-lantern-chain { height:105px; } .seasonal-lantern img { width:45px; } }
+@media(prefers-reduced-motion:reduce) { .seasonal-mark { animation:none; top:20%; } .seasonal-mark:nth-child(n+5) { display:none; } .seasonal-lantern { animation:none; } }
+
+/* Decorations overlay the existing cards; they never reserve layout space. */
+.menu-item { min-width:0; container-type:inline-size; }
+.item-ribbon { white-space:nowrap; }
+.item-ribbons.is-crowded .item-ribbon { transform:none; top:calc(6px + var(--ribbon-index,0) * 17px); left:0; right:auto; width:108px; padding:2px 4px; font-size:9px; line-height:12px; border-radius:0 3px 3px 0; text-align:center; }
+@container (max-width:340px) {
+    .item-ribbon { width:170px; right:-43px; top:calc(24px + var(--ribbon-index,0) * 27px); font-size:10px; padding:5px 0; }
+    .item-pumpkin-pair .pumpkin-original { width:46px; height:46px; }
+    .item-pumpkin-pair .ornament-halloween:not(.pumpkin-original) { width:30px; height:30px; }
+    .item-new-year-emblem { width:66px; padding:8px 5px 6px; }
+    .year-number { font-size:25px; }
+    .year-caption { font-size:8px; }
+}
+@media(max-width:600px) {
+    .menu-grid { grid-template-columns:minmax(0,1fr); gap:24px; }
+    .menu-item > img { flex-shrink:0; }
+    .item-ribbons.is-crowded .item-ribbon { width:100px; top:calc(4px + var(--ribbon-index,0) * 16px); padding:1px 3px; line-height:13px; font-size:8px; }
+    .menu-details { min-width:0; }
+    .menu-details :is(h3,p) { overflow-wrap:anywhere; }
+    .item-hanging-lantern { right:8px; }
+    .item-hanging-lantern::before { height:12px; }
+    .item-hanging-lantern .ornament-ramadan { width:32px; height:38px; }
+    .item-new-year-emblem { top:10px; left:12px; width:60px; padding:5px 4px; outline-offset:2px; border-radius:5px 5px 12px 12px; }
+    .item-new-year-emblem .year-number { font-size:23px; }
+    .item-new-year-emblem .year-caption { font-size:7px; }
+    .item-new-year-emblem .ornament-new-year { width:20px; height:20px; top:-7px; right:-7px; }
+    .item-pumpkin-pair { right:-2px; bottom:-3px; }
+    .item-pumpkin-pair .pumpkin-original { width:40px; height:40px; }
+    .item-pumpkin-pair .ornament-halloween:not(.pumpkin-original) { width:27px; height:27px; }
+    .seasonal-lantern { display:none; }
+}
