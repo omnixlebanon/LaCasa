@@ -1,6 +1,7 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import api, { apiAssetUrl } from '../api.js';
 import { prepareMenuImage } from '../utils/menuImage.js';
+import './ProductImageInput.css';
 
 export async function uploadProductImage(file) {
     if (!file) return undefined;
@@ -17,10 +18,12 @@ export async function uploadProductImage(file) {
     return response.data.product_image;
 }
 
-export default function ProductImageInput({ value = '', file, onChange, onValueChange, onRemove, disabled }) {
+export default function ProductImageInput({ value = '', file, onChange, onRemove, disabled }) {
     const id = useId();
     const input = useRef(null);
     const [preview, setPreview] = useState('');
+    const [removing, setRemoving] = useState(false);
+    const [removeError, setRemoveError] = useState('');
     useEffect(() => {
         if (!file) { setPreview(''); return; }
         const url = URL.createObjectURL(file);
@@ -30,22 +33,19 @@ export default function ProductImageInput({ value = '', file, onChange, onValueC
     const src = file ? preview : (value.startsWith('imgs/') ? `/menu/${value}` : apiAssetUrl(value));
     return <div className="label-input">
         <label htmlFor={id}>Menu image</label>
-        {onValueChange && <>
-            <label htmlFor={`${id}-path`}>Image URL or folder path</label>
-            <input id={`${id}-path`} type="text" maxLength={255} value={value} placeholder="imgs/items/Espresso.png or https://…" disabled={disabled} onChange={event => {
-                input.current.value = '';
-                onChange(null);
-                onValueChange(event.target.value);
-            }} />
-        </>}
-        <input ref={input} id={id} type="file" accept="image/png,image/jpeg,image/webp" disabled={disabled} onChange={event => onChange(event.target.files?.[0] || null)} />
+        <input ref={input} id={id} type="file" accept="image/png,image/jpeg,image/webp" disabled={disabled || removing} onChange={event => { setRemoveError(''); onChange(event.target.files?.[0] || null); }} />
         <small>PNG, JPEG, or WebP, under 3 MB. Upload requires a server connection.</small>
         {src && <img src={src} alt="Product image preview" style={{ maxWidth: 180, maxHeight: 140, objectFit: 'contain' }} />}
-        {(file || value) && <button type="button" disabled={disabled} onClick={() => {
-            input.current.value = '';
-            onChange(null);
-            onValueChange?.('');
-            onRemove?.();
-        }}>Remove image</button>}
+        {(file || value) && <button className="product-image-remove" type="button" disabled={disabled || removing} onClick={async () => {
+            setRemoving(true); setRemoveError('');
+            try {
+                await onRemove?.();
+                if (input.current) input.current.value = '';
+                onChange(null);
+            } catch (error) {
+                setRemoveError(error.response?.data?.error || error.message || 'Could not remove image. Please retry.');
+            } finally { setRemoving(false); }
+        }}>{removing ? 'Removing...' : 'Remove image'}</button>}
+        {removeError && <p role="alert">{removeError}</p>}
     </div>;
 }

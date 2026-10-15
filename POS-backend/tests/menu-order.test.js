@@ -24,6 +24,11 @@ test('menu ordering is admin-only, atomic, and used by the public menu',async t=
  }
  const base=`http://127.0.0.1:${server.address().port}`;
  const mutate=(url,method,body,role='admin')=>fetch(base+url,{method,headers:{'Content-Type':'application/json','x-role':role},body:body&&JSON.stringify(body)});
+ assert.equal((await mutate('/api/products/1','PATCH',{product_image:'https://example.com/menu.png'})).status,200);
+ assert.equal((await (await fetch(base+'/public/menu')).json()).products.find(p=>p.product_id===1).product_image,'https://example.com/menu.png');
+ assert.equal((await mutate('/api/products/1','PATCH',{product_image:''},'employee')).status,403);
+ assert.equal((await mutate('/api/products/1','PATCH',{product_image:''})).status,200);
+ assert.equal((await (await fetch(base+'/public/menu')).json()).products.find(p=>p.product_id===1).product_image,'');
  assert.equal((await mutate('/api/products/groups','POST',{group_name:'Drinks'},'employee')).status,403);
  const group=await (await mutate('/api/products/groups','POST',{group_name:'Drinks'})).json();assert.ok(group.insertId);
  assert.equal((await mutate('/api/products/categories/1/group','PATCH',{menu_group_id:group.insertId})).status,200);

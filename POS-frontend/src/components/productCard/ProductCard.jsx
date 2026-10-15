@@ -13,6 +13,16 @@ function ProductCard({ data, categories = [], onProductEdit }) {
     const [editError, setEditError] = useState('');
     const [imageFile, setImageFile] = useState(null);
     const [saving, setSaving] = useState(false);
+    const removeImage = async () => {
+        if (saving) return;
+        setSaving(true);
+        try {
+            await api.patch(`/api/products/${data.product_id}`, { product_image: '' }, { adapter: 'xhr' });
+            setFormData(current => ({ ...current, product_image: '' }));
+            setImageFile(null);
+            await onProductEdit?.();
+        } finally { setSaving(false); }
+    };
     const hidden = Number(data.pos_hidden) === 1;
     const categoryHidden = Number(data.category_hidden) === 1;
     const toggleVisibility = async () => {
@@ -111,7 +121,7 @@ function ProductCard({ data, categories = [], onProductEdit }) {
                             <div className='input-area-4th-line'>
                             </div>
                             <div className='label-input'><label htmlFor="product_description">Menu description</label><textarea id="product_description" name="product_description" maxLength={2000} value={formData.product_description} onChange={handleFormInputChange} /></div>
-                            <ProductImageInput value={formData.product_image} file={imageFile} onChange={setImageFile} onValueChange={product_image => setFormData(current => ({ ...current, product_image }))} disabled={saving} />
+                            <ProductImageInput value={formData.product_image} file={imageFile} onChange={setImageFile} onRemove={removeImage} disabled={saving} />
                             <div className='edit-submit-container'><button type='submit' disabled={saving}>{saving ? 'Saving...' : 'Save Changes'}</button></div>
                         </div>
                     </form>

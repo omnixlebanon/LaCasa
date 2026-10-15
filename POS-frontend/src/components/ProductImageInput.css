@@ -1,0 +1,4 @@
+.product-image-remove { align-self:flex-start; min-height:44px; padding:8px 14px; border:1px solid #b42318; border-radius:8px; background:#fff; color:#b42318; font:inherit; cursor:pointer; }
+.product-image-remove:hover:not(:disabled) { background:#fff1f0; }
+.product-image-remove:focus-visible { outline:2px solid #b42318; outline-offset:2px; }
+.product-image-remove:disabled { opacity:.5; cursor:default; }
