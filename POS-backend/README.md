@@ -1,5 +1,18 @@
 # POS backend
 
+## Menu image uploads with Vercel Blob
+
+Connect a public Blob store to the backend Vercel project and set its server-only
+`BLOB_READ_WRITE_TOKEN` environment variable. Redeploy the backend after adding it.
+For local uploads, add the same variable to `POS-backend/.env` and restart the backend.
+Never prefix this secret with `VITE_` or commit it.
+
+In Product Management, add or edit a product, choose its Menu image, and save.
+The existing authenticated upload endpoint validates PNG, JPEG, and WebP files
+under 3 MB, uploads them to `menu/products/`, and saves their public URL with the product.
+Existing image URLs continue working. Blob takes priority when its token is set;
+otherwise the existing Supabase/local storage configuration is used.
+
 For Vercel + Supabase setup, see [the deployment guide](../DEPLOYMENT.md). Set `DATABASE_URL` to enable PostgreSQL; otherwise the existing local MySQL configuration is used. The commands below describe the legacy MySQL installation.
 
 Run from this directory with the existing database settings in `.env`:

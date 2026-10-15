@@ -26,7 +26,9 @@ let defaultStore;
 function getStore() {
     if (!defaultStore) {
         const cloud = process.env.VERCEL || process.env.DATABASE_URL || process.env.SUPABASE_URL || process.env.SUPABASE_SERVICE_ROLE_KEY;
-        const storage = cloud ? require('./supabaseImageStorage').createSupabaseImageStorage({
+        const storage = process.env.BLOB_READ_WRITE_TOKEN
+            ? require('./blobImageStorage').createBlobImageStorage({ token: process.env.BLOB_READ_WRITE_TOKEN })
+            : cloud ? require('./supabaseImageStorage').createSupabaseImageStorage({
             url: process.env.SUPABASE_URL,
             databaseUrl: process.env.DATABASE_URL,
             serviceRoleKey: process.env.SUPABASE_SERVICE_ROLE_KEY,

@@ -1,5 +1,13 @@
 # Deploy the POS to Vercel and Supabase
 
+For **Vercel Blob menu images**, connect a public Blob store to the **backend**
+project, set its server-only `BLOB_READ_WRITE_TOKEN`, and redeploy the backend.
+The existing Product Management image picker will upload to Blob automatically.
+Blob takes priority over the Supabase Storage configuration below when the token
+is present. Existing image URLs remain valid; no image migration is required.
+For local development, add the token to `POS-backend/.env` and restart the API.
+See [Vercel Blob public storage](https://vercel.com/docs/vercel-blob/public-storage).
+
 Product image uploads use **Supabase Storage** on Vercel, with files in the `products/` folder of the public `menu-images` bucket. The backend creates this bucket on the first valid upload, restricted to PNG, JPEG, and WebP files under 3 MB. It stores the direct public CDN URL in the product record so the menu loads images without going through the backend or fetching image bytes from PostgreSQL. Unique filenames and a one-year cache lifetime allow CDN/browser caching without stale replacements. No product-images database migration is needed. Local installations without cloud/storage configuration save files in `POS-backend/images/products`; keep that folder writable, persisted, and backed up. Existing menu images and HTTPS image URLs still display as before. Uploads require a server connection.
 
 The frontend is React/Vite; the API is Express. Deploy them as two Vercel projects from this repository. Supabase provides PostgreSQL. The existing Express login and employee roles remain in use; Supabase Auth is not required.
