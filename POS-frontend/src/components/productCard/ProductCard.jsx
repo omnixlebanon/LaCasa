@@ -13,7 +13,16 @@ function ProductCard({ data, categories = [], onProductEdit }) {
     const [editError, setEditError] = useState('');
     const [imageFile, setImageFile] = useState(null);
     const [saving, setSaving] = useState(false);
-    const removeImage = () => setFormData(current => ({ ...current, product_image: '' }));
+    const removeImage = async () => {
+        if (saving) return;
+        setSaving(true);
+        try {
+            await api.patch(`/api/products/${data.product_id}`, { product_image: '' }, { adapter: 'xhr' });
+            setFormData(current => ({ ...current, product_image: '' }));
+            setImageFile(null);
+            await onProductEdit?.();
+        } finally { setSaving(false); }
+    };
     const hidden = Number(data.pos_hidden) === 1;
     const categoryHidden = Number(data.category_hidden) === 1;
     const toggleVisibility = async () => {

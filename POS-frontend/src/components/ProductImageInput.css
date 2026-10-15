@@ -4,5 +4,6 @@
 .product-image-remove:disabled { opacity:.5; cursor:default; }
 .product-image-actions { display:flex; flex-direction:row; align-items:center; justify-content:flex-end; gap:12px; width:100%; }
 .product-image-actions button { flex:0 1 auto; }
-.product-image-actions .product-image-remove { align-self:auto; background:#fff; border-color:#b42318; color:#b42318; }
-.product-image-actions .product-image-remove:hover:not(:disabled) { background:#fff1f0; border-color:#b42318; }
+.editPopup .product-image-actions .product-image-remove { display:inline-flex; align-items:center; justify-content:center; gap:8px; align-self:auto; min-height:44px; padding:10px 16px; border:1px solid #b42318; border-radius:8px; background:#b42318; color:#fff; font-size:14px; font-weight:600; line-height:1.25; box-shadow:0 1px 2px #00000014; }
+.editPopup .product-image-actions .product-image-remove:hover:not(:disabled) { background:#912018; border-color:#912018; }
+.product-image-actions .product-image-remove svg { flex-shrink:0; }
