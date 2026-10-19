@@ -16,7 +16,7 @@
             signature = next;
             document.documentElement.dataset.season = theme;
             const logo = document.querySelector('.logo img');
-            logo.src = '/menu/imgs/' + (theme === 'christmas' ? 'chrismas_logo.png' : theme === 'ramadan' ? 'laCasa_ram.png' : 'LaCasa_Logo.png');
+            logo.src = '/menu/imgs/la-casa-wordmark.png';
             clearTimeout(decorationTimer);
             document.getElementById('seasonal-decorations')?.remove();
             if (!appearance.decorations || theme === 'default') return;
