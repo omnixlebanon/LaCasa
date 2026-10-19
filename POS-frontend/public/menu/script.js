@@ -56,26 +56,34 @@ function renderMenu(products, groups, appearance) {
     const categoryNames = [...categories.keys()];
     const assigned = new Map(products.map(product => [product.product_category || 'Other', product.menu_group_id]));
     const known = new Set(groups.map(group => String(group.group_id)));
-    const sections = groups.map(group => ({id:'group-'+group.group_id,name:group.group_name,categories:categoryNames.filter(name=>String(assigned.get(name))===String(group.group_id))}));
-    sections.push({id:'other',name:'More',categories:categoryNames.filter(name=>!known.has(String(assigned.get(name))))});
+    const usedIds = new Set([...document.querySelectorAll('[id]')].filter(node => !content.contains(node)).map(node => node.id));
+    function groupAnchor(name) {
+        const base = String(name).normalize('NFKC').toLowerCase().trim().replace(/[^\p{L}\p{N}]+/gu, '-').replace(/^-|-$/g, '') || 'menu-section';
+        let id = base, suffix = 2;
+        while (usedIds.has(id)) id = base + '-' + suffix++;
+        usedIds.add(id);
+        return id;
+    }
+    const sections = groups.map(group => ({id:groupAnchor(group.group_name),name:group.group_name,categories:categoryNames.filter(name=>String(assigned.get(name))===String(group.group_id))}));
+    sections.push({id:groupAnchor('More'),name:'More',ungrouped:true,categories:categoryNames.filter(name=>!known.has(String(assigned.get(name))))});
     const fragment = document.createDocumentFragment();
     let imageIndex = 0;
     const navigation = document.createDocumentFragment();
     for (const group of sections) {
         const available = group.categories.filter(name => categories.has(name));
-        if (!available.length && group.id === 'other') continue;
+        if (!available.length && group.ungrouped) continue;
         const section = element('section', undefined, 'section'); section.id = group.id;
         section.append(element('h2', group.name));
         const navItem = element('li'); const link = element('a', group.name); link.href = '#' + group.id; navItem.append(link); navigation.append(navItem);
         if (!available.length) section.append(element('p', 'Items coming soon.'));
         const miniNav = element('div', undefined, 'mini-nav');
         available.forEach((name, index) => {
-            const id = group.id + '-category-' + index;
+            const id = group.id + '/category-' + index;
             if (available.length > 1) { const a = element('a', name); a.href = '#' + id; miniNav.append(a); }
         });
         if (miniNav.children.length) section.append(miniNav);
         available.forEach((name, index) => {
-            const heading = element('h3', name); heading.id = group.id + '-category-' + index;
+            const heading = element('h3', name); heading.id = group.id + '/category-' + index;
             if (name !== group.name) section.append(heading);
             const grid = element('div', undefined, 'menu-grid');
             if (name === group.name) grid.id = heading.id;
