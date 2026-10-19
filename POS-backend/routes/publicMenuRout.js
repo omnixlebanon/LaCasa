@@ -6,9 +6,12 @@ router.get('/menu', async (req, res) => {
         const [products] = await db.query(`SELECT p.product_id, p.product_name, p.product_category,
             p.product_price, p.product_description, p.product_image, c.menu_group_id
             FROM products p LEFT JOIN product_categories c ON c.p_category_name = p.product_category
+            LEFT JOIN menu_groups g ON g.group_id = c.menu_group_id
             WHERE p.pos_hidden = 0 AND COALESCE(c.pos_hidden, 0) = 0
+            AND p.menu_hidden = 0 AND COALESCE(c.menu_hidden, 0) = 0
+            AND COALESCE(g.pos_hidden, 0) = 0 AND COALESCE(g.menu_hidden, 0) = 0
             ORDER BY c.menu_position, c.p_category_id, p.menu_position, p.product_id`);
-        const [groups]=await db.query('SELECT * FROM menu_groups ORDER BY menu_position, group_id');
+        const [groups]=await db.query('SELECT * FROM menu_groups WHERE pos_hidden = 0 AND menu_hidden = 0 ORDER BY menu_position, group_id');
         const appearance = await require('../services/menuAppearance').read(db);
         // Publish badges only for items visible on the customer menu.
         appearance.badges = Object.fromEntries(products.filter(product => appearance.badges[product.product_id]?.length).map(product => [product.product_id, appearance.badges[product.product_id]]));

@@ -121,7 +121,7 @@ New checkout records save server-calculated `unit_cost`, `total_cost`, `cost_sou
 
 ### Product and category POS visibility
 
-Before deploying visibility controls, run `npm run migrate:product-visibility -- --supabase` from `POS-backend` for the deployed Supabase database (uses `SUPABASE_MIGRATION_URL`, falling back to `DATABASE_URL`). For local MySQL, omit `--supabase`. This repeatable migration adds `pos_hidden` flags with visible defaults; nothing is deleted.
+Before deploying visibility controls, run `npm run migrate:product-visibility -- --supabase` from `POS-backend` for the deployed Supabase database (uses `SUPABASE_MIGRATION_URL`, falling back to `DATABASE_URL`). For local MySQL, omit `--supabase`. Run the menu-groups migration first if groups are not set up. Rerun this repeatable migration for the Visibility subpage: it adds `pos_hidden` and `menu_hidden` flags to products, categories, and groups while preserving existing visibility settings. Nothing is deleted. Deploy the backend only after the migration succeeds.
 
 Admins can hide/show products and categories in Product Management. POS loads `/products?scope=pos` and `/products/categories?scope=pos`; management and sales retain all records. Category hiding takes precedence over product visibility without changing product flags. Reload an already-open POS to refresh visibility. Existing orders are kept and can still be completed; visibility controls the catalog, not historical records or previously added order items.
 

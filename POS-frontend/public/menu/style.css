@@ -46,6 +46,8 @@ body {
 .logo img{
     height:60px;
     width:auto;
+    display:block;
+    object-fit:contain;
     
 }
 nav {

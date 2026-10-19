@@ -40,6 +40,26 @@ beforeEach(async()=>{
  network.defaults.adapter=async config=>({data:config.method==='get'?[]:{success:true},status:200,headers:headers(11),config});
 });
 const write=(url,data={},method='post')=>offlineAdapter({url,method,data});
+
+test('group visibility preserves item settings and supports menu-only hiding offline',async()=>{
+ const group=await write('/api/products/groups',{group_name:'Drinks'});
+ await write('/api/products/categories/1/group',{menu_group_id:group.data.insertId},'patch');
+ const endpoint='/api/products/groups/'+group.data.insertId+'/visibility';
+ await write(endpoint,{hidden:false,menu_hidden:true},'patch');
+ assert.equal(readLocal(await load(),'/api/products?scope=pos').length,1);
+ assert.equal((await load()).cache['/api/products/groups'].data[0].menu_hidden,1);
+ await write(endpoint,{hidden:true,menu_hidden:true},'patch');
+ assert.equal(readLocal(await load(),'/api/products?scope=pos').length,0);
+ assert.equal(readLocal(await load(),'/api/products/categories?scope=pos').length,0);
+ await write('/api/products/1/visibility',{hidden:true,menu_hidden:true},'patch');
+ await write(endpoint,{hidden:false,menu_hidden:false},'patch');
+ assert.equal(readLocal(await load(),'/api/products?scope=pos').length,0);
+ await write('/api/products/1/visibility',{hidden:false,menu_hidden:true},'patch');
+ assert.equal(readLocal(await load(),'/api/products?scope=pos').length,1);
+ await write('/api/products/categories/1/visibility',{hidden:true,menu_hidden:true},'patch');
+ assert.equal(readLocal(await load(),'/api/products?scope=pos').length,0);
+ assert.equal((await load()).cache['/api/products'].data[0].menu_hidden,1);
+});
 test('expired sync session clears cached login and preserves pending changes for that account',async()=>{
  await write('/api/products',{product_name:'Saved before expiry',product_category:'Hot',product_price:2});
  const owner=accountId();

@@ -28,13 +28,15 @@ function validateMenuDetails(body) {
 
 
 // Visibility controls both the POS and public menu; records and sales history stay intact.
-for (const [route, table, key] of [['/products/:id/visibility', 'products', 'product_id'], ['/products/categories/:id/visibility', 'product_categories', 'p_category_id']]) {
+for (const [route, table, key] of [['/products/:id/visibility', 'products', 'product_id'], ['/products/categories/:id/visibility', 'product_categories', 'p_category_id'], ['/products/groups/:id/visibility', 'menu_groups', 'group_id']]) {
   router.patch(route, requireManagement, async (req, res) => {
     if (typeof req.body?.hidden !== 'boolean' || !/^[1-9]\d*$/.test(req.params.id) || !Number.isSafeInteger(Number(req.params.id))) return res.status(400).json({ error: 'Provide a valid ID and hidden boolean.' });
+    if (req.body.menu_hidden !== undefined && typeof req.body.menu_hidden !== 'boolean') return res.status(400).json({error:'menu_hidden must be a boolean.'});
     try {
       const [[record]] = await db.query(`SELECT ${key} FROM ${table} WHERE ${key} = ?`, [req.params.id]);
       if (!record) return res.status(404).json({ error: 'Product or category not found.' });
-      await db.query(`UPDATE ${table} SET pos_hidden = ? WHERE ${key} = ?`, [req.body.hidden ? 1 : 0, req.params.id]);
+      if (req.body.menu_hidden === undefined) await db.query(`UPDATE ${table} SET pos_hidden = ? WHERE ${key} = ?`, [req.body.hidden ? 1 : 0, req.params.id]);
+      else await db.query(`UPDATE ${table} SET pos_hidden = ?, menu_hidden = ? WHERE ${key} = ?`, [req.body.hidden ? 1 : 0, req.body.menu_hidden ? 1 : 0, req.params.id]);
       res.json({ success: true });
     } catch (error) { console.error('Visibility update failed:', error); res.status(500).json({ error: 'Could not update POS visibility. Check the product visibility migration has run.' }); }
   });
@@ -85,7 +87,7 @@ router.put('/products/menu-order', requireManagement, async (req, res) => {
 // GET catefories
 router.get('/products/categories', async (req,res) => {
     try{
-        const [rows] = await db.query(`SELECT * FROM product_categories ${req.query.scope === 'pos' ? 'WHERE pos_hidden = 0' : ''} ORDER BY menu_position, p_category_id`);
+        const [rows] = await db.query(`SELECT c.*, COALESCE(g.pos_hidden, 0) AS group_hidden FROM product_categories c LEFT JOIN menu_groups g ON g.group_id = c.menu_group_id ${req.query.scope === 'pos' ? 'WHERE c.pos_hidden = 0 AND COALESCE(g.pos_hidden, 0) = 0' : ''} ORDER BY c.menu_position, c.p_category_id`);
         res.json(rows);
     }catch (err){
         res.status(500).json({error:"Error getting products categories: " + err.message})
@@ -155,7 +157,7 @@ router.delete('/products/category/:name', requireManagement, async (req, res) =>
 // GET /products
 router.get('/products', async (req, res) => {
     try {
-        const [rows] = await db.query(`SELECT p.*, COALESCE(c.pos_hidden, 0) AS category_hidden FROM products p LEFT JOIN product_categories c ON c.p_category_name = p.product_category ${req.query.scope === 'pos' ? 'WHERE p.pos_hidden = 0 AND COALESCE(c.pos_hidden, 0) = 0' : ''} ORDER BY c.menu_position, c.p_category_id, p.menu_position, p.product_id`);
+        const [rows] = await db.query(`SELECT p.*, COALESCE(c.pos_hidden, 0) AS category_hidden, COALESCE(g.pos_hidden, 0) AS group_hidden FROM products p LEFT JOIN product_categories c ON c.p_category_name = p.product_category LEFT JOIN menu_groups g ON g.group_id = c.menu_group_id ${req.query.scope === 'pos' ? 'WHERE p.pos_hidden = 0 AND COALESCE(c.pos_hidden, 0) = 0 AND COALESCE(g.pos_hidden, 0) = 0' : ''} ORDER BY c.menu_position, c.p_category_id, p.menu_position, p.product_id`);
         res.json(rows);
     } catch (err) {
         res.status(500).json({ error: "Error getting products: " + err.message });

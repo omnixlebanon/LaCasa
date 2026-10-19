@@ -238,3 +238,8 @@ DO $$ BEGIN
  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN REVOKE ALL ON position_salary_defaults FROM anon; END IF;
  IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'authenticated') THEN REVOKE ALL ON position_salary_defaults FROM authenticated; END IF;
 END $$;
+
+ALTER TABLE menu_groups ADD COLUMN IF NOT EXISTS pos_hidden SMALLINT NOT NULL DEFAULT 0 CHECK (pos_hidden IN (0, 1));
+ALTER TABLE products ADD COLUMN IF NOT EXISTS menu_hidden SMALLINT NOT NULL DEFAULT 0 CHECK (menu_hidden IN (0, 1));
+ALTER TABLE product_categories ADD COLUMN IF NOT EXISTS menu_hidden SMALLINT NOT NULL DEFAULT 0 CHECK (menu_hidden IN (0, 1));
+ALTER TABLE menu_groups ADD COLUMN IF NOT EXISTS menu_hidden SMALLINT NOT NULL DEFAULT 0 CHECK (menu_hidden IN (0, 1));

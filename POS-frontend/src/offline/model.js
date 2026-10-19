@@ -1,3 +1,4 @@
+function visibilityFields(data){if(typeof data.hidden!=='boolean'||(data.menu_hidden!==undefined&&typeof data.menu_hidden!=='boolean'))throw Error('Choose a valid visibility setting.');return {pos_hidden:data.hidden?1:0,...(data.menu_hidden===undefined?{}:{menu_hidden:data.menu_hidden?1:0})};}
 import {management,salaryEligible,canManage,assertChange} from '../utils/accessPolicy.js';
 import {normalizePaymentDetails} from '../utils/cashPayment.js';
 export const keyOf = (url, params={}) => {const u=new URL(url,'https://local');for(const [k,v]of Object.entries(params||{}))if(v!==undefined&&v!==null)u.searchParams.set(k,v);u.searchParams.sort();return u.pathname+u.search;};
@@ -59,6 +60,8 @@ export function applyLocal(state,op) {
  } else if(path==='/api/products/menu-order'){
   const key=data.kind==='groups'?'group_id':data.kind==='categories'?'p_category_id':'product_id';
   each(state,data.kind==='groups'?'/api/products/groups':data.kind==='categories'?'/api/products/categories':'/api/products',rows=>rows.map(row=>({...row,menu_position:data.entries.findIndex(entry=>same(entry[key],row[key]))})).sort((a,b)=>a.menu_position-b.menu_position));
+ } else if(/^\/api\/products\/groups\/[^/]+\/visibility$/.test(path)){
+  each(state,'/api/products/groups',rows=>rows.map(g=>same(g.group_id,parts[4])?{...g,...visibilityFields(data)}:g));
  } else if(path==='/api/products/groups'||path.startsWith('/api/products/groups/')){
   const groups=cached(state,'/api/products/groups');if(!groups)throw Error('Prepare offline data to download menu groups first.');
   const name=String(data.group_name||'').trim();
@@ -75,7 +78,7 @@ export function applyLocal(state,op) {
   each(state,'/api/products/categories',rows=>{if(method==='post')rows.push({p_category_id:id,p_category_name:data.category_name,pos_hidden:0});if(method==='put')for(const c of rows)if(c.p_category_name===data.old_name)c.p_category_name=data.new_name;return method==='delete'?rows.filter(c=>c.p_category_name!==decodeURIComponent(parts[4])):rows;});
   each(state,'/api/products',rows=>rows.map(p=>({...p,product_category:method==='put'&&p.product_category===data.old_name?data.new_name:method==='delete'&&p.product_category===decodeURIComponent(parts[4])?null:p.product_category})));
  } else if(path.startsWith('/api/products/categories/')){
-  each(state,'/api/products/categories',rows=>rows.map(c=>same(c.p_category_id,parts[4])?{...c,...(parts[5]==='group'?{menu_group_id:data.menu_group_id}:{pos_hidden:data.hidden?1:0})}:c));
+  each(state,'/api/products/categories',rows=>rows.map(c=>same(c.p_category_id,parts[4])?{...c,...(parts[5]==='group'?{menu_group_id:data.menu_group_id}:visibilityFields(data))}:c));
  } else if(path.startsWith('/api/products')){
   if((path==='/api/products'&&method==='post'||parts.length===4&&method==='patch')&&data.product_name!==undefined){
    if(typeof data.product_name!=='string'||!data.product_name.trim()||data.product_name.trim().length>120)throw Error('Product name must contain 1?120 characters.');
@@ -83,7 +86,7 @@ export function applyLocal(state,op) {
    const duplicate=(cached(state,'/api/products')||[]).find(product=>!same(product.product_id,method==='patch'?parts[3]:null)&&String(product.product_name).trim().toLowerCase()===data.product_name.toLowerCase());
    if(duplicate)throw Error('A product with this name already exists. Edit the existing product or choose a different name.');
   }
-  each(state,'/api/products',rows=>{if(path==='/api/products')return upsert(rows,'product_id',id,{...data,pos_hidden:0});if(method==='delete')return rows.filter(p=>!same(p.product_id,parts[3]));return rows.map(p=>same(p.product_id,parts[3])?{...p,...(parts[4]==='visibility'?{pos_hidden:data.hidden?1:0}:data)}:p);});
+  each(state,'/api/products',rows=>{if(path==='/api/products')return upsert(rows,'product_id',id,{...data,pos_hidden:0});if(method==='delete')return rows.filter(p=>!same(p.product_id,parts[3]));return rows.map(p=>same(p.product_id,parts[3])?{...p,...(parts[4]==='visibility'?visibilityFields(data):data)}:p);});
  } else if(path==='/api/items'||/^\/api\/stock\/[^/]+\/(edit|delete|batch)$/.test(path)){
   each(state,'/api/items',rows=>{if(method==='delete')return rows.filter(i=>!same(i.item_id,parts[3]));const itemId=path==='/api/items'?id:parts[3];const old=rows.find(i=>same(i.item_id,itemId))||{};const patch={};const fields={stock_name:'item_name',stock_category:'item_category',stock_uom:'uom',stock_limit:'safety_limit',stock_cost:'item_cost',stock_shelf_life:'shelf_life',stock_supplier:'supplier_name',stock_supplier_contact:'supplier_contact'};for(const [from,to]of Object.entries(fields))if(data[from]!==undefined)patch[to]=data[from];if(parts[4]==='batch')patch.stock=Number(old.stock||0)+Number(data.batch_stock);return upsert(rows,'item_id',itemId,{stock:0,item_cost:0,safety_limit:0,...old,...patch});});
   if(method==='delete')each(state,'/api/stock/recipe',rows=>rows.filter(r=>!same(r.item_id,parts[3])));
@@ -217,7 +220,8 @@ export function applyLocal(state,op) {
   each(state,'/api/management/requests',rows=>rows.map(r=>same(r.request_id,parts[4])?{...r,status:data.status,pending_sync:true}:r));
  } else throw Error('This action cannot be saved offline yet. No changes were discarded.');
  const categories=cached(state,'/api/products/categories')||[];
- each(state,'/api/products',rows=>rows.map(p=>({...p,category_hidden:categories.find(c=>c.p_category_name===p.product_category)?.pos_hidden||0})));
+ const groups=cached(state,'/api/products/groups')||[];
+ each(state,'/api/products',rows=>rows.map(p=>{const c=categories.find(c=>c.p_category_name===p.product_category);return {...p,category_hidden:c?.pos_hidden||0,group_hidden:groups.find(g=>same(g.group_id,c?.menu_group_id))?.pos_hidden||0};}));
  summaries(state);return response;
 }
 export function expenseOccurrences(row,from,to){
@@ -229,7 +233,7 @@ export function readLocal(state,key){
  const path=pathOf(key),params=new URL(key,'https://local').searchParams;
  if(path==='/api/products'||path==='/api/products/categories'){
   let rows=copy(cached(state,path));if(!rows)throw Error('Connect once to download this page for offline use.');
-  if(params.get('scope')==='pos')rows=rows.filter(r=>!Number(r.pos_hidden)&&!Number(r.category_hidden));return rows;
+  if(params.get('scope')==='pos')rows=rows.filter(r=>{const c=path==='/api/products/categories'?r:(cached(state,'/api/products/categories')||[]).find(c=>c.p_category_name===r.product_category);const g=(cached(state,'/api/products/groups')||[]).find(g=>same(g.group_id,c?.menu_group_id));return !Number(r.pos_hidden)&&!Number(c?.pos_hidden)&&!Number(g?.pos_hidden);});return rows;
  }
  if(path==='/api/employees'){const role=JSON.parse(localStorage.getItem('auth_user'))?.accessLevel;return management(role)?copy((cached(state,path)||[]).filter(row=>role==='admin'||row.access_level!=='admin')):[];}
  if(path==='/api/employees/payroll'&&state.cache[key]){const protectedIds=new Set((cached(state,'/api/employees')||[]).filter(row=>!salaryEligible(row.access_level)).map(row=>String(row.user_id)));return copy(state.cache[key].data.filter(row=>!protectedIds.has(String(row.userId))));}

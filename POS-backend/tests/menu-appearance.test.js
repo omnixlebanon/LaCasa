@@ -21,6 +21,7 @@ test('appearance persists for other clients, enforces management access and expo
         CREATE TABLE products(product_id integer PRIMARY KEY,product_name text,product_category text,product_price numeric,product_description text,product_image text,pos_hidden integer,menu_position integer);
         INSERT INTO product_categories VALUES(1,'Drinks',NULL,0,1),(2,'Private',NULL,1,2);
         INSERT INTO products VALUES(1,'Coffee','Drinks',3,'','',0,1),(2,'Hidden','Drinks',4,'','',1,2),(3,'Private drink','Private',4,'','',0,3);`);
+ await engine.exec(`ALTER TABLE menu_groups ADD COLUMN pos_hidden integer DEFAULT 0; ALTER TABLE menu_groups ADD COLUMN menu_hidden integer DEFAULT 0; ALTER TABLE product_categories ADD COLUMN menu_hidden integer DEFAULT 0; ALTER TABLE products ADD COLUMN menu_hidden integer DEFAULT 0;`);
     const db = wrap({ async query(config) { const result = await engine.query(config.text,config.values);return {...result,rowCount:result.affectedRows??result.rows.length}; } });
     const path = require.resolve('../config/database'), old = require.cache[path];
     require.cache[path] = { id:path,filename:path,loaded:true,exports:db };

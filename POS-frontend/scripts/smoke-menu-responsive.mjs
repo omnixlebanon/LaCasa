@@ -56,7 +56,7 @@ try {
         }
         await command('Page.navigate',{url:origin+'/POS/menu_management'});
         await until(()=>evaluate("!!document.querySelector('.menu-page-nav') && !document.querySelector('.loading-state') && !!document.querySelector('.menu-theme-option')"),'management');
-        for(const page of ['Menu Order','Themes','Item Badges']) {
+        for(const page of ['Menu Order','Visibility','Themes','Item Badges']) {
             await evaluate(`[...document.querySelectorAll('.menu-page-nav button')].find(b=>b.textContent==='${page}').click()`);await pause(80);
             const metrics=await evaluate(`({width:innerWidth,scroll:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('.menu-management-page *')].filter(e=>e.getClientRects().length&&e.getBoundingClientRect().right>innerWidth+1).slice(0,5).map(e=>e.className)})`);
             assert.ok(metrics.scroll<=width+1,JSON.stringify({width,page,...metrics}));
