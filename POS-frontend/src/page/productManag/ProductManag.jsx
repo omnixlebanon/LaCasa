@@ -187,7 +187,7 @@ function ProductManag() {
                 </div>, document.body
             )}
 
-            {structurePopup&&<StructurePopup kind={structurePopup} onClose={()=>setStructurePopup(null)} onChanged={async()=>{await fetchCategories();await fetchData();await fetchGroups();}}/>}
+            {structurePopup&&<StructurePopup kind={structurePopup} onClose={()=>setStructurePopup(null)} initialGroups={!loadingGroups&&!groupError?groups:undefined} initialCategories={!loadingCategories&&!categoryError?categoryRecords:undefined} onChanged={refreshVisibility}/>}
 
             <div className='main-area'>
                 <div className='head-area'>

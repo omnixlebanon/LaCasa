@@ -118,6 +118,13 @@
 .menu-visibility .menu-order-list li { flex-wrap:wrap; }
 .menu-visibility select { min-width:0; }
 .menu-visibility h4 { margin-top:24px; }
+.visibility-toolbar { margin-top:20px; }
+.menu-visibility .visibility-search { display:block; width:100%; min-height:54px; padding:14px 16px; box-sizing:border-box; font:inherit; font-size:16px; border-radius:10px; }
+.visibility-filters { display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px; margin-top:14px; }
+.visibility-filters label { display:flex; flex:1 1 170px; flex-direction:column; gap:6px; min-width:0; font-size:14px; font-weight:600; }
+.visibility-filters select { width:100%; box-sizing:border-box; font:inherit; }
+.visibility-filters button { min-height:44px; padding:8px 14px; border:1px solid var(--border-color); border-radius:8px; background:var(--sec-bg); color:var(--font-color); cursor:pointer; }
+.menu-create-section .menu-structure-form input { flex:1 1 200px; width:auto; }
 .menu-order-list li.menu-group-editor { display:block; min-width:0; }
 .menu-group-heading { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
 .menu-group-assignment { margin:16px 0 28px; padding:20px; border:2px solid var(--main-color); border-radius:12px; background:var(--main-soft); }
@@ -129,6 +136,12 @@
 .menu-group-assignment button { background:var(--main-color); color:white; font-weight:600; }
 .menu-group-heading .menu-structure-form { flex:1; min-width:0; }
 .menu-group-editor h5 { margin:16px 0 8px; font-size:14px; }
+.menu-group-categories { margin-top:12px; }
+.menu-group-categories summary { display:flex; align-items:center; justify-content:space-between; gap:12px; min-height:44px; padding:8px 12px; border-radius:8px; background:var(--main-soft); font-weight:600; cursor:pointer; list-style:none; }
+.menu-group-categories summary::-webkit-details-marker { display:none; }
+.menu-group-categories summary:focus-visible { outline:2px solid var(--main-color); outline-offset:2px; }
+.menu-category-chevron { flex-shrink:0; }
+.menu-group-categories[open] .menu-category-chevron { transform:rotate(180deg); }
 .menu-group-editor .menu-category-picker { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
 .menu-group-editor .menu-category-picker select { min-width:0; max-width:100%; }
 .menu-order-list li.menu-row-drop-target { background:var(--main-soft); box-shadow:inset 0 3px var(--main-color),inset 0 -3px var(--main-color); }
