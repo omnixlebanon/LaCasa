@@ -69,6 +69,7 @@
 .menu-structure-dialog::backdrop { background:#0008; }
 .menu-structure-dialog>header { display:flex; align-items:center; justify-content:space-between; gap:12px; }
 .menu-structure-dialog .menu-structure { margin-top:12px; }
+.menu-structure-dialog .menu-order-list { max-height:none; overflow:visible; }
 @media(max-width:700px){.menu-structure-dialog { padding:12px; }.menu-structure-dialog .menu-public-card { padding:12px; }}
 
 .menu-category-placement li { flex-wrap:wrap; }
