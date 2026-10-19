@@ -15,7 +15,7 @@
 .menu-theme-option>span { font-size:26px; }
 .menu-theme-option.theme-christmas { background:linear-gradient(130deg,#e6dada,#c3d6d8); color:#274046; }
 .menu-theme-option.theme-ramadan { background:linear-gradient(130deg,#fff3e0,#e0bc8e); color:#582c07; }
-.menu-theme-option.theme-halloween { background:linear-gradient(130deg,#fff0df,#f5b16b); color:#8a3908; }
+.menu-theme-option.theme-halloween { background:linear-gradient(130deg,#f0e8f5,#d5bfe3); color:#5a286a; }
 .menu-theme-option.theme-new-year { background:linear-gradient(130deg,#fff2be,#ded9ec); color:#34304e; }
 .menu-decoration-toggle { display:flex; align-items:center; gap:10px; margin-top:20px; min-height:44px; }
 .menu-appearance input[type="checkbox"],.menu-appearance input[type="radio"] { accent-color:var(--main-color); width:18px; height:18px; flex-shrink:0; }

@@ -3,12 +3,17 @@ import { network } from '../../offline/transport.js';
 
 const themes = [['default','Everyday','☕'],['christmas','Christmas','❄'],['halloween','Halloween','🎃'],['ramadan','Ramadan','☾'],['new-year','New Year','✦']];
 const badges = [['christmas','Christmas Special'],['halloween','Halloween Special'],['ramadan','Ramadan Special'],['new-year','New Year Special'],['limited-time','Limited Time'],['new','New'],['most-popular','Most Popular']];
-export default function MenuAppearance({ products, section = 'themes' }) {
+export default function MenuAppearance({ section = 'themes' }) {
+    const [products,setProducts]=useState([]);
     const [badgeTab,setBadgeTab]=useState('all');
     const [value,setValue]=useState(null),[saved,setSaved]=useState(''),[busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[query,setQuery]=useState('');
     async function load() {
         setBusy(true);setError('');setMessage('');
-        try { const {data}=await network.get('/api/settings/menu-appearance');setValue(data);setSaved(JSON.stringify(data)); }
+        try {
+            const [appearance,catalog]=await Promise.all([network.get('/api/settings/menu-appearance'),network.get('/api/products')]);
+            setProducts(catalog.data.filter(product=>Number.isSafeInteger(Number(product.product_id))&&Number(product.product_id)>0));
+            setValue(appearance.data);setSaved(JSON.stringify(appearance.data));
+        }
         catch(e) { setError(e.response?.data?.error||'Could not load appearance. Connect to the server and retry.'); }
         finally { setBusy(false); }
     }
@@ -37,6 +42,7 @@ export default function MenuAppearance({ products, section = 'themes' }) {
             <label className="menu-decoration-toggle"><input type="checkbox" checked={value.decorations} onChange={e=>update({decorations:e.target.checked})}/>Show seasonal decorations (snow, lantern, pumpkins or sparkles)</label>
         </fieldset>
         <fieldset hidden={section!=='badges'} disabled={busy}><legend>Item banners &amp; badges</legend><p>Choose one or more badges for each item. Holiday badges work independently of the menu theme.</p>
+            <p>New items appear here after syncing. <button type="button" disabled={busy||dirty} onClick={load}>Refresh items</button></p>
             <div className="menu-badge-nav" role="group" aria-label="Badge categories">
                 {[['all','All badges'],...badges].map(([id,label])=><button key={id} type="button" aria-pressed={badgeTab===id} onClick={()=>setBadgeTab(id)}>{label.replace(' Special','')}{id!=='all'&&<span>{products.filter(product=>(value.badges[product.product_id]||[]).includes(id)).length}</span>}</button>)}
             </div>

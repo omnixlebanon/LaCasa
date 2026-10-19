@@ -1,13 +1,13 @@
 /* Seasonal palettes and effects preserve the reference menu's Christmas and Ramadan styling. */
 :root[data-season="christmas"] { --accent-color:#597288; --accent-color2:#274046; --season-light:#e6dada; --season-dark:#274046; }
 :root[data-season="ramadan"] { --accent-color:#a36b3d; --accent-color2:#582c07; --season-light:#fff3e0; --season-dark:#582c07; }
-:root[data-season="halloween"] { --accent-color:#f59a38; --accent-color2:#b84d0b; --season-light:#fff0df; --season-dark:#47210e; }
+:root[data-season="halloween"] { --accent-color:#9166a8; --accent-color2:#5a286a; --season-light:#f0e8f5; --season-dark:#25152d; }
 :root[data-season="new-year"] { --accent-color:#9b751d; --accent-color2:#34304e; --season-light:#fff8df; --season-dark:#201e34; }
 :root[data-season]:not([data-season="default"]) body { background:linear-gradient(to bottom,var(--season-light),var(--season-dark)); background-attachment:fixed; }
 :root[data-theme="dark"][data-season]:not([data-season="default"]) body { background:linear-gradient(to bottom,#16161d,var(--season-dark)); }
 :root[data-theme="dark"][data-season="ramadan"] { --accent-color2:#e3b16d; }
 :root[data-theme="dark"][data-season="christmas"] { --accent-color2:#93b7c0; }
-:root[data-theme="dark"][data-season="halloween"] { --accent-color2:#ffad60; }
+:root[data-theme="dark"][data-season="halloween"] { --accent-color2:#e0a2f3; }
 :root[data-theme="dark"][data-season="new-year"] { --accent-color2:#e5c777; }
 :root[data-theme="dark"][data-season]:not([data-season="default"]) nav { background:var(--season-dark); }
 .menu-item.has-badges { position:relative; outline-offset:-2px; }
