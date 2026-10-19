@@ -114,4 +114,10 @@
     .menu-order-controls { gap:4px; }
 }
 .menu-order-list li.menu-row-dragging { opacity:.55; background:var(--sec-bg); }
+.menu-order-list li.menu-group-editor { display:block; min-width:0; }
+.menu-group-heading { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.menu-group-heading .menu-structure-form { flex:1; min-width:0; }
+.menu-group-editor h5 { margin:16px 0 8px; font-size:14px; }
+.menu-group-editor .menu-category-picker { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.menu-group-editor .menu-category-picker select { min-width:0; max-width:100%; }
 .menu-order-list li.menu-row-drop-target { background:var(--main-soft); box-shadow:inset 0 3px var(--main-color),inset 0 -3px var(--main-color); }

@@ -63,10 +63,11 @@ function renderMenu(products, groups, appearance) {
     const navigation = document.createDocumentFragment();
     for (const group of sections) {
         const available = group.categories.filter(name => categories.has(name));
-        if (!available.length) continue;
+        if (!available.length && group.id === 'other') continue;
         const section = element('section', undefined, 'section'); section.id = group.id;
         section.append(element('h2', group.name));
         const navItem = element('li'); const link = element('a', group.name); link.href = '#' + group.id; navItem.append(link); navigation.append(navItem);
+        if (!available.length) section.append(element('p', 'Items coming soon.'));
         const miniNav = element('div', undefined, 'mini-nav');
         available.forEach((name, index) => {
             const id = group.id + '-category-' + index;
