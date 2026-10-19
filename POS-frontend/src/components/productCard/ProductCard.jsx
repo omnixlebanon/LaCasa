@@ -1,15 +1,13 @@
 import MoneyInput from '../MoneyInput.jsx';
 import ProductImageInput, { uploadProductImage } from '../ProductImageInput.jsx';
 import './ProductCard.css'
-import { Eye, EyeOff, Trash, PenLine, X } from 'lucide-react';
+import { Trash, PenLine, X } from 'lucide-react';
 import { useCurrency } from '../../global';
 import api from '/src/api.js';
 import { useState } from 'react';
 import { createPortal } from 'react-dom';
 function ProductCard({ data, categories = [], onProductEdit }) {
     const { formatPrice, currencyLabel } = useCurrency()
-    const [visibilityBusy, setVisibilityBusy] = useState(false);
-    const [visibilityError, setVisibilityError] = useState('');
     const [editError, setEditError] = useState('');
     const [imageFile, setImageFile] = useState(null);
     const [saving, setSaving] = useState(false);
@@ -22,15 +20,6 @@ function ProductCard({ data, categories = [], onProductEdit }) {
             setImageFile(null);
             await onProductEdit?.();
         } finally { setSaving(false); }
-    };
-    const hidden = Number(data.pos_hidden) === 1;
-    const categoryHidden = Number(data.category_hidden) === 1;
-    const toggleVisibility = async () => {
-        if (visibilityBusy) return;
-        setVisibilityBusy(true); setVisibilityError('');
-        try { await api.patch(`/api/products/${data.product_id}/visibility`, { hidden: !hidden }); await onProductEdit?.(); }
-        catch (error) { setVisibilityError(error.response?.data?.error || 'Could not change visibility.'); }
-        finally { setVisibilityBusy(false); }
     };
     const [isEditPopupOpen, setIsEditPopupOpen] = useState(false);
     const default_form_values = {
@@ -129,9 +118,7 @@ function ProductCard({ data, categories = [], onProductEdit }) {
                 </div>, document.body
             )}
 
-            <div className={`product-card${hidden || categoryHidden ? ' product-pos-hidden' : ''}`}>
-                <p className="product-visibility-status">{hidden ? 'Hidden from POS & menu' : categoryHidden ? 'Hidden by category' : 'Visible in POS & menu'}</p>
-                {visibilityError && <p role="alert">{visibilityError}</p>}
+            <div className="product-card">
                 <div className='product-card-head'>
                     <h3>{data.product_name}</h3>
                     <span className='product-category'>{data.product_category}</span>
@@ -139,9 +126,6 @@ function ProductCard({ data, categories = [], onProductEdit }) {
                 <div className='product-card-body'>
                     <span className='product-price' >{formatPrice(data.product_price)}</span>
                     <div className='action-btns-container'>
-                        <button type="button" className="product-visibility-toggle" disabled={visibilityBusy} onClick={toggleVisibility} aria-label={`${hidden ? 'Show' : 'Hide'} ${data.product_name} ${hidden ? 'in' : 'from'} POS`} title={categoryHidden ? 'The category is hidden; showing this product will not override the category.' : undefined}>
-                            {hidden ? <Eye size={18} /> : <EyeOff size={18} />}{visibilityBusy ? 'Saving...' : hidden ? 'Show in POS & menu' : 'Hide from POS & menu'}
-                        </button>
                         <button className='edit-btn action-btn' onClick={() => { setFormData(default_form_values); setEditError(''); setImageFile(null); setIsEditPopupOpen(true); }}><PenLine /></button>
                         <button className='delete-btn action-btn' onClick={handleDelete}><Trash /></button>
                     </div>

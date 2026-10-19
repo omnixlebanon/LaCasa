@@ -1,3 +1,5 @@
+import ProductVisibility from './ProductVisibility.jsx';
+import '../menuManag/MenuManag.css';
 import StructurePopup from "../../components/StructurePopup.jsx";
 import ProductImageInput, { uploadProductImage } from '../../components/ProductImageInput.jsx';
 import LoadingState from '../../components/LoadingState.jsx';
@@ -23,26 +25,15 @@ function ProductManag() {
     const { currencyLabel } = useCurrency();
     const [products, setProducts] = useState([]);
     const [categoryRecords, setCategoryRecords] = useState([]);
-    const [visibilityBusy, setVisibilityBusy] = useState(null);
-    const [visibilityError, setVisibilityError] = useState('');
-    const [visibilityFilter, setVisibilityFilter] = useState('');
+    const [activePage,setActivePage]=useState('products');
+    const [groups,setGroups]=useState([]);
+    const [groupError,setGroupError]=useState('');
+    const [loadingGroups,setLoadingGroups]=useState(true);
     const [categories, setCategories] = useState([]); // Single source of truth for categories
     const [categoryFilter, setCategoryFilter] = useState("");
     const [searchQuery, setSearchQuery] = useState("");
     const [isAddPopupOpen, setIsAddPopupOpen] = useState(false);
     const [structurePopup,setStructurePopup]=useState(null);
-
-    // Local states for the Category Management popup
-
-    const toggleCategoryVisibility = async category => {
-        if (visibilityBusy !== null) return;
-        setVisibilityBusy(category.p_category_id); setVisibilityError('');
-        try {
-            await api.patch(`/api/products/categories/${category.p_category_id}/visibility`, { hidden: Number(category.pos_hidden) !== 1 });
-            await Promise.all([fetchData(), fetchCategories()]);
-        } catch (error) { setVisibilityError(error.response?.data?.error || 'Could not change category visibility.'); }
-        finally { setVisibilityBusy(null); }
-    };
 
     // Fetch products
     const fetchData = async (quiet = false) => {
@@ -77,12 +68,22 @@ function ProductManag() {
         }
     };
 
+    const fetchGroups=async(quiet=false)=>{
+        if(!quiet)setLoadingGroups(true);setGroupError('');
+        try{setGroups((await api.get('/api/products/groups')).data);}
+        catch(error){setGroupError(error.response?.data?.error||'Could not load groups. Please try again.');}
+        finally{setLoadingGroups(false);}
+    };
+    const refreshVisibility=()=>Promise.all([fetchData(true),fetchCategories(true),fetchGroups(true)]);
+
     useEffect(() => {
         fetchData();
         fetchCategories();
+        fetchGroups();
         const refresh = () => {
             fetchData(true);
             fetchCategories(true);
+            fetchGroups(true);
         };
         window.addEventListener('offline-snapshot', refresh);
         return () => window.removeEventListener('offline-snapshot', refresh);
@@ -90,7 +91,6 @@ function ProductManag() {
 
     const sortedProducts = useMemo(() => {
         let result = [...products];
-        if (visibilityFilter) result = result.filter(product => (Number(product.pos_hidden) === 1 || Number(product.category_hidden) === 1) === (visibilityFilter === 'hidden'));
 
         if (searchQuery.trim() !== "") {
             const term = searchQuery.toLowerCase();
@@ -105,7 +105,7 @@ function ProductManag() {
             });
         }
         return result;
-    }, [products, searchQuery, categoryFilter, visibilityFilter]);
+    }, [products, searchQuery, categoryFilter]);
 
     const handleAdd = async (e) => {
         if (e) e.preventDefault();
@@ -129,7 +129,7 @@ function ProductManag() {
             if (imageFile) payload.product_image = await uploadProductImage(imageFile);
             const res = await api.post('/api/products', payload);
             if (res.status === 201) {
-                setSearchQuery('');setCategoryFilter('');setVisibilityFilter('');
+                setSearchQuery('');setCategoryFilter('');
                 await fetchData();
                 setSaveMessage('Saved '+product_name+' on this device. Check Sync for the server result.');
                 setIsAddPopupOpen(false);
@@ -187,7 +187,7 @@ function ProductManag() {
                 </div>, document.body
             )}
 
-            {structurePopup&&<StructurePopup kind={structurePopup} onClose={()=>setStructurePopup(null)} onChanged={async()=>{await fetchCategories();await fetchData();}}/>}
+            {structurePopup&&<StructurePopup kind={structurePopup} onClose={()=>setStructurePopup(null)} onChanged={async()=>{await fetchCategories();await fetchData();await fetchGroups();}}/>}
 
             <div className='main-area'>
                 <div className='head-area'>
@@ -197,13 +197,21 @@ function ProductManag() {
                     </div>
                 </div>
 
+                <nav className="menu-page-nav" aria-label="Product management pages">
+                    <button type="button" className={activePage==='products'?'active':''} aria-current={activePage==='products'?'page':undefined} onClick={()=>setActivePage('products')}>Products</button>
+                    <button type="button" className={activePage==='visibility'?'active':''} aria-current={activePage==='visibility'?'page':undefined} onClick={()=>setActivePage('visibility')}>Visibility</button>
+                </nav>
+                {activePage==='visibility'&&<>
+                    {(loadingProducts||loadingCategories||loadingGroups||productError||categoryError||groupError)&&<LoadingState label="Loading visibility settings" error={productError||categoryError||groupError} onRetry={refreshVisibility}/>}
+                    {!loadingProducts&&!loadingCategories&&!loadingGroups&&<ProductVisibility products={products} categories={categoryRecords} groups={groups} onChanged={refreshVisibility} disabled={!!(productError||categoryError||groupError)}/>}
+                </>}
+                <div hidden={activePage!=='products'}>
                 <div className="search-nav">
                     <div className="searchbar">
                         <Search />
                         <input type="text" placeholder="Search..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                     </div>
                     <div className="searchFilters">
-                        <select aria-label="POS visibility" value={visibilityFilter} onChange={event => setVisibilityFilter(event.target.value)}><option value="">All visibility</option><option value="visible">Visible in POS & menu</option><option value="hidden">Hidden from POS & menu</option></select>
                         <select value={categoryFilter} onChange={(e) => setCategoryFilter(e.target.value)}>
                             <option value="">All Categories</option>
                             {categories.map((category, index) => (
@@ -222,20 +230,13 @@ function ProductManag() {
                     </div>
                 </div>
 
-                <section className="category-visibility-panel" aria-label="Category POS and menu visibility">
-                    <h3>Categories in POS & menu</h3><p>Hiding a category hides all its products. Showing it again keeps individually hidden products hidden.</p>
-                    {visibilityError && <p role="alert">{visibilityError}</p>}
-                    {(loadingCategories || categoryError) && <LoadingState label="Loading categories..." error={categoryError} onRetry={() => fetchCategories()} />}
-                    <div>{categoryRecords.map(category => <button type="button" key={category.p_category_id} disabled={visibilityBusy !== null} onClick={() => toggleCategoryVisibility(category)} aria-pressed={Number(category.pos_hidden) !== 1}>
-                        <strong>{category.p_category_name}</strong><span>{visibilityBusy === category.p_category_id ? 'Saving...' : Number(category.pos_hidden) === 1 ? 'Hidden - show in POS' : 'Visible - hide from POS'}</span>
-                    </button>)}</div>
-                </section>
                 {(loadingProducts || productError) && <LoadingState label="Loading products..." error={productError} onRetry={() => fetchData()} />}
                 {!loadingProducts && !productError && !sortedProducts.length && <p className="product-empty">No products match your filters.</p>}
                 <div className='display-area'>
                     {sortedProducts.map((product) => (
                         <ProductCard key={product.product_id} data={product} categories={categories} onProductEdit={fetchData} />
                     ))}
+                </div>
                 </div>
             </div>
         </>

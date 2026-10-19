@@ -3,7 +3,7 @@ import api from '../../api.js';
 
 const mode=row=>Number(row.pos_hidden)?'both':Number(row.menu_hidden)?'menu':'visible';
 const label=row=>mode(row)==='both'?'Hidden in POS and menu':mode(row)==='menu'?'Hidden in menu':'Visible';
-export default function MenuVisibility({products,categories,groups,onChanged,disabled}){
+export default function ProductVisibility({products,categories,groups,onChanged,disabled}){
  const [busy,setBusy]=useState(false),[error,setError]=useState(''),[message,setMessage]=useState(''),[search,setSearch]=useState('');
  async function save(kind,id,value){
   if(busy)return;setBusy(true);setError('');setMessage('');

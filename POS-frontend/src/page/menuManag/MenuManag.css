@@ -120,6 +120,13 @@
 .menu-visibility h4 { margin-top:24px; }
 .menu-order-list li.menu-group-editor { display:block; min-width:0; }
 .menu-group-heading { display:flex; flex-wrap:wrap; align-items:center; gap:10px; }
+.menu-group-assignment { margin:16px 0 28px; padding:20px; border:2px solid var(--main-color); border-radius:12px; background:var(--main-soft); }
+.menu-group-assignment h4 { margin:0 0 8px; }
+.menu-group-assignment p { margin:8px 0 16px; }
+.menu-group-assignment form { display:flex; flex-wrap:wrap; align-items:flex-end; gap:12px; }
+.menu-group-assignment label { display:flex; flex:1 1 200px; flex-direction:column; gap:8px; min-width:0; font-weight:600; }
+.menu-group-assignment select { width:100%; max-width:100%; box-sizing:border-box; font:inherit; }
+.menu-group-assignment button { background:var(--main-color); color:white; font-weight:600; }
 .menu-group-heading .menu-structure-form { flex:1; min-width:0; }
 .menu-group-editor h5 { margin:16px 0 8px; font-size:14px; }
 .menu-group-editor .menu-category-picker { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
