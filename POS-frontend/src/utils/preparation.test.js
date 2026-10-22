@@ -7,6 +7,8 @@ test('routes drinks and desserts to the bar and food to the kitchen', () => {
         assert.equal(preparationStation({ product_category: category }), 'Bar');
     }
     assert.equal(preparationStation({ product_category: 'Sandwiches' }), 'Kitchen');
+    assert.equal(preparationStation({ product_name: 'Spice Pumpkins', product_category: 'Specials' }), 'Bar');
+    assert.equal(preparationStation({ product_category: ' spice pumpkins ' }), 'Bar');
 });
 test('prints only added quantities, keeping separate notes for the same product', () => {
     const items = [{ lineId: 'a', product_id: 1, qty: 2, note: 'No sugar' }];

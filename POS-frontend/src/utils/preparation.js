@@ -3,6 +3,7 @@ const barCategories = new Set(['hot drinks', 'cold drinks', 'milkshakes', 'iced 
 // Older carts stored only one line per product; its identity must survive removals.
 export const lineKey = (item) => item.lineId || `legacy-${item.product_id}`;
 export function preparationStation(item) {
+    if ([item.product_name, item.product_category].some(value => String(value || '').trim().toLowerCase() === 'spice pumpkins')) return 'Bar';
     return barCategories.has(String(item.product_category || '').trim().toLowerCase()) || /drink|dessert|desert/i.test(item.product_category || '') ? 'Bar' : 'Kitchen';
 }
 export function preparationSnapshot(items) {
