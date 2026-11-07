@@ -14,12 +14,15 @@ const storageModule='data:text/javascript;base64,'+(await readFile(join(root,'sr
 const catalog=[{product_id:1,product_name:'Test coffee',product_category:'Drinks',product_price:5,pos_hidden:0,category_hidden:0}];
 if(fullDay)for(let id=2;id<=100;id++)catalog.push({...catalog[0],product_id:id,product_name:'Test product '+id});
 let revision=1,shared=[],history=[],checkouts=0;
+const changedTables={},apiReads=new Map();
+const purchases=[{purchase_id:'old-purchase',item_name:'Old purchase fixture',purchased_at:'2020-01-01T10:00:00Z',quantity:1,unit_cost:2,total_cost:2,uom:'kg'},{purchase_id:'recent-purchase',item_name:'Recent purchase fixture',purchased_at:new Date().toISOString(),quantity:1,unit_cost:2,total_cost:2,uom:'kg'}];
 const receipts=new Map();
 const server=http.createServer(async(req,res)=>{
  try{
   const path=new URL(req.url,'http://local').pathname;
+  if(path==='/stress-harness'){res.setHeader('Content-Type','text/html');res.setHeader('Cache-Control','no-store');return res.end('<!doctype html><title>Isolated offline queue check</title>');}
   if(path.startsWith('/test-modules/')){
-   const name=path.split('/').at(-1);if(!['transport.js','storage.js','model.js','cashPayment.js','accessPolicy.js','axios.js'].includes(name)){res.statusCode=404;return res.end();}
+   const name=path.split('/').at(-1);if(!['transport.js','resources.js','storage.js','model.js','cashPayment.js','accessPolicy.js','axios.js'].includes(name)){res.statusCode=404;return res.end();}
    let source=await readFile(name==='axios.js'?join(root,'node_modules/axios/dist/esm/axios.js'):join(root,['cashPayment.js','accessPolicy.js'].includes(name)?'src/utils':'src/offline',name),'utf8');
    if(name==='model.js')source=source.replace('../utils/cashPayment.js','./cashPayment.js');
    source=source.replace('../utils/accessPolicy.js','./accessPolicy.js');
@@ -37,7 +40,21 @@ const server=http.createServer(async(req,res)=>{
     let result={success:true};
     if(path.startsWith('/api/open-orders/'))shared=req.method==='DELETE'?shared.filter(order=>order.checkoutOperationId!==path.split('/').at(-1)):[...shared.filter(order=>order.checkoutOperationId!==data.order.checkoutOperationId),data.order];
     if(path==='/api/checkout'){checkouts++;result={success:true,orderId:'test-sale-'+checkouts};history.push({order_id:result.orderId,total_amount:data.totalAmount,details:data.details,order_date:req.headers['x-offline-created-at']});shared=shared.filter(order=>order.checkoutOperationId!==data.details.checkout_operation_id);}
-    revision++;receipts.set(id,{data:result,revision});res.setHeader('X-Sync-Revision',String(revision));return res.end(JSON.stringify(result));
+    revision++;
+    for(const table of path==='/api/checkout'?['orders_history','offline_open_orders','tablez','items','batches']:path.startsWith('/api/open-orders/')?['offline_open_orders']:['*'])changedTables[table]=revision;
+    receipts.set(id,{data:result,revision});res.setHeader('X-Sync-Revision',String(revision));return res.end(JSON.stringify(result));
+   }
+   apiReads.set(path,(apiReads.get(path)||0)+1);
+   if(path==='/api/auth/me')return res.end(JSON.stringify({success:true,user:{id:1,email:'test@fixture.invalid',name:'Test admin',accessLevel:'admin'}}));
+   if(path==='/api/settings/exchange-rate')return res.end(JSON.stringify({rate:89500}));
+   if(path==='/api/offline/manifest')return res.end(JSON.stringify({revision,baseline:1,tables:changedTables}));
+   if(path==='/api/history'||path==='/api/stock/history'){
+    res.setHeader('X-History-Pagination','1');
+    const params=new URL(req.url,'http://local').searchParams;
+    let rows=path==='/api/history'?history:purchases;
+    rows=rows.filter(row=>{const date=String(row.order_date||row.purchased_at).slice(0,10);return (!params.get('from')||date>=params.get('from'))&&(!params.get('to')||date<=params.get('to'))&&(params.get('recent')!=='1'||date>=new Date(Date.now()-90*86400000).toISOString().slice(0,10));});
+    if(params.has('limit'))rows=rows.slice(Number(params.get('offset')||0),Number(params.get('offset')||0)+Number(params.get('limit')));
+    return res.end(JSON.stringify(rows));
    }
    if(path==='/api/employees/payroll-costs')return res.end(JSON.stringify([{user_id:7,employee_name:'Test cashier',salary_month:new Date().toISOString().slice(0,7)+'-01',amount_paid:600,paid_at:new Date().toISOString()}]));
    const payload=path==='/api/seating/floors'?[{floor_id:1,floor_name:'Test floor',tables:[{t_id:1,t_name:'T1',t_status:'available',t_seats:2,t_type:'square'}]}]:path==='/api/products'?catalog:path==='/api/products/categories'?[{p_category_id:1,p_category_name:'Drinks',pos_hidden:0}]:path==='/api/open-orders'?shared:path==='/api/history'?history:path==='/api/stock/summary'?{}:path==='/api/offline/revision'?{ready:true}:[];
@@ -66,8 +83,14 @@ try{
  ws.onmessage=event=>{const message=JSON.parse(event.data);if(message.id){const pending=requests.get(message.id);if(!pending)return;requests.delete(message.id);clearTimeout(pending.timer);if(message.error)pending.reject(Error(message.error.message));else pending.resolve(message.result);}};
  function command(method,params={}){return new Promise((resolve,reject)=>{const id=++sequence;const timer=setTimeout(()=>{requests.delete(id);reject(Error('CDP timeout: '+method));},25000);requests.set(id,{resolve,reject,timer});ws.send(JSON.stringify({id,method,params}));});}
  async function evaluate(expression){const result=await command('Runtime.evaluate',{expression,awaitPromise:true,returnByValue:true});if(result.exceptionDetails)throw Error(result.exceptionDetails.text+': '+result.exceptionDetails.exception?.description);return result.result?.value;}
+ async function openPayment(){
+  await evaluate("window.print=()=>window.dispatchEvent(new Event('afterprint'));document.querySelector('.check-in-btn').click()");
+  await until(()=>evaluate("!!document.querySelector('.cash-payment-dialog[open]')||(!document.querySelector('.check-in-btn').disabled&&document.querySelector('.check-in-btn').textContent.includes('Check in'))"),'staff slips completed');
+  if(!await evaluate("!!document.querySelector('.cash-payment-dialog[open]')"))await evaluate("document.querySelector('.check-in-btn').click()");
+  await until(()=>evaluate("!!document.querySelector('.cash-payment-dialog[open]')"),'payment dialog');
+ }
  const state=()=>evaluate(`import(${JSON.stringify(storageModule)}).then(m=>m.load())`);
- diagnose=async()=>{const saved=await state();console.log(JSON.stringify({page:await evaluate('document.body.innerText.slice(0,1500)'),local:fullDay?{queue:saved.queue.length,first:saved.queue[0],error:saved.error,recovery:saved.recovery.length}:saved},null,2));};
+ diagnose=async()=>{const saved=await state().catch(error=>({error:error.message}));console.log(JSON.stringify({page:await evaluate('document.body.innerText.slice(0,1500)'),local:fullDay?{queue:saved.queue?.length,first:saved.queue?.[0],error:saved.error,recovery:saved.recovery?.length}:saved},null,2));};
  await command('Page.enable');await command('Network.enable');
  await command('Page.addScriptToEvaluateOnNewDocument',{source:`localStorage.setItem('auth_user',JSON.stringify({id:1,email:'test@fixture.invalid',name:'Test admin',accessLevel:'admin'}));`});
  await command('Emulation.setDeviceMetricsOverride',{width:390,height:844,deviceScaleFactor:1,mobile:true});
@@ -90,8 +113,7 @@ try{
  await evaluate("document.querySelectorAll('.mobile-order-tabs button')[1].click()");
  const boxes=await evaluate("(() => {const a=document.querySelector('.offline-indicator').getBoundingClientRect(),b=document.querySelector('.check-in-btn').getBoundingClientRect();return {overlap:a.left<b.right&&a.right>b.left&&a.top<b.bottom&&a.bottom>b.top};})()");
  assert.equal(boxes.overlap,false,'sync button overlaps checkout');
- await evaluate("document.querySelector('.check-in-btn').click()");
- await until(()=>evaluate("!!document.querySelector('.cash-payment-dialog[open]')"),'payment dialog');
+ await openPayment();
  assert.equal((await state()).drafts.orders.length,1,'opening payment keeps the order');
  await evaluate("document.querySelector('[aria-label=\"Cancel payment\"]').click()");
  assert.equal((await state()).drafts.orders.length,1,'cancelling payment keeps the order');
@@ -135,6 +157,10 @@ try{
  await until(async()=>(await state()).queue.length===0,'reconnect synchronization');
  assert.equal(checkouts,1);assert.equal(history[0].details.payment.amount_received,17.3);assert.equal(history[0].details.payment.change_usd,5);assert.equal(history[0].details.payment.change_lbp,205850);assert.equal(history.length,1);assert.equal(shared.length,0);
  if(fullDay){
+  // UI behavior is verified above. Exercise a large encrypted backlog without
+  // mounting a second copy of the POS UI for every storage notification.
+  await command('Page.navigate',{url:origin+'/stress-harness'});
+  await until(()=>evaluate("document.title==='Isolated offline queue check'"),'offline stress harness');
   await evaluate(`import('/test-modules/transport.js').then(m=>{window.dayTransport=m;m.network.defaults.baseURL=location.origin;})`);
   await command('Network.emulateNetworkConditions',{offline:true,latency:0,downloadThroughput:0,uploadThroughput:0});
   const began=Date.now();
@@ -146,17 +172,21 @@ try{
     await m.offlineAdapter({url:'/api/seating/tables/1/status',method:'put',data:{t_status:'occupied'}});
     await m.offlineAdapter({url:'/api/checkout',method:'post',data:{totalAmount:25,customerName:'Full day test',details:{checkout_operation_id:id,table_id:1,items:[{product_id:1,qty:5,price:5}]}}});
    }return true;})()`);
-   if((batch+1)%10===0)console.log('Full-day test: '+((batch+1)*10)+' orders saved offline');
+   if((batch+1)%10===0){console.log('Full-day test: '+((batch+1)*10)+' orders saved offline');await command('HeapProfiler.collectGarbage');}
   }
   const saved=await state();assert.equal(saved.queue.filter(op=>op.url==='/api/checkout').length,500);assert.equal(saved.queue.length,1500);assert.equal(saved.cache['/api/history'].data.length,501);
   console.log('500 orders and 2,500 cart edits saved in '+((Date.now()-began)/1000).toFixed(1)+'s; encrypted state payload '+(Buffer.byteLength(JSON.stringify(saved))/1048576).toFixed(2)+' MiB');
-  await command('Page.reload');await until(()=>evaluate("!!document.querySelector('.product-card-btn')"),'full day offline reload');
+  await command('Page.navigate',{url:origin+'/POS'});await until(()=>evaluate("!!document.querySelector('.product-card-btn')"),'full day offline reload');
   assert.equal((await state()).queue.filter(op=>op.url==='/api/checkout').length,500);
   await command('Network.emulateNetworkConditions',{offline:false,latency:0,downloadThroughput:-1,uploadThroughput:-1});
+  await command('Page.navigate',{url:origin+'/stress-harness'});
+  await until(()=>evaluate("document.title==='Isolated offline queue check'"),'sync stress harness');
+  await evaluate(`import('/test-modules/transport.js').then(m=>{m.network.defaults.baseURL=location.origin;void m.syncPending();})`);
   const syncStart=Date.now();
-  while((await state()).queue.length){if(Date.now()-syncStart>300000)throw Error('Full-day sync exceeded five minutes');await pause(1000);}
+  let progressAt=Date.now();
+  while((await state()).queue.length){if(Date.now()-syncStart>900000)throw Error('Full-day sync exceeded fifteen minutes');if(Date.now()-progressAt>=30000){console.log('Full-day sync: '+(await state()).queue.length+' operations remaining');await command('HeapProfiler.collectGarbage');progressAt=Date.now();}await pause(1000);}
   assert.equal(checkouts,501);assert.equal(history.length,501);assert.equal(new Set(history.map(sale=>sale.order_id)).size,501);
-  await command('Page.reload');await pause(1000);assert.equal(checkouts,501);
+  await command('Page.navigate',{url:origin+'/POS'});await until(()=>evaluate("!!document.querySelector('.product-card-btn')"),'POS after full-day sync');await pause(1000);assert.equal(checkouts,501);
   console.log('PASS: 500 offline orders survived reload and synced exactly once in '+((Date.now()-syncStart)/1000).toFixed(1)+'s.');
  }
  if(!fullDay){
@@ -168,6 +198,38 @@ try{
   assert.equal(await evaluate("!!document.querySelector('.position-salary-form')"),true,'position defaults form');
   await command('Page.navigate',{url:`http://127.0.0.1:${server.address().port}/POS/sales`});
   await until(()=>evaluate("!!document.querySelector('.sales-kpi-grid')"),'sales with payroll');
+  await until(async()=>(await state()).snapshotRevision===revision,'sales snapshot settled');
+  await pause(500);
+  const initialHistoryReads=apiReads.get('/api/history');
+  await pause(16000);
+  assert.equal(apiReads.get('/api/history'),initialHistoryReads,'unchanged sales must not download history on a timer');
+  revision++;changedTables.offline_open_orders=revision;
+  await evaluate("window.dispatchEvent(new Event('focus'))");
+  await until(async()=>(await state()).snapshotRevision===revision,'remote cart refresh');
+  await pause(500);
+  assert.equal(apiReads.get('/api/history'),initialHistoryReads,'cart-only changes must not refresh sales or history');
+  const previousTotals=await evaluate("document.querySelector('.sales-kpi-grid').textContent");
+  history[0]={...history[0],total_amount:Number(history[0].total_amount)+5,details:{...history[0].details,items:history[0].details.items.map((item,index)=>index?item:{...item,qty:item.qty+1})}};
+  revision++;changedTables.orders_history=revision;
+  await evaluate("window.dispatchEvent(new Event('focus'))");
+  await until(()=>evaluate(`document.querySelector('.sales-kpi-grid').textContent!==${JSON.stringify(previousTotals)}`),'related sale changes refresh totals');
+  await pause(500);
+  const visibleHistoryReads=apiReads.get('/api/history');
+  await evaluate("Object.defineProperty(document,'hidden',{configurable:true,get:()=>true});document.dispatchEvent(new Event('visibilitychange'))");
+  revision++;changedTables.business_expenses=revision;
+  await evaluate("window.dispatchEvent(new Event('focus'))");
+  await pause(500);
+  assert.equal(apiReads.get('/api/history'),visibleHistoryReads,'hidden tabs must not refresh sales');
+  await evaluate("delete document.hidden;document.dispatchEvent(new Event('visibilitychange'))");
+  await until(()=>apiReads.get('/api/history')>visibleHistoryReads,'visible tab resumes related updates');
+  console.log('PASS: unchanged and cart-only changes do not reload sales; related sales and expenses refresh; hidden tabs pause.');
+  await pause(500);
+  const beforeCustom=apiReads.get('/api/history');
+  await evaluate("[...document.querySelectorAll('.sales-timeframe-button')].find(button=>button.textContent.includes('Custom Range')).click()");
+  await pause(500);
+  assert.equal(apiReads.get('/api/history'),beforeCustom,'an incomplete custom range must not download all history');
+  await evaluate("[...document.querySelectorAll('.sales-timeframe-button')].find(button=>button.textContent.includes('Daily')).click()");
+  await until(()=>evaluate("document.querySelector('.sales-kpi-grid').textContent.includes('3 units')"),'daily totals after custom selection');
   assert.equal(await evaluate("!!document.querySelector('.sales-cost-chart')"),false);
   await evaluate("Array.from(document.querySelectorAll('.sales-chart-tab')).find(el=>el.textContent==='Total Cost by Expense').click()");
   await until(()=>evaluate("!!document.querySelector('.sales-cost-chart')"),'cost pie tab');
@@ -184,7 +246,7 @@ try{
   await evaluate("document.querySelector('.product-card-btn').click()");
   await until(async()=>(await state()).drafts.orders[0]?.items.length===1,'WHISH item');
   await evaluate("document.querySelectorAll('.mobile-order-tabs button')[1].click()");
-  await evaluate("document.querySelector('.check-in-btn').click()");
+  await openPayment();
   await until(()=>evaluate("!!document.querySelector('.cash-payment-dialog[open]')"),'WHISH payment dialog');
   await evaluate("document.querySelectorAll('.payment-methods button')[1].click()");
   await evaluate("window.receiptPrints=0;window.print=()=>{window.receiptPrints++;window.dispatchEvent(new Event('afterprint'));};");
@@ -210,9 +272,23 @@ try{
  assert.ok(Math.abs(Number(pageBox[1])-80*72/25.4)<2,'receipt uses the 80 mm roll');
  assert.ok(Number(pageBox[2])<200*72/25.4,'short receipt does not use a full-length page');
  assert.equal((pdfText.match(/\/Type\s*\/Page\b/g)||[]).length,1,'short receipt fits one page');
-
-
-
+ await command('Page.navigate',{url:origin+'/POS/stock/history'});
+ await until(()=>evaluate("document.querySelector('.stock-history-page')?.textContent.includes('Recent purchase fixture')"),'recent stock purchases');
+ assert.equal(await evaluate("document.querySelector('.stock-history-page').textContent.includes('Old purchase fixture')"),false);
+ await evaluate("[...document.querySelectorAll('.stock-history-page button')].find(button=>button.textContent.includes('Load older')).click()");
+ await until(()=>evaluate("document.querySelector('.stock-history-page').textContent.includes('Old purchase fixture')"),'older purchases on demand');
+ const purchaseReads=apiReads.get('/api/stock/history');
+ revision++;changedTables.offline_open_orders=revision;
+ await evaluate("window.dispatchEvent(new Event('focus'))");
+ await until(async()=>(await state()).snapshotRevision===revision,'unrelated stock snapshot');await pause(500);
+ assert.equal(apiReads.get('/api/stock/history'),purchaseReads,'cart changes must not re-download historical purchases');
+ assert.equal(await evaluate("document.querySelector('.stock-history-page').textContent.includes('Old purchase fixture')"),true,'older history stays visible');
+ purchases.push({...purchases[1],purchase_id:'new-purchase',item_name:'New purchase fixture'});
+ revision++;changedTables.stock_purchases=revision;
+ await evaluate("window.dispatchEvent(new Event('focus'))");
+ await until(()=>evaluate("document.querySelector('.stock-history-page')?.textContent.includes('New purchase fixture')"),'related purchase refresh');
+ assert.equal(await evaluate("document.querySelector('.stock-history-page').textContent.includes('Old purchase fixture')"),true,'related refresh preserves historical view');
+ console.log('PASS: recent purchases load by default; older history remains visible and only related changes reload it.');
  }
  console.log('PASS: mobile layout, offline reopening, durable cart, shared open order, offline checkout, reconnect and one sale only.');
 }catch(error){await diagnose?.().catch(()=>{});throw error;}

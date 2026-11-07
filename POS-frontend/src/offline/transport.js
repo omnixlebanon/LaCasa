@@ -1,5 +1,6 @@
 import {management} from '../utils/accessPolicy.js';
 import axios from 'axios';
+import {canReuseResource} from './resources.js';
 import { accountId, load, change, announceSnapshot } from './storage.js';
 import { keyOf, readLocal, applyLocal, remap } from './model.js';
 export const network = axios.create({baseURL:import.meta.env?.VITE_API_URL || (import.meta.env?.DEV?'http://localhost:8080':''),withCredentials:true,timeout:15000});
@@ -85,17 +86,25 @@ async function downloadSnapshot(owner) {
  const previous=await load(owner);
  urls.push(...Object.keys(previous.cache).filter(key=>/^\/api\/(shifts|expenses|employees\/payroll)\?/.test(key)));
  for(let attempt=0;attempt<3;attempt++){
-  const cache={};let revision=null,consistent=true;
+  const manifestResponse=await network.get('/api/offline/manifest',{headers:{'X-Offline-Account-Id':owner.split(':')[0]}}).catch(async error=>{if(error.response?.status!==404)throw error;const res=await network.get('/api/offline/revision');return {...res,data:null};});
+  const manifest=manifestResponse.data;
+  const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Beirut',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  const cache={};let revision=manifestResponse.headers['x-sync-revision'],consistent=true;
   for(const url of new Set(urls)){
    if(accountId()!==owner)throw Error('Account changed while downloading.');
-   const res=await network.get(url,{headers:{'X-Offline-Account-Id':owner.split(':')[0]}});
+   const key=keyOf(url);
+   if(previous.cache[key]&&canReuseResource(url,previous,manifest,Number(revision),today)){cache[key]=previous.cache[key];continue;}
+   const requestUrl=['/api/history','/api/stock/history'].includes(url)?url+'?recent=1':url;
+   const res=await network.get(requestUrl,{headers:{'X-Offline-Account-Id':owner.split(':')[0]}});
    const rev=res.headers['x-sync-revision'];
    if(rev===undefined)throw Error('Deploy the offline backend and run its migration first.');
    if(revision!==null&&revision!==rev)consistent=false;
    revision=rev;cache[keyOf(url)]={data:res.data,downloadedAt:new Date().toISOString()};
    if(syncProgress.active&&syncProgress.stage==='download'){syncProgress={...syncProgress,done:Object.keys(cache).length,total:new Set(urls).size};announce();}
   }
-  if(consistent)return {cache,revision:Number(revision)};
+  const final=await network.get('/api/offline/revision');
+  if(final.headers['x-sync-revision']!==revision)consistent=false;
+  if(consistent)return {cache,revision:Number(revision),snapshotRevision:Number(revision),snapshotDay:today};
  }
  throw Error('Shared data is changing. Please prepare offline data again when updates finish.');
 }
@@ -106,8 +115,8 @@ export async function prepareOffline() {
   if((await load(owner)).queue.length)return;
   syncProgress={active:true,done:0,total:0,stage:'download'};announce();
   const snapshot=await downloadSnapshot(owner);
-  await change(state=>{
-   if(state.queue.length)return;
+  const installed=await change(state=>{
+   if(state.queue.length||Number(state.revision)>snapshot.revision)return false;
    Object.assign(state,snapshot);
    const shared=state.cache['/api/open-orders'].data;
    const seen=new Set(state.drafts.syncedKeys||[]);
@@ -118,7 +127,9 @@ export async function prepareOffline() {
    state.drafts.syncedKeys=[...new Set([...seen,...shared.map(order=>order.checkoutOperationId)])];
    for(const order of localOnly){const op=draftOperation(order);applyLocal(state,op);state.queue.push(op);}
    state.prepared=true;state.lastSync=new Date().toISOString();state.error=null;
+   return true;
   },owner);
+  if(!installed)return;
   connectionState='online';announceSnapshot();
  })().catch(async error=>{
   connectionState=error.response?.status===401?'sign-in required':'offline';
@@ -183,6 +194,9 @@ async function skipDuplicateProduct(owner,op,reason=op.problem,code){
   state.recovery=state.recovery||[];
   state.recovery.push({...op,skippedAt:new Date().toISOString(),skipReason:notice,noticeRead:/^\/api\/(bot(?:\/|$)|management\/requests(?:\/|$)|history\/[^/]+\/refund-request(?:\/|$))/.test(op.url)});
   state.queue=state.queue.filter(pending=>pending.id!==op.id);
+  // A rejected optimistic edit may have changed cached data without a server
+  // revision. Force replacement instead of reusing that provisional resource.
+  delete state.snapshotRevision;
   // Keep the prior revision so skipping never silently accepts concurrent edits.
   const drafts=state.drafts;
   // The next full refresh restores server values. Keep provisional local data until then.
@@ -319,11 +333,16 @@ export async function offlineAdapter(config){
 }
 window.addEventListener('online',()=>{void syncPending().then(prepareOffline);});
 window.addEventListener('offline',()=>{connectionState='offline';announce();});
-const retryTimer=setInterval(()=>{
+const refreshVisible=()=>{
+ if(globalThis.document?.hidden)return;
  if(accountId()&&navigator.onLine)void syncPending().then(async()=>{
   const state=await load();if(state.queue.length)return;
   const current=await network.get('/api/offline/revision');
-  if(!state.prepared||Number(current.headers['x-sync-revision'])!==state.revision)await prepareOffline();
+  const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Beirut',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+  if(!state.prepared||state.snapshotDay!==today||state.snapshotRevision!==state.revision||Number(current.headers['x-sync-revision'])!==state.revision)await prepareOffline();
  }).catch(()=>{});
-},15000);
+};
+window.addEventListener('focus',refreshVisible);
+globalThis.document?.addEventListener('visibilitychange',refreshVisible);
+const retryTimer=setInterval(refreshVisible,15000);
 retryTimer.unref?.();

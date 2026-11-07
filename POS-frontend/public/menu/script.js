@@ -100,7 +100,7 @@ async function loadMenu() {
     busy = true; retry.hidden = true; content.setAttribute('aria-busy', 'true');
     if (previous === null) status.textContent = 'Loading menu...';
     try {
-        const response = await fetch('/api/public/menu', { cache: 'no-store', credentials: 'omit', signal: AbortSignal.timeout(15000) });
+        const response = await fetch('/api/public/menu', { credentials: 'omit', signal: AbortSignal.timeout(15000) });
         if (!response.ok) throw new Error('Menu unavailable');
         const data = await response.json();
         if (!Array.isArray(data.products)) throw new Error('Invalid menu');

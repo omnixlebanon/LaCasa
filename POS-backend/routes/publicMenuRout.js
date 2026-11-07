@@ -1,7 +1,7 @@
 const router = require('express').Router();
 const db = require('../config/database');
 router.get('/menu', async (req, res) => {
-    res.set('Cache-Control', 'no-store');
+    res.set('Cache-Control', 'public, max-age=0, s-maxage=60');
     try {
         const [products] = await db.query(`SELECT p.product_id, p.product_name, p.product_category,
             p.product_price, p.product_description, p.product_image, c.menu_group_id
@@ -17,6 +17,7 @@ router.get('/menu', async (req, res) => {
         appearance.badges = Object.fromEntries(products.filter(product => appearance.badges[product.product_id]?.length).map(product => [product.product_id, appearance.badges[product.product_id]]));
         res.json({ products, groups, appearance });
     } catch (error) {
+        res.set('Cache-Control','no-store');
         console.error('Public menu load failed:', error.message);
         res.status(503).json({ error: 'Menu is temporarily unavailable. Please try again.' });
     }

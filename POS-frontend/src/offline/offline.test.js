@@ -18,6 +18,7 @@ Object.defineProperty(navigator,'locks',{value:{async request(name,options,fn){
 const {change,load,emptyState,accountId,restoreBackup}=await import('./storage.js');
 const {offlineAdapter,syncPending,network,resolvePending,correctPending,saveDraftEdit,prepareOffline,leavePendingUnsynced,resumeHeld,activePending}=await import('./transport.js');
 const {readLocal,applyLocal,keyOf,remap}=await import('./model.js');
+const {historyPages}=await import('../utils/historyPages.js');
 const headers=revision=>({'x-sync-revision':String(revision)});
 let account=0;
 function fixture(){
@@ -40,6 +41,71 @@ beforeEach(async()=>{
  network.defaults.adapter=async config=>({data:config.method==='get'?[]:{success:true},status:200,headers:headers(11),config});
 });
 const write=(url,data={},method='post')=>offlineAdapter({url,method,data});
+
+test('history pagination retries changed revisions and never returns a partial or duplicated report',async()=>{
+ navigator.onLine=true;
+ let first=true;const offsets=[];
+ network.defaults.adapter=async config=>{
+  if(config.params?.limit!==500)return {data:[],status:200,headers:headers(11),config};
+  const offset=Number(config.params?.offset||0);offsets.push(offset);
+  const rev=first&&offset===0?10:11;
+  if(offset===500)first=false;
+  return {data:offset===0?Array.from({length:500},(_,order_id)=>({order_id})):[],status:200,headers:{...headers(rev),'x-history-pagination':'1'},config};
+ };
+ const result=await historyPages('/api/history',{recent:'1'});
+ navigator.onLine=false;
+ assert.equal(result.length,500);assert.equal(new Set(result.map(row=>row.order_id)).size,500);
+ assert.deepEqual(offsets,[0,500,0,500]);
+});
+
+test('offline reports refuse unavailable old periods while recent data and pending sales remain available',async()=>{
+ const today=new Date().toISOString().slice(0,10);
+ await change(state=>{state.snapshotDay=today;state.cache['/api/history'].data=[{order_id:'saved',order_date:today}];});
+ assert.equal((await historyPages('/api/history',{from:today,to:today})).length,1);
+ await assert.rejects(historyPages('/api/history',{}),/older history/);
+ await assert.rejects(historyPages('/api/history',{from:'2020-01-01'}),/older history/);
+});
+
+test('incremental preparation replaces deleted shared carts, reuses unchanged products and verifies final revision',async()=>{
+ const day=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Beirut',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ await change(state=>{state.snapshotRevision=10;state.snapshotDay=day;state.drafts={orders:[{id:'cart',checkoutOperationId:'cart'}],activeOrderId:'cart',syncedKeys:['cart'],nextOrder:1};state.cache['/api/open-orders'].data=[{id:'cart',checkoutOperationId:'cart'}];});
+ const requests=[];
+ network.defaults.adapter=async config=>{requests.push(config.url);return {data:config.url==='/api/offline/manifest'?{revision:11,baseline:1,tables:{offline_open_orders:11}}:[],status:200,headers:headers(11),config};};
+ navigator.onLine=true;await prepareOffline();navigator.onLine=false;
+ const state=await load();
+ assert.equal(state.revision,11);assert.equal(state.snapshotRevision,11);
+ assert.equal(requests.includes('/api/products'),false);
+ assert.equal(requests.includes('/api/history?recent=1'),false);
+ assert.equal(requests.includes('/api/open-orders'),true);
+ assert.equal(requests.at(-1),'/api/offline/revision');
+ assert.deepEqual(state.drafts.orders,[]);assert.deepEqual(state.cache['/api/open-orders'].data,[]);
+ assert.equal(state.cache['/api/products'].data[0].product_name,'Coffee');
+});
+
+test('a write during incremental download retries rather than saving a mixed snapshot',async()=>{
+ const day=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Beirut',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
+ await change(state=>{state.snapshotRevision=10;state.snapshotDay=day;});
+ let attempts=0;const requests=[];
+ network.defaults.adapter=async config=>{
+  requests.push(config.url);
+  if(config.url==='/api/offline/manifest')attempts++;
+  const rev=attempts===1&&config.url!=='/api/offline/revision'?11:12;
+  return {data:config.url==='/api/offline/manifest'?{revision:rev,baseline:1,tables:{offline_open_orders:11,orders_history:attempts>1?12:9}}:[],status:200,headers:headers(rev),config};
+ };
+ navigator.onLine=true;await prepareOffline();navigator.onLine=false;
+ const state=await load();assert.equal(attempts,2);assert.equal(state.snapshotRevision,12);
+ assert.ok(requests.includes('/api/history?recent=1'));
+});
+
+test('a late snapshot cannot overwrite a newer write acknowledged by another tab',async()=>{
+ network.defaults.adapter=async config=>{
+  if(config.url==='/api/offline/revision')await change(state=>{state.revision=12;state.cache['/api/history'].data=[{order_id:'newer-confirmed-sale'}];});
+  return {data:config.url==='/api/offline/manifest'?{revision:11,baseline:1,tables:{orders_history:11}}:[],status:200,headers:headers(11),config};
+ };
+ navigator.onLine=true;await prepareOffline();navigator.onLine=false;
+ const state=await load();assert.equal(state.revision,12);
+ assert.equal(state.cache['/api/history'].data[0].order_id,'newer-confirmed-sale');
+});
 
 test('group visibility preserves item settings and supports menu-only hiding offline',async()=>{
  const group=await write('/api/products/groups',{group_name:'Drinks'});
@@ -301,7 +367,7 @@ test('duplicate creates leave the queue with a notice and other requests continu
  const shared=fixture();shared.cache['/api/products'].data.push({product_id:88,product_name:'Existing elsewhere',product_category:'Hot',product_price:8});
  const sent=[];
  network.defaults.adapter=async config=>{
-  if(config.method==='get')return {data:shared.cache[keyOf(config.url)]?.data||[],status:200,headers:headers(10),config};
+  if(config.method==='get')return {data:shared.cache[keyOf(config.url)]?.data||[],status:200,headers:headers(11),config};
   sent.push(config.url);
   if(config.url==='/api/products')throw new AxiosError('Duplicate','ERR_BAD_REQUEST',config,null,{status:422,data:{code:'PRODUCT_NAME_EXISTS',error:'A product with this name already exists.'}});
   return {data:{id:55},status:200,headers:headers(11),config};
@@ -331,10 +397,11 @@ test('dependent orders are removed from the queue but preserved in recovery with
 });
 
 test('a failed refresh cannot block removing a rejected request',async()=>{
+ await change(state=>{state.snapshotRevision=10;});
  await write('/api/products',{product_name:'Remote duplicate',product_category:'Hot',product_price:2});
  const original=(await load()).queue[0];
  network.defaults.adapter=async config=>{if(config.method==='get')throw new AxiosError('Offline','ERR_NETWORK',config);throw new AxiosError('Duplicate','ERR_BAD_REQUEST',config,null,{status:422,data:{code:'PRODUCT_NAME_EXISTS'}});};
- navigator.onLine=true;await syncPending();const state=await load();assert.equal(state.queue.length,0);assert.equal(state.recovery[0].id,original.id);
+ navigator.onLine=true;await syncPending();const state=await load();assert.equal(state.queue.length,0);assert.equal(state.recovery[0].id,original.id);assert.equal(state.snapshotRevision,undefined);
 });
 
 test('an already paused needs-review request is skipped without a manual retry',async()=>{

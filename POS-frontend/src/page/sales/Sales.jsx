@@ -1,4 +1,8 @@
 import { businessDate } from './utils/businessTime.js';
+import {historyPages} from '../../utils/historyPages.js';
+import {network} from '../../offline/transport.js';
+import {load} from '../../offline/storage.js';
+import {salesRefreshKey} from './utils/refreshKey.js';
 import Expenses from '../expenses/Expenses.jsx';
 import LoadingState from '../../components/LoadingState.jsx';
 import { useCurrency } from '../../global.jsx';
@@ -32,12 +36,17 @@ export default function Sales() {
 	const fetchSales = useCallback(async (signal) => {
 		setRefreshing(true);
 		try {
+			if(timeframe==='custom'&&(!customStartDate||!customEndDate||customStartDate>customEndDate)){
+			 setTransactions([]);setExpenses([]);setPayroll([]);setHasLoaded(true);setLastUpdated(new Date());setError('');return true;
+			}
 			const now = new Date();
             const today = businessDate(now);
             const through = timeframe === 'custom' && customEndDate ? customEndDate : today;
-            const [history, summary, expenseResponse, payrollResponse] = await Promise.all([api.get("/api/history", { signal }), api.get("/api/products/summary", { signal }), api.get('/api/expenses', { params: { through }, signal }), api.get('/api/employees/payroll-costs', {signal})]);
+            const from=timeframe==='daily'?today:timeframe==='monthly'?today.slice(0,7)+'-01':timeframe==='yearly'?today.slice(0,4)+'-01-01':timeframe==='custom'?customStartDate:null;
+            const historyParams=from?{from,to:through}:{};
+            const [history, summary, expenseResponse, payrollResponse] = await Promise.all([historyPages('/api/history',historyParams,signal), api.get("/api/products/summary", { signal }), api.get('/api/expenses', { params: { through }, signal }), api.get('/api/employees/payroll-costs', {signal})]);
 			if (signal?.aborted) return;
-			const data = normalizeSales(history.data, summary.data);
+			const data = normalizeSales(history, summary.data);
 			setProducts(data.products);
 			setTransactions(data.transactions);
             setExpenses(expenseResponse.data.map(row => ({ ...row, timestamp: `${row.expense_date}T00:00:00`, totalRevenue: 0, totalCost: Number(row.amount), totalProfit: -Number(row.amount), quantity: 0 })));
@@ -46,23 +55,45 @@ export default function Sales() {
 			setHasLoaded(true);
 			setLastUpdated(new Date());
 			setError("");
-		} catch {
-			if (!signal?.aborted) setError("Could not refresh sales. Displayed figures may be out of date.");
+			return true;
+		} catch (error) {
+			if (!signal?.aborted) setError(error.message || "Could not refresh sales. Displayed figures may be out of date.");
+			return false;
 		} finally {
 			if (!signal?.aborted) { setLoading(false); setRefreshing(false); }
 		}
-	}, [timeframe, customEndDate]);
+	}, [timeframe, customStartDate, customEndDate]);
 	useEffect(() => {
 		const controller = new AbortController();
-		let timer;
+		let timer, running=false, lastKey, manifest, checkedAt=0, checkedRevision;
 		const refresh = async () => {
-			await fetchSales(controller.signal);
-			if (!controller.signal.aborted) timer = setTimeout(refresh, 15e3);
+			if(document.hidden||running||controller.signal.aborted)return;
+			running=true;
+			try {
+			 const state=await load();
+			 if(navigator.onLine&&(Date.now()-checkedAt>=15000||checkedRevision!==state.revision)){
+			  manifest=await network.get('/api/offline/manifest',{signal:controller.signal});checkedAt=Date.now();checkedRevision=state.revision;
+			 }
+			 const key=salesRefreshKey(manifest?.data,Number(manifest?.headers['x-sync-revision']??state.revision),state,businessDate(new Date()));
+			 if(key!==lastKey && await fetchSales(controller.signal))lastKey=key;
+			} catch { if(lastKey===undefined)await fetchSales(controller.signal); }
+			finally{running=false;}
 		};
 		refresh();
+		timer=setInterval(refresh,15000);
+		window.addEventListener('offline-snapshot',refresh);
+		window.addEventListener('offline-change',refresh);
+		window.addEventListener('focus',refresh);
+		window.addEventListener('online',refresh);
+		document.addEventListener('visibilitychange',refresh);
 		return () => {
 			controller.abort();
-			clearTimeout(timer);
+			clearInterval(timer);
+			window.removeEventListener('offline-snapshot',refresh);
+			window.removeEventListener('offline-change',refresh);
+			window.removeEventListener('focus',refresh);
+			window.removeEventListener('online',refresh);
+			document.removeEventListener('visibilitychange',refresh);
 		};
 	}, [fetchSales]);
 	// Filtered Transactions for Active Timeframe & Date Range

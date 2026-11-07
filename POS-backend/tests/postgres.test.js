@@ -366,12 +366,12 @@ test('public menu reflects catalog changes and hides private fields and hidden p
   const publicMenu = async () => {
     const response = await fetch(base + '/api/public/menu');
     assert.equal(response.status, 200);
-    assert.equal(response.headers.get('cache-control'), 'no-store');
+    assert.match(response.headers.get('cache-control'), /s-maxage=60/);
     return (await response.json()).products;
   };
   let row = (await publicMenu()).find(p => p.product_id === id);
   assert.equal(row.product_description, '<b>Fresh</b>');
-  assert.deepEqual(Object.keys(row).sort(), ['product_id','product_name','product_category','product_price','product_description','product_image'].sort());
+  assert.deepEqual(Object.keys(row).sort(), ['product_id','product_name','product_category','product_price','product_description','product_image','menu_group_id'].sort());
   assert.equal((await fetch(base + '/api/products')).status, 401);
   assert.equal((await request(`/products/${id}`, 'PATCH', { product_price: 4, product_name: 'Updated menu drink', product_description: '', product_image: '' })).status, 200);
   row = (await publicMenu()).find(p => p.product_id === id);
@@ -390,6 +390,22 @@ test('public menu reflects catalog changes and hides private fields and hidden p
 const { randomUUID } = require('node:crypto');
 const syncHeaders = (id, revision) => ({'X-Operation-Id':id,'X-Base-Revision':String(revision),'X-Offline-Account-Id':'1','X-Offline-Created-At':'2026-01-12T10:30:00.000Z'});
 const revision = async () => Number((await request('/offline/revision')).headers.get('x-sync-revision'));
+
+test('history lists omit image bytes, support stable pagination and reject invalid ranges',async()=>{
+ const image='data:image/png;base64,'+Buffer.alloc(100000,1).toString('base64');
+ await db.query('INSERT INTO orders_history (order_id,customer_name,total_amount,details,refund_evidence) VALUES (?,?,?,?,?)',['egress-evidence','Egress test',1,JSON.stringify({items:[]}),image]);
+ const list=await request('/history?limit=500&offset=0');
+ assert.equal(list.headers.get('x-history-pagination'),'1');
+ const row=list.data.find(row=>row.order_id==='egress-evidence');
+ assert.equal(row.refund_evidence,'/api/history/egress-evidence/evidence');
+ assert.ok(!JSON.stringify(list.data).includes(image));
+ assert.equal((await request('/history?limit=1&offset=0')).data.length,1);
+ assert.equal((await request('/history?limit=501')).status,400);
+ assert.equal((await request('/history?from=2026-02-31')).status,400);
+ const evidence=await fetch(base+'/api/history/egress-evidence/evidence',{headers:{Cookie:cookie}});
+ assert.equal(evidence.status,200);assert.equal((await evidence.arrayBuffer()).byteLength,100000);
+ await db.query('DELETE FROM orders_history WHERE order_id = ?',['egress-evidence']);
+});
 
 test('offline checkout commits receipt, stock and original sale timestamp once; retry keeps original revision', async () => {
   const [[product]] = await db.query('SELECT product_id FROM products WHERE product_id = 1');

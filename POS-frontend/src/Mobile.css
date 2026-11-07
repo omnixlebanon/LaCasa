@@ -2,6 +2,8 @@
 .mobile-header { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: max(14px, env(safe-area-inset-top)) 16px 14px; background: white; border-bottom: 1px solid var(--border-color); }
 .mobile-header strong { display: block; font-size: 15px; }
 .mobile-header small { display: block; color: var(--font-color); font-size: 12px; }
+.mobile-header > div:first-child { min-width: 0; }
+.mobile-header small { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .mobile-header-actions { display: flex; gap: 8px; }
 .mobile-header button { display: grid; place-items: center; min-width: 44px; min-height: 44px; padding: 8px; border: 1px solid var(--border-color); border-radius: 10px; }
 .mobile-navigation { position: fixed; bottom: 0; left: 0; right: 0; z-index: 1000; display: flex; padding: 6px 8px max(6px, env(safe-area-inset-bottom)); border-top: 1px solid var(--border-color); background: white; box-shadow: 0 -4px 20px #1839280a; }

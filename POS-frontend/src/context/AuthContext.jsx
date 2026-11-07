@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }) => {
     let active = true;
     let checking = false;
     const checkSession = async () => {
-      if (checking || !navigator.onLine) { if (active) setLoading(false); return; }
+      if (document.hidden || checking || !navigator.onLine) { if (active) setLoading(false); return; }
       checking = true;
       try {
         const res = await api.get('/api/auth/me', { withCredentials: true });
@@ -59,12 +59,14 @@ export const AuthProvider = ({ children }) => {
     void checkSession();
     window.addEventListener('online', checkSession);
     window.addEventListener('focus', checkSession);
+    document.addEventListener('visibilitychange', checkSession);
     const timer = setInterval(checkSession, 60000);
     return () => {
       active = false;
       clearInterval(timer);
       window.removeEventListener('online', checkSession);
       window.removeEventListener('focus', checkSession);
+      document.removeEventListener('visibilitychange', checkSession);
     };
   }, []);
 

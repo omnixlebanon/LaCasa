@@ -22,7 +22,7 @@ export function CurrencyProvider({ children }) {
   useEffect(() => {
     let mounted = true, fetching = false;
     const refresh = async () => {
-      if (fetching || savingRate.current || !navigator.onLine || !localStorage.getItem('auth_user')) return;
+      if (document.hidden || fetching || savingRate.current || !navigator.onLine || !localStorage.getItem('auth_user')) return;
       fetching = true;
       const version = rateVersion.current;
       try {
@@ -37,7 +37,8 @@ export function CurrencyProvider({ children }) {
     window.addEventListener('focus', refresh);
     window.addEventListener('online', refresh);
     window.addEventListener('offline-snapshot', refresh);
-    return () => { mounted = false; clearInterval(timer); window.removeEventListener('focus', refresh); window.removeEventListener('online', refresh); window.removeEventListener('offline-snapshot', refresh); };
+    document.addEventListener('visibilitychange', refresh);
+    return () => { mounted = false; clearInterval(timer); window.removeEventListener('focus', refresh); window.removeEventListener('online', refresh); window.removeEventListener('offline-snapshot', refresh); document.removeEventListener('visibilitychange', refresh); };
   }, []);
 
   const toggleCurrency = () => {

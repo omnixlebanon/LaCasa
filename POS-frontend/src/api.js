@@ -3,7 +3,7 @@ import { offlineAdapter } from './offline/transport.js';
 import { beginRequest } from './requestActivity.js';
 
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || (import.meta.env.DEV ? 'http://localhost:8080' : ''),
+  baseURL: import.meta.env?.VITE_API_URL || (import.meta.env?.DEV ? 'http://localhost:8080' : ''),
   withCredentials: true,
   adapter: offlineAdapter,
 });

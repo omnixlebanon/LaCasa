@@ -22,7 +22,7 @@ const app = express();
 app.use(cors({
     origin: process.env.CLIENT_URL,
     credentials: true,
-    exposedHeaders: ['X-Sync-Revision']
+    exposedHeaders: ['X-Sync-Revision','X-History-Pagination']
 }));
 // Stay below Vercel's 4.5 MB request limit, including the JSON envelope.
 app.use(express.json({ limit: '4mb' }));
@@ -34,6 +34,10 @@ app.use('/api/auth', auth_routes)
 app.use(require('./middleware/disabledChatbot'));
 app.use('/api', verifyToken, require('./middleware/durableSync'));
 app.get('/api/offline/revision', (req,res) => res.json({ ready: true }));
+app.get('/api/offline/manifest', async (req,res,next) => {
+    try { const tracking=require('./services/syncManifest');const db=require('./config/database');res.json(await tracking.optional(db,()=>tracking.read(db))); }
+    catch(error) { next(error); }
+});
 app.get('/api/offline/operations/:id', async (req,res,next) => {
     try { const [[row]] = await require('./config/database').query('SELECT owner_id FROM offline_sync_operations WHERE operation_id = ?', [req.params.id]); res.json({ applied: !!row && row.owner_id === String(req.user.user_id) }); }
     catch(error) { next(error); }

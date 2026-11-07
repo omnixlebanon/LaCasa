@@ -47,7 +47,7 @@ module.exports = async function durableSync(req, res, next) {
     try {
      if(res.statusCode>=400||scope.failed) { await raw.rollback(); if(scope.failed&&res.statusCode<400){res.statusCode=500;body={error:'Transaction was rolled back.'};} }
      else {
-      if(scope.dirty){revision++;await raw.query('UPDATE offline_sync_state SET revision = ? WHERE id = 1',[revision]);}
+      if(scope.dirty){revision++;const tracking=require('../services/syncManifest');await tracking.optional(raw,()=>tracking.record(raw,revision,scope.tables));await raw.query('UPDATE offline_sync_state SET revision = ? WHERE id = 1',[revision]);}
       if(operation)await raw.query('INSERT INTO offline_sync_operations (operation_id,owner_id,fingerprint,response_status,response_body) VALUES (?,?,?,?,?)',[operation,owner,fingerprint,res.statusCode,JSON.stringify({body,revision})]);
       await raw.commit();
      }

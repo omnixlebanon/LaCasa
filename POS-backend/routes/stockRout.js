@@ -8,8 +8,9 @@ const { requireManager } = require('../middleware/auth');
 const { listExpiredBatches, discardExpiredBatches } = require('../services/expiredStockService');
 
 router.get('/stock/history', async (req,res) => {
-    try { const [rows]=await db.execute('SELECT * FROM stock_purchases ORDER BY purchased_at DESC, purchase_id DESC'); res.json(rows.map(row=>({...row,purchased_at:typeof row.purchased_at==='string'?row.purchased_at.replace(' ','T')+'Z':row.purchased_at}))); }
-    catch(error) { res.status(500).json({error:['42P01','ER_NO_SUCH_TABLE'].includes(error.code)?'Stock history is not set up yet. Run npm run migrate:stock-history in POS-backend.':error.message}); }
+    res.set('X-History-Pagination','1');
+    try { const window=require('../services/historyWindow')(req.query,'purchased_at');const [rows]=await db.execute(`SELECT * FROM stock_purchases ${window.where} ORDER BY purchased_at DESC, purchase_id DESC${window.page}`,window.values); res.json(rows.map(row=>({...row,purchased_at:typeof row.purchased_at==='string'?row.purchased_at.replace(' ','T')+'Z':row.purchased_at}))); }
+    catch(error) { res.status(error.status||500).json({error:['42P01','ER_NO_SUCH_TABLE'].includes(error.code)?'Stock history is not set up yet. Run npm run migrate:stock-history in POS-backend.':error.message}); }
 });
 
 router.get('/stock/expired-batches', requireManager, async (req, res) => {

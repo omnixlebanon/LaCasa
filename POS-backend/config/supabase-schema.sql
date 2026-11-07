@@ -205,6 +205,9 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS pos_hidden SMALLINT NOT NULL DEFAU
 ALTER TABLE product_categories ADD COLUMN IF NOT EXISTS pos_hidden SMALLINT NOT NULL DEFAULT 0 CHECK (pos_hidden IN (0, 1));
 
 CREATE TABLE IF NOT EXISTS offline_sync_state (id INTEGER PRIMARY KEY, revision BIGINT NOT NULL DEFAULT 0);
+CREATE TABLE IF NOT EXISTS pos_settings (setting_key VARCHAR(60) PRIMARY KEY, setting_value TEXT NOT NULL);
+ALTER TABLE pos_settings ENABLE ROW LEVEL SECURITY;
+REVOKE ALL ON pos_settings FROM PUBLIC;
 INSERT INTO offline_sync_state(id,revision) VALUES(1,0) ON CONFLICT(id) DO NOTHING;
 CREATE TABLE IF NOT EXISTS offline_sync_operations (operation_id VARCHAR(36) PRIMARY KEY, owner_id VARCHAR(40) NOT NULL, fingerprint VARCHAR(64) NOT NULL, response_status INTEGER NOT NULL, response_body TEXT NOT NULL);
 ALTER TABLE offline_sync_state ENABLE ROW LEVEL SECURITY;

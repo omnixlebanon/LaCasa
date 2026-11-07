@@ -37,7 +37,7 @@ test('appearance persists for other clients, enforces management access and expo
         const value={theme,decorations:false,badges:{1:['new','most-popular','limited-time'],2:['christmas'],3:['ramadan']}};
         assert.equal((await request('PUT',value,'manager')).status,200);
         assert.deepEqual(await(await request('GET',undefined,'owner')).json(),value);
-        const response=await fetch(base+'/public/menu');assert.equal(response.status,200);assert.equal(response.headers.get('cache-control'),'no-store');
+        const response=await fetch(base+'/public/menu');assert.equal(response.status,200);assert.match(response.headers.get('cache-control'),/s-maxage=60/);
         const menu=await response.json();assert.deepEqual(menu.appearance,{...value,badges:{1:value.badges[1]}});assert.deepEqual(menu.products.map(p=>p.product_id),[1]);
     }
     const before=await(await request()).json();

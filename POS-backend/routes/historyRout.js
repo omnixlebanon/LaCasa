@@ -7,11 +7,15 @@ const { sendEvidence } = require('../services/evidenceService');
 
 router.get('/history',async (req,res)=>{
     try {
-        const [rows] = await db.execute(`SELECT * FROM orders_history`);
+        const window = require('../services/historyWindow')(req.query,'order_date');
+        res.set('X-History-Pagination','1');
+        const [rows] = await db.execute(`SELECT internal_id, order_id, customer_name, total_amount, details, order_date, status,
+          refund_reason, refunded_by, refunded_at, CASE WHEN refund_evidence IS NOT NULL AND refund_evidence <> '' THEN 1 ELSE 0 END AS refund_evidence
+          FROM orders_history ${window.where} ORDER BY order_date DESC, internal_id DESC${window.page}`, window.values);
         res.json(rows.map(row => ({ ...row, refund_evidence: row.refund_evidence
           ? `/api/history/${encodeURIComponent(row.order_id)}/evidence` : null })));
     } catch (err) {
-        res.status(500).json({error: err.message})
+        res.status(err.status||500).json({error: err.message})
     }
 
 })

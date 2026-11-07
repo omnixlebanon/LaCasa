@@ -58,7 +58,7 @@ try {
         await until(()=>evaluate("!!document.querySelector('.menu-page-nav') && !document.querySelector('.loading-state') && !!document.querySelector('.menu-theme-option')"),'management');
         for(const page of ['Menu Order','Themes','Item Badges']) {
             await evaluate(`[...document.querySelectorAll('.menu-page-nav button')].find(b=>b.textContent==='${page}').click()`);await pause(80);
-            const metrics=await evaluate(`({width:innerWidth,scroll:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('.menu-management-page *')].filter(e=>e.getClientRects().length&&e.getBoundingClientRect().right>innerWidth+1).slice(0,5).map(e=>e.className)})`);
+            const metrics=await evaluate(`({width:innerWidth,scroll:document.documentElement.scrollWidth,overflow:[...document.querySelectorAll('body *')].filter(e=>e.getClientRects().length&&e.getBoundingClientRect().right>${width}+1).slice(0,12).map(e=>({class:e.className,right:e.getBoundingClientRect().right,width:e.getBoundingClientRect().width,minWidth:getComputedStyle(e).minWidth}))})`);
             assert.ok(metrics.scroll<=width+1,JSON.stringify({width,page,...metrics}));
         }
         console.log('PASS menu light/dark and all management pages:',width+'px');

@@ -9,8 +9,8 @@ function contextualDatabase(pool) {
  }});
 }
 function transactionContext(raw) {
- const state = { failed: false, dirty: false };
- async function query(sql, values) { const result = await raw.query(sql, values); if (/^\s*(INSERT|UPDATE|DELETE)/i.test(sql) && result[0]?.affectedRows) state.dirty = true; return result; }
+ const state = { failed: false, dirty: false, tables: new Set() };
+ async function query(sql, values) { const result = await raw.query(sql, values); if (/^\s*(INSERT|UPDATE|DELETE)/i.test(sql) && result[0]?.affectedRows) { state.dirty = true; const table = /^\s*(?:INSERT\s+INTO|UPDATE|DELETE\s+FROM)\s+([a-z_]+)/i.exec(sql)?.[1]; state.tables.add(table?.toLowerCase() || '*'); } return result; }
  state.connection = { query, execute: query, beginTransaction: async()=>{}, commit: async()=>{}, rollback: async()=>{state.failed=true;}, release:()=>{} };
  return state;
 }

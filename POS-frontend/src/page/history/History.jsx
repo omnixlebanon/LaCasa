@@ -1,4 +1,5 @@
 import ReceiptDialog from '../../components/ReceiptDialog.jsx';
+import {historyPages} from '../../utils/historyPages.js';
 import RefundDialog from '../../components/RefundDialog.jsx';
 import LoadingState from '../../components/LoadingState.jsx';
 import useMobile from '../../hooks/useMobile.js';
@@ -16,6 +17,7 @@ function OrderHistory() {
     const [filter, setFilter] = useState('daily');
     const [statusFilter, setStatusFilter] = useState('');
     const [history, setHistory] = useState([]);
+    const olderMode=useRef(false);
     const [selectedOrder, setSelectedOrder] = useState(null);
     const [receipt,setReceipt]=useState(null);
     const [selectedEvidence, setSelectedEvidence] = useState(null);
@@ -32,15 +34,17 @@ function OrderHistory() {
     const { formatPrice } = useCurrency();
     const { user } = useAuth();
     const isManager = ['admin','owner','manager'].includes(user?.accessLevel);
-    const fetchData = async () => {
+    const fetchData = async (older=false) => {
+        if(older===true)olderMode.current=true;
+        older=olderMode.current;
         setLoading(true);
         setLoadError('');
         try {
-            const response = await api.get('/api/history');
-            setHistory(response.data || []);
+            setHistory(await historyPages('/api/history',older?{}:{recent:'1'}));
+            if(older)setFilter('all');
         } catch (error) {
             console.error("Error fetching order history:", error);
-            setLoadError('Could not load order history. Please try again.');
+            setLoadError(error.message || 'Could not load order history. Please try again.');
         } finally {
             setLoading(false);
         }
@@ -173,6 +177,7 @@ function OrderHistory() {
 
                 <div className="search-nav history-nav">
                     <div className="searchButtons">
+                        <button className="search-button" onClick={() => fetchData(true)}>Load older history (online)</button>
                         <button
                             className={`search-button ${filter === "daily" ? "active" : ""}`}
                             onClick={() => setFilter('daily')}

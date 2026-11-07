@@ -58,6 +58,7 @@ export async function restoreBackup(file) {
  await change(state=>{
   if(state.queue.length||state.drafts.orders.length)throw Error('Export and synchronize pending changes, and finish open carts before restoring.');
   for(const key of ['cache','queue','revision','lastSync','prepared','idMap','drafts'])state[key]=saved[key];
+  delete state.snapshotRevision;delete state.snapshotDay;
   state.archive=[...new Map([...saved.archive,...state.archive].map(op=>[op.id,op])).values()];
   state.recovery=[...(state.recovery||[]),...(saved.recovery||[])];
   state.error='Backup restored. Reconnect to verify pending operations.';
